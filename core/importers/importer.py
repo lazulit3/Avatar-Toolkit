@@ -1,11 +1,15 @@
 import bpy
 import logging
 import os
+import pathlib
 import typing
+from bpy.types import Operator, Context
+from bpy_extras.io_utils import ImportHelper
 from typing import Optional, Callable, Dict, List, Union, Set
 from ..common import clear_default_objects
 from .import_pmx import import_pmx
 from .import_pmd import import_pmd
+from ..translations import t
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -118,7 +122,12 @@ import_types: Dict[str, ImportMethod] = {
         method=lambda directory, filepath: bpy.ops.tuxedo.import_mmd_animation(directory=directory, filepath=filepath)
     ),
     "vrm": lambda directory, files, filepath: bpy.ops.import_scene.vrm(filepath=filepath),
-    "pmx": lambda directory, files, filepath: import_pmx(filepath),
+    "pmx": lambda directory, files, filepath: import_pmx(bpy.context, filepath, 
+        scale=1.0,
+        use_mipmap=True,
+        sph_blend_factor=1.0,
+        spa_blend_factor=1.0
+    ),
     "pmd": lambda directory, files, filepath: import_pmd(filepath),
     "animx": (lambda directory, files, filepath : bpy.ops.avatar_toolkit.animx_importer(directory=directory,files=files,filepath=filepath)),
 }
@@ -128,3 +137,68 @@ def concat_imports_filter(imports: Dict[str, ImportMethod]) -> str:
     return "".join(f"*.{importer};" for importer in imports.keys())
 
 imports: str = concat_imports_filter(import_types)
+
+
+class AvatarToolKit_OT_Import(Operator, ImportHelper):
+    """Import files into Blender with Avatar Toolkit settings"""
+    bl_idname: str = "avatar_toolkit.import"
+    bl_label: str = t("QuickAccess.import")
+    
+    files: bpy.props.CollectionProperty(
+        type=bpy.types.OperatorFileListElement, 
+        options={'HIDDEN', 'SKIP_SAVE'}
+    )
+    
+    filter_glob: bpy.props.StringProperty(
+        default=imports, 
+        options={'HIDDEN', 'SKIP_SAVE'}
+    )
+    
+    directory: bpy.props.StringProperty(
+        maxlen=1024, 
+        subtype='FILE_PATH', 
+        options={'HIDDEN', 'SKIP_SAVE'}
+    )
+
+    def execute(self, context: Context) -> Set[str]:
+        clear_default_objects()
+        
+        file_grouping_dict: Dict[str, List[Dict[str, str]]] = {}
+        is_multi = len(self.files) > 0
+
+        if is_multi:
+            for file in self.files:
+                fullpath = os.path.join(self.directory, os.path.basename(file.name))
+                ext = pathlib.Path(fullpath).suffix.replace(".", "")
+                
+                if ext not in file_grouping_dict:
+                    file_grouping_dict[ext] = []
+                file_grouping_dict[ext].append({"name": os.path.basename(file.name)})
+        else:
+            fullpath = os.path.join(os.path.dirname(self.filepath), os.path.basename(self.filepath))
+            ext = pathlib.Path(fullpath).suffix.replace(".", "")
+            
+            if ext not in file_grouping_dict:
+                file_grouping_dict[ext] = []
+            file_grouping_dict[ext].append({"name": fullpath})
+
+        for file_group_name, files in file_grouping_dict.items():
+            try:
+                if file_group_name == "vrm" and not hasattr(bpy.ops.import_scene, "vrm"):
+                    bpy.ops.wm.vrm_importer_popup('INVOKE_DEFAULT')
+                    return {'CANCELLED'}
+
+                directory = self.directory if self.directory else ""
+                import_types[file_group_name](directory, files, self.filepath)
+
+            except AttributeError as e:
+                if file_group_name == "vrm":
+                    bpy.ops.wm.vrm_importer_popup('INVOKE_DEFAULT')
+                else:
+                    self.report({'ERROR'}, t('Importing.need_importer').format(extension=file_group_name))
+                logger.error(f"Importer error: {e}")
+                return {'CANCELLED'}
+
+        self.report({'INFO'}, t('Quick_Access.import_success'))
+        return {'FINISHED'}
+

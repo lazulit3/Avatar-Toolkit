@@ -370,11 +370,24 @@ class AvatarToolkitSceneProperties(PropertyGroup):
 def register() -> None:
     """Register the Avatar Toolkit property group"""
     logger.info("Registering Avatar Toolkit properties")
+    try:
+        bpy.utils.register_class(AvatarToolkitSceneProperties)
+    except ValueError:
+        # Class already registered, we can continue
+        pass
     bpy.types.Scene.avatar_toolkit = PointerProperty(type=AvatarToolkitSceneProperties)
     logger.debug("Properties registered successfully")
 
 def unregister() -> None:
     """Unregister the Avatar Toolkit property group"""
     logger.info("Unregistering Avatar Toolkit properties")
-    del bpy.types.Scene.avatar_toolkit
+    try:
+        del bpy.types.Scene.avatar_toolkit
+    except:
+        pass
+    try:
+        bpy.utils.unregister_class(AvatarToolkitSceneProperties)
+    except RuntimeError:
+        pass
     logger.debug("Properties unregistered successfully")
+
