@@ -18,23 +18,12 @@ from ..core.common import (
     get_armature_list,
     get_armature_stats
 )
-from ..core.importers.importer import import_types, imports
 from ..functions.pose_mode import (
     AvatarToolkit_OT_StartPoseMode,
     AvatarToolkit_OT_StopPoseMode,
     AvatarToolkit_OT_ApplyPoseAsShapekey,
     AvatarToolkit_OT_ApplyPoseAsRest
 )
-
-class AvatarToolKit_OT_Import(Operator):
-    """Import FBX files into Blender with Avatar Toolkit settings"""
-    bl_idname: str = "avatar_toolkit.import"
-    bl_label: str = t("QuickAccess.import")
-    
-    def execute(self, context: Context) -> Set[str]:
-        clear_default_objects()
-        bpy.ops.import_scene.fbx('INVOKE_DEFAULT', filter_glob=imports)
-        return {'FINISHED'}
 
 class AvatarToolKit_OT_ExportFBX(Operator):
     """Export selected objects as FBX"""
@@ -153,5 +142,3 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         button_row.scale_y = 1.5
         button_row.operator("avatar_toolkit.import", text=t("QuickAccess.import"), icon='IMPORT')
         button_row.operator("avatar_toolkit.export", text=t("QuickAccess.export"), icon='EXPORT')
-
-

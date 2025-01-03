@@ -126,15 +126,21 @@ class ATOOLKIT_OT_preview_visemes(Operator):
     
     @classmethod
     def poll(cls, context: Context) -> bool:
-        # Check if we're in object mode first
+        # Check if we're in object mode
         if context.mode != 'OBJECT':
             return False
             
+        # Get mesh from UI selection
+        props = context.scene.avatar_toolkit
+        mesh_obj = bpy.data.objects.get(props.viseme_mesh)
+        
+        # Validate armature and mesh
         armature = get_active_armature(context)
         if not armature:
             return False
         valid, _ = validate_armature(armature)
-        return valid and context.active_object and context.active_object.type == 'MESH'
+        return valid and mesh_obj and mesh_obj.type == 'MESH'
+
     
     def execute(self, context: Context) -> Set[str]:
         props = context.scene.avatar_toolkit
@@ -179,11 +185,21 @@ class ATOOLKIT_OT_create_visemes(Operator):
     
     @classmethod
     def poll(cls, context: Context) -> bool:
+        # Check if we're in object mode
+        if context.mode != 'OBJECT':
+            return False
+            
+        # Get mesh from UI selection
+        props = context.scene.avatar_toolkit
+        mesh_obj = bpy.data.objects.get(props.viseme_mesh)
+        
+        # Validate armature and mesh
         armature = get_active_armature(context)
         if not armature:
             return False
         valid, _ = validate_armature(armature)
-        return valid and context.active_object and context.active_object.type == 'MESH'
+        return valid and mesh_obj and mesh_obj.type == 'MESH'
+
 
     def execute(self, context: Context) -> Set[str]:
         props = context.scene.avatar_toolkit

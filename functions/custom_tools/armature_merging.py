@@ -30,8 +30,8 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             wm.progress_begin(0, 100)
 
             # Get both armatures
-            base_armature_name: str = context.scene.merge_armature_into
-            merge_armature_name: str = context.scene.merge_armature
+            base_armature_name: str = context.scene.avatar_toolkit.merge_armature_into
+            merge_armature_name: str = context.scene.avatar_toolkit.merge_armature
             base_armature: Optional[Object] = bpy.data.objects.get(base_armature_name)
             merge_armature: Optional[Object] = bpy.data.objects.get(merge_armature_name)
             
