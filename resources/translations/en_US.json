@@ -188,6 +188,11 @@
     "Tools.shapekey_tolerance_desc": "Minimum difference to consider a shape key as used",
     "Tools.shapekeys_removed": "Removed {count} unused shape keys",
 
+    "UVTools.too_many_vertices": "Error! You have too much stuff selected. Are you sure you're selecting two edges?",
+    "UVTools.need_line": "You need one line of selected UV points per selected object. Object \"{obj}\" does not meet this requirement!",
+    "UVTools.align_edges": "Align UV Edges to Target",
+    "UVTools.align_edges_desc": "Aligns a selected line of UV points on each selected mesh to the line of selected UV points on the active mesh. Useful for kitbashing textures of one model onto another. Uses distance from the 2D cursor to identify the start of the line of UV points on each mesh.",
+
     "MMD.label": "MMD Tools",
     "MMD.bone_standardization": "Bone Standardization",
     "MMD.weight_processing": "Weight Processing",
