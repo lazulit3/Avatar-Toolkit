@@ -14,10 +14,10 @@ from ...core.translations import t
 from ...core.common import (
     get_active_armature,
     get_all_meshes,
-    validate_armature,
     clear_unused_data_blocks,
     ProgressTracker
 )
+from ...core.armature_validation import validate_armature
 
 def textures_match(tex1: ShaderNodeTexImage, tex2: ShaderNodeTexImage) -> bool:
     """Compare two texture nodes for matching properties and image data"""

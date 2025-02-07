@@ -7,12 +7,12 @@ from ...core.logging_setup import logger
 from ...core.translations import t
 from ...core.common import (
     get_active_armature,
-    validate_armature,
     get_all_meshes,
     ProgressTracker,
     calculate_bone_orientation,
     add_armature_modifier
 )
+from ...core.armature_validation import validate_armature
 
 class AvatarToolkit_OT_AttachMesh(Operator):
     """Operator to attach a mesh to an armature bone with automatic weight setup"""

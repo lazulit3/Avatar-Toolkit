@@ -14,7 +14,6 @@ from ..core.translations import t
 from ..core.common import (
     get_active_armature, 
     clear_default_objects, 
-    validate_armature,
     get_armature_list,
     get_armature_stats
 )
@@ -24,6 +23,7 @@ from ..functions.pose_mode import (
     AvatarToolkit_OT_ApplyPoseAsShapekey,
     AvatarToolkit_OT_ApplyPoseAsRest
 )
+from ..core.armature_validation import validate_armature
 
 class AvatarToolKit_OT_ExportFBX(Operator):
     """Export selected objects as FBX"""

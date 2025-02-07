@@ -7,8 +7,8 @@ from ...core.translations import t
 from ...core.common import (
     get_active_armature,
     get_all_meshes,
-    validate_armature
 )
+from ...core.armature_validation import validate_armature
 
 # Constants
 MERGE_ITERATION_COUNT = 20

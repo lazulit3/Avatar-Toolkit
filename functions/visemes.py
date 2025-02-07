@@ -9,10 +9,10 @@ from ..core.logging_setup import logger
 from ..core.translations import t
 from ..core.common import (
     get_active_armature,
-    validate_armature,
     get_all_meshes,
     validate_mesh_for_pose
 )
+from ..core.armature_validation import validate_armature
 
 class VisemeCache:
     """Manages caching of generated viseme shape data for performance optimization"""

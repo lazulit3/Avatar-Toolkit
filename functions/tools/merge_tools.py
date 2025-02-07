@@ -4,7 +4,8 @@ from typing import Set, List
 from bpy.types import Operator, Context, Armature, EditBone
 from ...core.translations import t
 from ...core.logging_setup import logger
-from ...core.common import get_active_armature, get_all_meshes, get_vertex_weights, transfer_vertex_weights, validate_armature
+from ...core.common import get_active_armature, get_all_meshes, get_vertex_weights, transfer_vertex_weights
+from ...core.armature_validation import validate_armature
 
 class AvatarToolkit_OT_ConnectBones(Operator):
     """Connect disconnected bones in chain"""

@@ -8,13 +8,13 @@ from ..core.common import (
     get_active_armature,
     get_all_meshes,
     apply_pose_as_rest,
-    validate_armature,
     cache_vertex_positions,
     apply_vertex_positions,
     validate_mesh_for_pose,
     process_armature_modifiers,
     ProgressTracker
 )
+from ..core.armature_validation import validate_armature
 
 class BatchPoseOperationMixin:
     """Base class for batch pose operations"""

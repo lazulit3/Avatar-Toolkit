@@ -1,7 +1,8 @@
 import bpy
 from bpy.types import Operator, Context
 from ...core.translations import t
-from ...core.common import get_active_armature, validate_armature
+from ...core.common import get_active_armature
+from ...core.armature_validation import validate_armature
 
 class AvatarToolKit_OT_SeparateByMaterials(Operator):
     """Operator to separate mesh by materials"""

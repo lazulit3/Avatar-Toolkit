@@ -6,11 +6,11 @@ from ...core.translations import t
 from ...core.common import (
     get_active_armature,
     get_all_meshes,
-    validate_armature,
     validate_meshes,
     join_mesh_objects,
     ProgressTracker
 )
+from ...core.armature_validation import validate_armature
 
 class AvatarToolkit_OT_JoinAllMeshes(Operator):
     """Operator to join all meshes in the scene"""

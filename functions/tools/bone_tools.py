@@ -5,12 +5,11 @@ from typing import Optional, Dict, Any, List, Tuple
 from ...core.translations import t
 from ...core.common import (
     get_active_armature, 
-    validate_armature, 
     get_all_meshes,
     ProgressTracker,
-    validate_bone_hierarchy,
     restore_bone_transforms
 )
+from ...core.armature_validation import validate_armature, validate_bone_hierarchy
 
 def duplicate_bone(bone: EditBone) -> EditBone:
     """Create a duplicate of the given bone"""
