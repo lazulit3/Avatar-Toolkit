@@ -200,6 +200,10 @@
     "Tools.shapekey_tolerance": "シェイプキーの許容値",
     "Tools.shapekey_tolerance_desc": "シェイプキーを使用済みと判断する最小差分",
     "Tools.shapekeys_removed": "{count}個の未使用シェイプキーを削除しました",
+    "Tools.convert_rigify_to_unity": "RigifyをUnityに変換",
+    "Tools.convert_rigify_to_unity_desc": "RigifyアーマチュアをUnity互換フォーマットに変換",
+    "Tools.rigify_converted": "Rigifyアーマチュアの変換が完了しました",
+    "Tools.no_armature": "アーマチュアが選択されていません",
 
     "MMD.label": "MMDツール",
     "MMD.bone_standardization": "ボーン標準化",

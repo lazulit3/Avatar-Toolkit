@@ -408,6 +408,12 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         default=True
     )
 
+    merge_twist_bones: BoolProperty(
+        name=t("Tools.merge_twist_bones"),
+        description=t("Tools.merge_twist_bones_desc"),
+        default=True
+    )
+
 def register() -> None:
     """Register the Avatar Toolkit property group"""
     logger.info("Registering Avatar Toolkit properties")

@@ -200,6 +200,11 @@
     "Tools.shapekey_tolerance": "Shape Key Tolerance",
     "Tools.shapekey_tolerance_desc": "Minimum difference to consider a shape key as used",
     "Tools.shapekeys_removed": "Removed {count} unused shape keys",
+    "Tools.rigify_title": "Rigify Tools",
+    "Tools.convert_rigify_to_unity": "Convert Rigify to Unity",
+    "Tools.convert_rigify_to_unity_desc": "Convert Rigify armature to Unity-compatible format",
+    "Tools.rigify_converted": "Rigify armature converted successfully",
+    "Tools.no_armature": "No armature selected",
 
     "UVTools.too_many_vertices": "Error! You have too much stuff selected. Are you sure you're selecting two edges?",
     "UVTools.need_line": "You need one line of selected UV points per selected object. Object \"{obj}\" does not meet this requirement!",

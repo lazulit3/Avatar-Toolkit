@@ -200,6 +200,10 @@
       "Tools.shapekey_tolerance": "쉐이프 키 허용 오차",
       "Tools.shapekey_tolerance_desc": "쉐이프 키를 사용된 것으로 간주할 최소 차이",
       "Tools.shapekeys_removed": "{count}개의 미사용 쉐이프 키 제거됨",
+      "Tools.convert_rigify_to_unity": "Rigify를 Unity로 변환",
+      "Tools.convert_rigify_to_unity_desc": "Rigify 아마추어를 Unity 호환 형식으로 변환",
+      "Tools.rigify_converted": "Rigify 아마추어 변환 완료",
+      "Tools.no_armature": "아마추어가 선택되지 않았습니다",
   
       "MMD.label": "MMD 도구",
       "MMD.bone_standardization": "본 표준화",
