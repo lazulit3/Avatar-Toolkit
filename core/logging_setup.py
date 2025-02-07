@@ -4,6 +4,7 @@ from typing import Optional, Any
 from bpy.types import Context
 
 logger = logging.getLogger('avatar_toolkit')
+_original_error = logger.error
 
 def configure_logging(enabled: bool = False) -> None:
     """Configure logging for Avatar Toolkit"""
@@ -16,15 +17,16 @@ def configure_logging(enabled: bool = False) -> None:
     if enabled:
         handler = logging.StreamHandler()
         handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s\n%(exc_info)s' if enabled else '%(message)s')
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         
-        # Override error logging to include traceback
         def error_with_traceback(msg, *args, **kwargs):
-            if kwargs.get('exc_info', False):
-                msg = f"{msg}\n{traceback.format_exc()}"
-            logger.error(msg, *args, **kwargs)
+            if kwargs.get('exc_info', False) or isinstance(msg, Exception):
+                full_msg = f"{msg}\n{traceback.format_exc()}"
+                _original_error(full_msg, *args, **{**kwargs, 'exc_info': False})
+            else:
+                _original_error(msg, *args, **kwargs)
             
         logger.error = error_with_traceback
 

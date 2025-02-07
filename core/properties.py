@@ -396,6 +396,12 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         default=0
     )
 
+     merge_twist_bones: BoolProperty(
+        name=t("Tools.merge_twist_bones"),
+        description=t("Tools.merge_twist_bones_desc"),
+        default=True
+    )
+
     list_only_mode: BoolProperty(
         name=t("Tools.list_only_mode"),
         description=t("Tools.list_only_mode_desc"),
@@ -522,7 +528,13 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         name="Show Hierarchy Issues",
         default=False
     )
-        
+      
+   merge_twist_bones: BoolProperty(
+        name=t("Tools.merge_twist_bones"),
+        description=t("Tools.merge_twist_bones_desc"),
+        default=True
+    )
+                
 def register() -> None:
     """Register the Avatar Toolkit property group"""
     logger.info("Registering Avatar Toolkit properties")
