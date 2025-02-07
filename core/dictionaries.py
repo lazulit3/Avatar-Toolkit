@@ -354,3 +354,121 @@ resonite_translations = {
     'thumb_2_r': "thumb2.R",
     'thumb_3_r': "thumb3.R"
 }
+
+standard_bones = {
+    # Core Structure
+    'hips': 'Hips',
+    'spine': 'Spine',
+    'chest': 'Chest',
+    'upper_chest': 'Chest.Up',
+    'neck': 'Neck',
+    'head': 'Head',
+    
+    # Arms
+    'left_arm': 'UpperArm.L',
+    'left_elbow': 'LowerArm.L',
+    'left_wrist': 'Hand.L',
+    'right_arm': 'UpperArm.R',
+    'right_elbow': 'LowerArm.R',
+    'right_wrist': 'Hand.R',
+    
+    # Legs
+    'left_leg': 'UpperLeg.L',
+    'left_knee': 'LowerLeg.L',
+    'left_ankle': 'Foot.L',
+    'left_toe': 'Toes.L',
+    'right_leg': 'UpperLeg.R',
+    'right_knee': 'LowerLeg.R',
+    'right_ankle': 'Foot.R',
+    'right_toe': 'Toes.R',
+    
+    # Fingers Left
+    'thumb_1_l': 'Thumb1.L',
+    'thumb_2_l': 'Thumb2.L',
+    'thumb_3_l': 'Thumb3.L',
+    'index_1_l': 'Index1.L',
+    'index_2_l': 'Index2.L',
+    'index_3_l': 'Index3.L',
+    'middle_1_l': 'Middle1.L',
+    'middle_2_l': 'Middle2.L',
+    'middle_3_l': 'Middle3.L',
+    'ring_1_l': 'Ring1.L',
+    'ring_2_l': 'Ring2.L',
+    'ring_3_l': 'Ring3.L',
+    'pinkie_1_l': 'Pinky1.L',
+    'pinkie_2_l': 'Pinky2.L',
+    'pinkie_3_l': 'Pinky3.L',
+    
+    # Fingers Right
+    'thumb_1_r': 'Thumb1.R',
+    'thumb_2_r': 'Thumb2.R',
+    'thumb_3_r': 'Thumb3.R',
+    'index_1_r': 'Index1.R',
+    'index_2_r': 'Index2.R',
+    'index_3_r': 'Index3.R',
+    'middle_1_r': 'Middle1.R',
+    'middle_2_r': 'Middle2.R',
+    'middle_3_r': 'Middle3.R',
+    'ring_1_r': 'Ring1.R',
+    'ring_2_r': 'Ring2.R',
+    'ring_3_r': 'Ring3.R',
+    'pinkie_1_r': 'Pinky1.R',
+    'pinkie_2_r': 'Pinky2.R',
+    'pinkie_3_r': 'Pinky3.R',
+    
+    # Eyes
+    'left_eye': 'Eye.L',
+    'right_eye': 'Eye.R'
+}
+
+# Define standard bone hierarchies
+bone_hierarchy = [
+    ('Hips', 'Spine'),
+    ('Spine', 'Chest'),
+    ('Chest', 'Chest.Up'),
+    ('Chest.Up', 'Neck'),
+    ('Neck', 'Head'),
+    ('Head', 'Eye.L'),
+    ('Head', 'Eye.R'),
+    
+    # Left Arm Chain
+    ('Chest.Up', 'UpperArm.L'),
+    ('UpperArm.L', 'LowerArm.L'),
+    ('LowerArm.L', 'Hand.L'),
+    
+    # Right Arm Chain
+    ('Chest.Up', 'UpperArm.R'),
+    ('UpperArm.R', 'LowerArm.R'),
+    ('LowerArm.R', 'Hand.R'),
+    
+    # Left Leg Chain
+    ('Hips', 'UpperLeg.L'),
+    ('UpperLeg.L', 'LowerLeg.L'),
+    ('LowerLeg.L', 'Foot.L'),
+    ('Foot.L', 'Toes.L'),
+    
+    # Right Leg Chain
+    ('Hips', 'UpperLeg.R'),
+    ('UpperLeg.R', 'LowerLeg.R'),
+    ('LowerLeg.R', 'Foot.R'),
+    ('Foot.R', 'Toes.R')
+]
+
+# Define finger hierarchies
+finger_hierarchy = {
+    'left': [
+        ('Hand.L', 'Thumb1.L', 'Thumb2.L', 'Thumb3.L'),
+        ('Hand.L', 'Index1.L', 'Index2.L', 'Index3.L'),
+        ('Hand.L', 'Middle1.L', 'Middle2.L', 'Middle3.L'),
+        ('Hand.L', 'Ring1.L', 'Ring2.L', 'Ring3.L'),
+        ('Hand.L', 'Pinky1.L', 'Pinky2.L', 'Pinky3.L')
+    ],
+    'right': [
+        ('Hand.R', 'Thumb1.R', 'Thumb2.R', 'Thumb3.R'),
+        ('Hand.R', 'Index1.R', 'Index2.R', 'Index3.R'),
+        ('Hand.R', 'Middle1.R', 'Middle2.R', 'Middle3.R'),
+        ('Hand.R', 'Ring1.R', 'Ring2.R', 'Ring3.R'),
+        ('Hand.R', 'Pinky1.R', 'Pinky2.R', 'Pinky3.R')
+    ]
+}
+

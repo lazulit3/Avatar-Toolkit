@@ -462,6 +462,19 @@ class AvatarToolkitSceneProperties(PropertyGroup):
     materials: CollectionProperty(
         type=SceneMatClass
     )
+
+    show_found_bones: BoolProperty(
+        name="Show Found Bones",
+        default=False
+    )
+    show_non_standard: BoolProperty(
+        name="Show Non-Standard Bones",
+        default=False
+    )
+    show_hierarchy: BoolProperty(
+        name="Show Hierarchy Issues",
+        default=False
+    )
         
 
 

@@ -70,6 +70,7 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
     def draw(self, context: Context) -> None:
         """Draw the panel layout"""
         layout: UILayout = self.layout
+        props = context.scene.avatar_toolkit
         
         # Armature Selection Box
         armature_box: UILayout = layout.box()
@@ -83,26 +84,67 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         # Armature Validation
         active_armature: Optional[Object] = get_active_armature(context)
         if active_armature:
-            is_valid: bool
-            messages: List[str]
             is_valid, messages = validate_armature(active_armature)
             
-            # Create info box for all validation information
-            info_box: UILayout = col.box()
+            info_box = col.box()
             
             if is_valid:
-                row: UILayout = info_box.row()
-                split: UILayout = row.split(factor=0.6)
+                row = info_box.row()
+                split = row.split(factor=0.6)
                 split.label(text=t("QuickAccess.valid_armature"), icon='CHECKMARK')
-                stats: Dict[str, int] = get_armature_stats(active_armature)
+                stats = get_armature_stats(active_armature)
                 split.label(text=t("QuickAccess.bones_count", count=stats['bone_count']))
                 
                 if stats['has_pose']:
                     info_box.label(text=t("QuickAccess.pose_bones_available"), icon='POSE_HLT')
             else:
-                # Display validation failure messages
-                for message in messages:
-                    info_box.label(text=message, icon='ERROR')
+                # Found Bones section
+                validation_box = info_box.box()
+                row = validation_box.row()
+                row.prop(props, "show_found_bones", text=t("Validation.section.found_bones"), icon='TRIA_DOWN' if props.show_found_bones else 'TRIA_RIGHT', emboss=False)
+                if props.show_found_bones:
+                    for line in messages[0].split('\n'):
+                        validation_box.label(text=line)
+                
+                # Main validation status
+                validation_box = info_box.box()
+                row = validation_box.row()
+                row.alert = True
+                row.label(text=t("Validation.status.failed"))
+                
+                # Detailed validation message
+                validation_box = info_box.box()
+                row = validation_box.row()
+                row.alert = True
+                row.label(text=t("Validation.message.failed.line1"))
+                row = validation_box.row()
+                row.alert = True
+                row.label(text=t("Validation.message.failed.line2"))
+                row = validation_box.row()
+                row.alert = True
+                row.label(text=t("Validation.message.failed.line3"))
+                        
+                # Non-Standard Bones section
+                validation_box = info_box.box()
+                row = validation_box.row()
+                row.alert = True
+                row.prop(props, "show_non_standard", text=t("Validation.section.non_standard"), icon='TRIA_DOWN' if props.show_non_standard else 'TRIA_RIGHT', emboss=False)
+                if props.show_non_standard:
+                    for line in messages[1].split('\n'):
+                        sub_row = validation_box.row()
+                        sub_row.alert = True
+                        sub_row.label(text=line)
+                        
+                # Hierarchy Issues section
+                validation_box = info_box.box()
+                row = validation_box.row()
+                row.alert = True
+                row.prop(props, "show_hierarchy", text=t("Validation.section.hierarchy"), icon='TRIA_DOWN' if props.show_hierarchy else 'TRIA_RIGHT', emboss=False)
+                if props.show_hierarchy:
+                    for message in messages[2:]:
+                        sub_row = validation_box.row()
+                        sub_row.alert = True
+                        sub_row.label(text=message)
 
             # Validation Mode Warnings - always show in info box
             validation_mode = context.scene.avatar_toolkit.validation_mode
