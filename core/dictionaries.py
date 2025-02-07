@@ -404,3 +404,22 @@ rigify_basic_unity_names = {
     "foot.R": "RightFoot",
     "toe.R": "RightToes"
 }
+
+rigify_unnecessary_bones = [
+    'face',
+    'ear.l', 'ear.r',
+    'forehead',
+    'cheek.t.l', 'cheek.t.r',
+    'cheek.b.l', 'cheek.b.r',
+    'brow.t.l', 'brow.t.r',
+    'brow.b.l', 'brow.b.r',
+    'jaw',
+    'chin',
+    'nose',
+    'temple.l', 'temple.r',
+    'teeth',
+    'lip',
+    'lid',
+    'heel',
+    'pelvis.'
+]

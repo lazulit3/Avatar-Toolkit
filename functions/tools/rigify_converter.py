@@ -4,7 +4,7 @@ from bpy.types import Operator, Context, Object, PoseBone, EditBone, Bone, Const
 from ...core.common import get_active_armature, validate_armature
 from ...core.logging_setup import logger
 from ...core.translations import t
-from ...core.dictionaries import rigify_unity_names, rigify_basic_unity_names
+from ...core.dictionaries import rigify_unity_names, rigify_basic_unity_names, rigify_unnecessary_bones
 
 class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
     """Convert Rigify armature to Unity-compatible format"""
@@ -18,9 +18,8 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        valid, _ = validate_armature(armature)
-        return valid and ("DEF-spine" in armature.data.bones or 
-                        "spine" in armature.data.bones and "metarig" in armature.name.lower())
+        return ("DEF-spine" in armature.data.bones or 
+                "spine" in armature.data.bones and "metarig" in armature.name.lower())
 
     def execute(self, context: Context) -> Set[str]:
         try:
@@ -30,6 +29,10 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
                 return {'CANCELLED'}
 
             logger.info("Starting Rigify to Unity conversion")
+            
+            # Rename armature object to "Armature"
+            armature.name = "Armature"
+            armature.data.name = "Armature"
             
             if "DEF-spine" in armature.data.bones:
                 self.move_def_bones(armature)
@@ -56,17 +59,16 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
         """Remove unnecessary bones and merge neck bones"""
         bpy.ops.object.mode_set(mode='EDIT')
         
-        # Remove heel and pelvis bones
+        # Remove bones matching patterns from dictionary
         bones_to_remove = []
         for bone in armature.data.edit_bones:
-            if ('heel' in bone.name.lower() or 
-                'pelvis.' in bone.name.lower()):
+            if any(pattern in bone.name.lower() for pattern in rigify_unnecessary_bones):
                 bones_to_remove.append(bone.name)
                 
         for bone_name in bones_to_remove:
             if bone_name in armature.data.edit_bones:
                 armature.data.edit_bones.remove(armature.data.edit_bones[bone_name])
-                
+   
         # Handle neck bones
         if 'spine.004' in armature.data.edit_bones and 'spine.005' in armature.data.edit_bones:
             neck_start = armature.data.edit_bones['spine.004']
@@ -144,11 +146,12 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
                 bone.name = new_name
 
     def cleanup_bone_collections(self, armature: Object) -> None:
-        """Remove or consolidate bone collections"""
+        """Remove all bone collections since they're not needed for Unity"""
         if hasattr(armature.data, 'collections') and armature.data.collections:
-            # Get the first collection as main
-            main_collection = armature.data.collections[0]
-            
+            while len(armature.data.collections) > 0:
+                collection = armature.data.collections[0]
+                armature.data.collections.remove(collection)
+
             # Remove other collections
             while len(armature.data.collections) > 1:
                 collection = armature.data.collections[1]
