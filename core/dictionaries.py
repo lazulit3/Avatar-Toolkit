@@ -354,3 +354,72 @@ resonite_translations = {
     'thumb_2_r': "thumb2.R",
     'thumb_3_r': "thumb3.R"
 }
+
+rigify_unity_names = {
+    "DEF-spine": "Hips",
+    "DEF-spine.001": "Spine",
+    "DEF-spine.002": "Chest",
+    "DEF-spine.003": "UpperChest",
+    "DEF-neck": "Neck",
+    "DEF-head": "Head",
+    "DEF-shoulder.L": "LeftShoulder",
+    "DEF-upper_arm.L": "LeftUpperArm",
+    "DEF-forearm.L": "LeftLowerArm",
+    "DEF-hand.L": "LeftHand",
+    "DEF-shoulder.R": "RightShoulder",
+    "DEF-upper_arm.R": "RightUpperArm",
+    "DEF-forearm.R": "RightLowerArm",
+    "DEF-hand.R": "RightHand",
+    "DEF-thigh.L": "LeftUpperLeg",
+    "DEF-shin.L": "LeftLowerLeg",
+    "DEF-foot.L": "LeftFoot",
+    "DEF-toe.L": "LeftToes",
+    "DEF-thigh.R": "RightUpperLeg",
+    "DEF-shin.R": "RightLowerLeg",
+    "DEF-foot.R": "RightFoot",
+    "DEF-toe.R": "RightToes"
+}
+
+rigify_basic_unity_names = {
+    "spine": "Hips",
+    "spine.001": "Spine",
+    "spine.002": "Chest",
+    "spine.003": "UpperChest",
+    "neck": "Neck",
+    "head": "Head",
+    "shoulder.L": "LeftShoulder",
+    "upper_arm.L": "LeftUpperArm",
+    "forearm.L": "LeftLowerArm",
+    "hand.L": "LeftHand",
+    "shoulder.R": "RightShoulder",
+    "upper_arm.R": "RightUpperArm",
+    "forearm.R": "RightLowerArm",
+    "hand.R": "RightHand",
+    "thigh.L": "LeftUpperLeg",
+    "shin.L": "LeftLowerLeg",
+    "foot.L": "LeftFoot",
+    "toe.L": "LeftToes",
+    "thigh.R": "RightUpperLeg",
+    "shin.R": "RightLowerLeg",
+    "foot.R": "RightFoot",
+    "toe.R": "RightToes"
+}
+
+rigify_unnecessary_bones = [
+    'face',
+    'ear.l', 'ear.r',
+    'forehead',
+    'cheek.t.l', 'cheek.t.r',
+    'cheek.b.l', 'cheek.b.r',
+    'brow.t.l', 'brow.t.r',
+    'brow.b.l', 'brow.b.r',
+    'jaw',
+    'chin',
+    'nose',
+    'temple.l', 'temple.r',
+    'teeth',
+    'lip',
+    'lid',
+    'heel',
+    'pelvis.'
+]
