@@ -10,7 +10,7 @@ import numpy.typing as npt
 
 from typing import Optional, Tuple, List, Set, Dict, Any, Generator, Callable, Union, Type
 from mathutils import Vector, Matrix
-from bpy.types import (Context, Object, Modifier, EditBone, Operator, 
+from bpy.types import (Context, Object, Modifier, EditBone, Operator, Material,
                       VertexGroup, ShapeKey, Bone, Mesh, Armature, PropertyGroup)
 from functools import lru_cache
 from bpy.props import PointerProperty, IntProperty, StringProperty
