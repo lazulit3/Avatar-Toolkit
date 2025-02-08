@@ -5,20 +5,28 @@ from ..core.translations import t
 from ..core.dictionaries import (
     standard_bones,
     bone_hierarchy,
-    finger_hierarchy
+    finger_hierarchy,
+    acceptable_bone_hierarchy,
+    acceptable_bone_names
 )
 
-def validate_armature(armature: Object) -> Tuple[bool, List[str]]:
+def validate_armature(armature: Object) -> Tuple[bool, List[str], bool]:
+    """
+    Validates armature and returns (is_valid, messages, is_acceptable_standard)
+    """
     validation_mode = bpy.context.scene.avatar_toolkit.validation_mode
     messages: List[str] = []
     
     if validation_mode == 'NONE':
-        return True, []
+        return True, [], False
         
     if not armature or armature.type != 'ARMATURE' or not armature.data.bones:
-        return False, [t("Armature.validation.basic_check_failed")]
+        return False, [t("Armature.validation.basic_check_failed")], False
         
     found_bones: Dict[str, Bone] = {bone.name: bone for bone in armature.data.bones}
+    
+    # Check if armature matches acceptable standards
+    is_acceptable = check_acceptable_standards(found_bones)
     
     # List all bones in armature
     bone_list = "\n".join([f"- {bone}" for bone in found_bones.keys()])
@@ -75,8 +83,17 @@ def validate_armature(armature: Object) -> Tuple[bool, List[str]]:
                     if not validate_finger_chain(found_bones, finger_chain):
                         messages.append(t("Armature.validation.invalid_finger", finger=finger_chain[0]))
     
-    is_valid: bool = len(messages) == 0
-    return is_valid, messages
+    is_valid = len(messages) == 0
+    
+    if not is_valid and is_acceptable:
+        messages = [
+            t("Armature.validation.acceptable_standard.success"),
+            t("Armature.validation.acceptable_standard.note"),
+            t("Armature.validation.acceptable_standard.option")
+        ]
+        return True, messages, True
+        
+    return is_valid, messages, False
 
 def validate_bone_hierarchy(bones: Dict[str, Bone], parent_name: str, child_name: str) -> bool:
     """Validate if there is a valid parent-child relationship between bones"""
@@ -108,4 +125,24 @@ def validate_finger_chain(bones: Dict[str, Bone], chain: Tuple[str, ...]) -> boo
     for i in range(len(chain) - 1):
         if not validate_bone_hierarchy(bones, chain[i], chain[i + 1]):
             return False
+    return True
+
+def check_acceptable_standards(bones: Dict[str, Bone]) -> bool:
+    """Check if armature matches acceptable non-standard hierarchy"""
+    # Check if bones exist in acceptable list
+    for bone_category, acceptable_names in acceptable_bone_names.items():
+        found = False
+        for name in acceptable_names:
+            if name in bones:
+                found = True
+                break
+        if not found:
+            return False
+    
+    # Validate acceptable hierarchy
+    for parent, child in acceptable_bone_hierarchy:
+        if parent in bones and child in bones:
+            if not validate_bone_hierarchy(bones, parent, child):
+                return False
+                
     return True

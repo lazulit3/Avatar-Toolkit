@@ -19,8 +19,8 @@ class AvatarToolkit_OT_ApplyTransforms(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        is_valid, _ = validate_armature(armature)
-        return is_valid and context.mode == 'OBJECT'
+        valid, _, _ = validate_armature(armature)
+        return valid and context.mode == 'OBJECT'
 
     def execute(self, context: Context) -> Set[str]:
         try:
@@ -67,8 +67,8 @@ class AvatarToolkit_OT_CleanShapekeys(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        is_valid, _ = validate_armature(armature)
-        return is_valid and context.mode == 'OBJECT' and len(get_all_meshes(context)) > 0
+        valid, _, _ = validate_armature(armature)
+        return valid and context.mode == 'OBJECT' and len(get_all_meshes(context)) > 0
 
     def execute(self, context: Context) -> Set[str]:
         try:

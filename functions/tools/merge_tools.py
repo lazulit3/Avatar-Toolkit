@@ -19,8 +19,8 @@ class AvatarToolkit_OT_ConnectBones(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        is_valid, _ = validate_armature(armature)
-        return is_valid
+        valid, _, _ = validate_armature(armature)
+        return valid
         
     def execute(self, context: Context) -> Set[str]:
         try:

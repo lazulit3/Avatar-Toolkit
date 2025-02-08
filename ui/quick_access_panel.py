@@ -84,19 +84,31 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         # Armature Validation
         active_armature: Optional[Object] = get_active_armature(context)
         if active_armature:
-            is_valid, messages = validate_armature(active_armature)
+            is_valid, messages, is_acceptable = validate_armature(active_armature)
             
             info_box = col.box()
             
             if is_valid:
-                row = info_box.row()
-                split = row.split(factor=0.6)
-                split.label(text=t("QuickAccess.valid_armature"), icon='CHECKMARK')
-                stats = get_armature_stats(active_armature)
-                split.label(text=t("QuickAccess.bones_count", count=stats['bone_count']))
-                
-                if stats['has_pose']:
-                    info_box.label(text=t("QuickAccess.pose_bones_available"), icon='POSE_HLT')
+                if is_acceptable:
+                    # Show acceptable standard message
+                    info_box.label(text=messages[0], icon='INFO')
+                    info_box.label(text=messages[1])
+                    info_box.label(text=messages[2])
+                    
+                    # Add standardize button
+                    standardize_box = info_box.box()
+                    standardize_box.operator("avatar_toolkit.standardize_armature", 
+                                          text=t("QuickAccess.standardize_armature"),
+                                          icon='MODIFIER')
+                else:
+                    row = info_box.row()
+                    split = row.split(factor=0.6)
+                    split.label(text=t("QuickAccess.valid_armature"), icon='CHECKMARK')
+                    stats = get_armature_stats(active_armature)
+                    split.label(text=t("QuickAccess.bones_count", count=stats['bone_count']))
+                    
+                    if stats['has_pose']:
+                        info_box.label(text=t("QuickAccess.pose_bones_available"), icon='POSE_HLT')
             else:
                 # Found Bones section
                 validation_box = info_box.box()
@@ -146,7 +158,7 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                         sub_row.alert = True
                         sub_row.label(text=message)
 
-            # Validation Mode Warnings - always show in info box
+            # Validation Mode Warnings
             validation_mode = context.scene.avatar_toolkit.validation_mode
             if validation_mode == 'BASIC':
                 warning_row = info_box.box()
@@ -184,3 +196,4 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         button_row.scale_y = 1.5
         button_row.operator("avatar_toolkit.import", text=t("QuickAccess.import"), icon='IMPORT')
         button_row.operator("avatar_toolkit.export", text=t("QuickAccess.export"), icon='EXPORT')
+

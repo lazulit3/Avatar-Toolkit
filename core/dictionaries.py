@@ -470,6 +470,62 @@ finger_hierarchy = {
     ]
 }
 
+acceptable_bone_hierarchy = [
+    # Right side chain
+    ('Hips', 'Chest'),
+    ('Chest', 'Shoulder.R'),
+    ('Shoulder.R', 'Arm.R'),
+    ('Arm.R', 'Elbow.R'),
+    ('Elbow.R', 'Wrist.R'),
+    ('Hips', 'Leg.R'),
+    ('Leg.R', 'Knee.R'),
+    ('Knee.R', 'Foot.R'),
+    ('Foot.R', 'Toes.R'),
+    
+    # Left side chain
+    ('Chest', 'Shoulder.L'),
+    ('Shoulder.L', 'Arm.L'),
+    ('Arm.L', 'Elbow.L'),
+    ('Elbow.L', 'Wrist.L'),
+    ('Hips', 'Leg.L'),
+    ('Leg.L', 'Knee.L'),
+    ('Knee.L', 'Foot.L'),
+    ('Foot.L', 'Toes.L'),
+
+    # Head and Eyes
+    ('Chest', 'Neck'),
+    ('Neck', 'Head'),
+    ('Head', 'Eye_L'),
+    ('Head', 'Eye_R'),
+    ('Head', 'LeftEye'),
+    ('Head', 'RightEye')
+]
+
+acceptable_bone_names = {
+    'hips': ['Hips'],
+    'chest': ['Chest'],
+    'neck': ['Neck'],
+    'head': ['Head'],
+    'eye_l': ['Eye_L', 'LeftEye'],
+    'eye_r': ['Eye_R', 'RightEye'],
+    'shoulder_r': ['Shoulder.R'],
+    'arm_r': ['Arm.R'],
+    'elbow_r': ['Elbow.R'],
+    'wrist_r': ['Wrist.R'],
+    'leg_r': ['Leg.R'],
+    'knee_r': ['Knee.R'],
+    'foot_r': ['Foot.R'],
+    'toes_r': ['Toes.R'],
+    'shoulder_l': ['Shoulder.L'],
+    'arm_l': ['Arm.L'],
+    'elbow_l': ['Elbow.L'],
+    'wrist_l': ['Wrist.L'],
+    'leg_l': ['Leg.L'],
+    'knee_l': ['Knee.L'],
+    'foot_l': ['Foot.L'],
+    'toes_l': ['Toes.L']
+}
+
 rigify_unity_names = {
     "DEF-spine": "Hips",
     "DEF-spine.001": "Spine",

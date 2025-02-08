@@ -17,10 +17,10 @@ class AvatarToolKit_OT_SeparateByMaterials(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        is_valid, _ = validate_armature(armature)
+        valid, _, _ = validate_armature(armature)
         return (context.active_object and 
                 context.active_object.type == 'MESH' and 
-                is_valid)
+                valid)
 
     def execute(self, context: Context) -> set[str]:
         """Execute the separation operation"""
@@ -49,10 +49,10 @@ class AvatarToolKit_OT_SeparateByLooseParts(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        is_valid, _ = validate_armature(armature)
+        valid, _, _ = validate_armature(armature)
         return (context.active_object and 
                 context.active_object.type == 'MESH' and 
-                is_valid)
+                valid)
 
     def execute(self, context: Context) -> set[str]:
         """Execute the separation operation"""

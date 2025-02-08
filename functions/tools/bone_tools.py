@@ -34,8 +34,8 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        is_valid, _ = validate_armature(armature)
-        return (is_valid and 
+        valid, _, _ = validate_armature(armature)
+        return (valid and 
                 context.mode == 'EDIT_ARMATURE' and
                 context.selected_editable_bones is not None and
                 len(context.selected_editable_bones) == 2)
@@ -128,8 +128,8 @@ class AvatarToolKit_OT_DeleteBoneConstraints(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        is_valid, _ = validate_armature(armature)
-        return is_valid
+        valid, _, _ = validate_armature(armature)
+        return valid
 
     def execute(self, context: Context) -> set[str]:
         """Execute the constraint removal operation"""
