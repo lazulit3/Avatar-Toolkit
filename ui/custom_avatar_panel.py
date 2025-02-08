@@ -6,9 +6,9 @@ from ..core.translations import t
 from ..core.common import (
     get_active_armature,
     get_all_meshes,
-    validate_armature,
     get_armature_list
 )
+from ..core.armature_validation import validate_armature
 
 class AvatarToolkit_OT_SearchMergeArmatureInto(Operator):
     """Search operator for selecting target armature to merge into"""

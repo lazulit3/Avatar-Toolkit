@@ -1,10 +1,11 @@
 import bpy
 from typing import Dict, List, Set, Optional, Tuple, Any
 from bpy.types import Operator, Context, Object, PoseBone, EditBone, Bone, Constraint
-from ...core.common import get_active_armature, validate_armature
+from ...core.common import get_active_armature
 from ...core.logging_setup import logger
 from ...core.translations import t
 from ...core.dictionaries import rigify_unity_names, rigify_basic_unity_names, rigify_unnecessary_bones
+from ...core.armature_validation import validate_armature
 
 class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
     """Convert Rigify armature to Unity-compatible format"""
