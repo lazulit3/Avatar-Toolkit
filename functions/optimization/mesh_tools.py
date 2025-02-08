@@ -25,7 +25,7 @@ class AvatarToolkit_OT_JoinAllMeshes(Operator):
         if not armature:
             return False
         valid: bool
-        valid, _ = validate_armature(armature)
+        valid, _, _ = validate_armature(armature)
         return valid
 
     def execute(self, context: Context) -> Set[str]:
@@ -69,7 +69,7 @@ class AvatarToolkit_OT_JoinSelectedMeshes(Operator):
         if not armature:
             return False
         valid: bool
-        valid, _ = validate_armature(armature)
+        valid, _, _ = validate_armature(armature)
         return (valid and 
                 context.mode == 'OBJECT' and 
                 len([obj for obj in context.selected_objects if obj.type == 'MESH']) > 1)

@@ -88,7 +88,7 @@ class AvatarToolkit_OT_RemoveDoublesAdvanced(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        valid, _ = validate_armature(armature)
+        valid, _, _ = validate_armature(armature)
         return valid
 
     def execute(self, context: Context) -> set[str]:
@@ -111,7 +111,7 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        valid, _ = validate_armature(armature)
+        valid, _, _ = validate_armature(armature)
         return valid
 
     def draw(self, context: Context) -> None:

@@ -88,75 +88,81 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
             
             info_box = col.box()
             
-            if is_valid:
-                if is_acceptable:
-                    # Show acceptable standard message
+            if not is_valid:
+                # Display non-standard bones and hierarchy issues
+                if len(messages) > 1:
+                    # Found Bones section
+                    validation_box = info_box.box()
+                    row = validation_box.row()
+                    row.prop(props, "show_found_bones", text=t("Validation.section.found_bones"), icon='TRIA_DOWN' if props.show_found_bones else 'TRIA_RIGHT', emboss=False)
+                    if props.show_found_bones:
+                        for line in messages[0].split('\n'):
+                            validation_box.label(text=line)
+                    
+                    # Main validation status
+                    validation_box = info_box.box()
+                    row = validation_box.row()
+                    row.alert = True
+                    row.label(text=t("Validation.status.failed"))
+                    
+                    # Detailed validation message
+                    validation_box = info_box.box()
+                    row = validation_box.row()
+                    row.alert = True
+                    row.label(text=t("Validation.message.failed.line1"))
+                    row = validation_box.row()
+                    row.alert = True
+                    row.label(text=t("Validation.message.failed.line2"))
+                    row = validation_box.row()
+                    row.alert = True
+                    row.label(text=t("Validation.message.failed.line3"))
+                    
+                    # Non-Standard Bones section
+                    validation_box = info_box.box()
+                    row = validation_box.row()
+                    row.alert = True
+                    row.prop(props, "show_non_standard", text=t("Validation.section.non_standard"), icon='TRIA_DOWN' if props.show_non_standard else 'TRIA_RIGHT', emboss=False)
+                    if props.show_non_standard:
+                        for line in messages[1].split('\n'):
+                            sub_row = validation_box.row()
+                            sub_row.alert = True
+                            sub_row.label(text=line)
+                            
+                    # Hierarchy Issues section
+                    validation_box = info_box.box()
+                    row = validation_box.row()
+                    row.alert = True
+                    row.prop(props, "show_hierarchy", text=t("Validation.section.hierarchy"), icon='TRIA_DOWN' if props.show_hierarchy else 'TRIA_RIGHT', emboss=False)
+                    if props.show_hierarchy:
+                        for message in messages[2:]:
+                            sub_row = validation_box.row()
+                            sub_row.alert = True
+                            sub_row.label(text=message)
+                else:
+                    # If no specific issues, show acceptable message
                     info_box.label(text=messages[0], icon='INFO')
                     info_box.label(text=messages[1])
                     info_box.label(text=messages[2])
-                    
-                    # Add standardize button
-                    standardize_box = info_box.box()
-                    standardize_box.operator("avatar_toolkit.standardize_armature", 
-                                          text=t("QuickAccess.standardize_armature"),
-                                          icon='MODIFIER')
-                else:
-                    row = info_box.row()
-                    split = row.split(factor=0.6)
-                    split.label(text=t("QuickAccess.valid_armature"), icon='CHECKMARK')
-                    stats = get_armature_stats(active_armature)
-                    split.label(text=t("QuickAccess.bones_count", count=stats['bone_count']))
-                    
-                    if stats['has_pose']:
-                        info_box.label(text=t("QuickAccess.pose_bones_available"), icon='POSE_HLT')
-            else:
-                # Found Bones section
-                validation_box = info_box.box()
-                row = validation_box.row()
-                row.prop(props, "show_found_bones", text=t("Validation.section.found_bones"), icon='TRIA_DOWN' if props.show_found_bones else 'TRIA_RIGHT', emboss=False)
-                if props.show_found_bones:
-                    for line in messages[0].split('\n'):
-                        validation_box.label(text=line)
+            elif is_valid and not is_acceptable:
+                row = info_box.row()
+                split = row.split(factor=0.6)
+                split.label(text=t("QuickAccess.valid_armature"), icon='CHECKMARK')
+                stats = get_armature_stats(active_armature)
+                split.label(text=t("QuickAccess.bones_count", count=stats['bone_count']))
                 
-                # Main validation status
-                validation_box = info_box.box()
-                row = validation_box.row()
-                row.alert = True
-                row.label(text=t("Validation.status.failed"))
+                if stats['has_pose']:
+                    info_box.label(text=t("QuickAccess.pose_bones_available"), icon='POSE_HLT')
+            elif is_valid and is_acceptable:
+                # Show acceptable standard message
+                info_box.label(text=messages[0], icon='INFO')
+                info_box.label(text=messages[1])
+                info_box.label(text=messages[2])
                 
-                # Detailed validation message
-                validation_box = info_box.box()
-                row = validation_box.row()
-                row.alert = True
-                row.label(text=t("Validation.message.failed.line1"))
-                row = validation_box.row()
-                row.alert = True
-                row.label(text=t("Validation.message.failed.line2"))
-                row = validation_box.row()
-                row.alert = True
-                row.label(text=t("Validation.message.failed.line3"))
-                        
-                # Non-Standard Bones section
-                validation_box = info_box.box()
-                row = validation_box.row()
-                row.alert = True
-                row.prop(props, "show_non_standard", text=t("Validation.section.non_standard"), icon='TRIA_DOWN' if props.show_non_standard else 'TRIA_RIGHT', emboss=False)
-                if props.show_non_standard:
-                    for line in messages[1].split('\n'):
-                        sub_row = validation_box.row()
-                        sub_row.alert = True
-                        sub_row.label(text=line)
-                        
-                # Hierarchy Issues section
-                validation_box = info_box.box()
-                row = validation_box.row()
-                row.alert = True
-                row.prop(props, "show_hierarchy", text=t("Validation.section.hierarchy"), icon='TRIA_DOWN' if props.show_hierarchy else 'TRIA_RIGHT', emboss=False)
-                if props.show_hierarchy:
-                    for message in messages[2:]:
-                        sub_row = validation_box.row()
-                        sub_row.alert = True
-                        sub_row.label(text=message)
+                # Add standardize button
+                standardize_box = info_box.box()
+                standardize_box.operator("avatar_toolkit.standardize_armature", 
+                                    text=t("QuickAccess.standardize_armature"),
+                                    icon='MODIFIER')
 
             # Validation Mode Warnings
             validation_mode = context.scene.avatar_toolkit.validation_mode
@@ -196,4 +202,3 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         button_row.scale_y = 1.5
         button_row.operator("avatar_toolkit.import", text=t("QuickAccess.import"), icon='IMPORT')
         button_row.operator("avatar_toolkit.export", text=t("QuickAccess.export"), icon='EXPORT')
-

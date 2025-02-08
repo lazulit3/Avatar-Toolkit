@@ -92,7 +92,7 @@ class AvatarToolkit_OT_CombineMaterials(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        valid, _ = validate_armature(armature)
+        valid, _, _ = validate_armature(armature)
         return valid
 
     def execute(self, context: Context) -> Set[str]:
