@@ -455,12 +455,6 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         default=""
     )
 
-    merge_all_bones: BoolProperty(
-        name=t('MergeArmature.merge_all'),
-        description=t('MergeArmature.merge_all_desc'),
-        default=True
-    )
-
     apply_transforms: BoolProperty(
         name=t('MergeArmature.apply_transforms'),
         description=t('MergeArmature.apply_transforms_desc'),
@@ -529,7 +523,10 @@ def register() -> None:
     """Register the Avatar Toolkit property group"""
     logger.info("Registering Avatar Toolkit properties")
     try:
+        bpy.utils.register_class(ZeroWeightBoneItem)
         bpy.utils.register_class(AvatarToolkitSceneProperties)
+        
+        
     except ValueError:
         # Class already registered, we can continue
         pass
@@ -544,7 +541,9 @@ def unregister() -> None:
     except:
         pass
     try:
+        bpy.utils.unregister_class(ZeroWeightBoneItem)
         bpy.utils.unregister_class(AvatarToolkitSceneProperties)
+        
     except RuntimeError:
         pass
     logger.debug("Properties unregistered successfully")
