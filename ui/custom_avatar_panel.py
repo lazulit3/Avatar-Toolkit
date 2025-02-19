@@ -155,7 +155,6 @@ class AvatarToolKit_PT_CustomPanel(Panel):
         
         # Group related options together
         transform_col: UILayout = col.column(align=True)
-        transform_col.prop(toolkit, "merge_all_bones")
         transform_col.prop(toolkit, "apply_transforms")
         
         col.separator(factor=0.5)
