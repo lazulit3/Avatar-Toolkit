@@ -11,6 +11,9 @@ Join the Neoneko Discord here: https://discord.catsblenderplugin.xyz
 
 Need a more stable toolset while Avatar Toolkit is in Alpha? Then please use Blender 4.x and use our Unofficial Cats Blender Plugin which you can find [here](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-).
 
+### Support us:
+If you like what we do and want to help support the development of cats you can do it on our pally.gg [here](https://pally.gg/p/teamneoneko) all money is split automatically between all developers and any support is appreciated.
+
 ## Blender version support policies.
 
 You can find them on the wiki here [HERE](https://avatartoolkit.xyz/wiki.html?version=0.1.0#what-is-avatar-toolkits-version-support-policy)
