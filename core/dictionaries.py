@@ -568,7 +568,15 @@ acceptable_bone_names = {
     'breast_upper_1_l': ['BreastUpper1_L'],
     'breast_upper_2_l': ['BreastUpper2_L'],
     'breast_upper_1_r': ['BreastUpper1_R'],
-    'breast_upper_2_r': ['BreastUpper2_R']
+    'breast_upper_2_r': ['BreastUpper2_R'],
+
+    'ear_upper_l': ['UpperEar.L', 'Upper Ear.L', 'Upper Ear_L'],
+    'ear_upper_r': ['UpperEar.R', 'Upper Ear.R', 'Upper Ear_R'],
+    'ear_lower_l': ['LowerEar.L', 'Lower Ear.L', 'Lower Ear_L'],
+    'ear_lower_r': ['LowerEar.R', 'Lower Ear.R', 'Lower Ear_R'],
+
+    'ears_upper': ['Ears Upper', 'EarsUpper', 'ears_upper'],
+    'ears_lower': ['Ears Lower', 'EarsLower', 'ears_lower']
 }
 
 rigify_unity_names = {

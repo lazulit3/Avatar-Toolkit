@@ -116,6 +116,15 @@ def validate_armature(armature: Object, detailed_messages: bool = False) -> Unio
             logger.warning(f"Found {len(non_standard_bones)} non-standard bones")
             non_standard_list = "\n".join([f"- {bone}" for bone in non_standard_bones])
             non_standard_messages.append(t("Armature.validation.non_standard_bones", bones=non_standard_list))
+            
+            non_standard_messages.append(t("Armature.validation.accessory_bones_note.line1"))
+            non_standard_messages.append(t("Armature.validation.accessory_bones_note.line2"))
+            non_standard_messages.append(t("Armature.validation.accessory_bones_note.line3"))
+            non_standard_messages.append(t("Armature.validation.accessory_bones_note.line4"))
+            non_standard_messages.append("")  # Add a blank line for spacing
+            non_standard_messages.append(t("Armature.validation.standardize_note.line1"))
+            non_standard_messages.append(t("Armature.validation.standardize_note.line2"))
+            non_standard_messages.append(t("Armature.validation.standardize_note.line3"))
     
     # Combine messages in correct order
     messages.extend(non_standard_messages)

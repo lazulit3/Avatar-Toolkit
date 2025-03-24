@@ -146,6 +146,9 @@ def merge_armatures(
             operator.report({'ERROR'}, t('MergeArmature.error.notFound', name=merge_armature_name))
         return
 
+    # Store meshes that need to be reparented
+    meshes_to_reparent = [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj.parent == merge_armature]
+    
     # Check transforms early
     if not validate_merge_armature_transforms(base_armature, merge_armature, None, tolerance):
         if not bpy.context.scene.avatar_toolkit.apply_transforms:
@@ -212,7 +215,6 @@ def merge_armatures(
         else:
             merge_armature_data.edit_bones.remove(merge_armature_data.edit_bones[bone_name])
 
-
     # Return to object mode
     bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -223,6 +225,8 @@ def merge_armatures(
     bpy.context.view_layer.objects.active = base_armature
     bpy.ops.object.join()
 
+    # Explicitly set active object after join
+    bpy.context.view_layer.objects.active = base_armature
     base_armature_data: bpy.types.Armature = base_armature.data
 
     # Restore parent relationships
@@ -237,10 +241,12 @@ def merge_armatures(
 
     bpy.ops.object.mode_set(mode='OBJECT')
 
-    # Update mesh parenting
-    for obj in bpy.data.objects:
-        if obj.type == 'MESH' and obj.parent == merge_armature:
-            obj.parent = base_armature
+    for mesh_obj in meshes_to_reparent:
+        if mesh_obj and mesh_obj.name in bpy.data.objects:
+            mesh_obj.parent = base_armature
+            for mod in mesh_obj.modifiers:
+                if mod.type == 'ARMATURE':
+                    mod.object = base_armature
 
     # Process vertex groups if not mesh_only
     if not mesh_only:
@@ -261,6 +267,8 @@ def merge_armatures(
             joined_mesh: Optional[Object] = join_mesh_objects(bpy.context, meshes_to_join)
             if joined_mesh:
                 logger.info(f"Joined meshes into {joined_mesh.name}")
+                # Ensure the joined mesh is properly parented
+                joined_mesh.parent = base_armature
 
     # Clean up shape keys if enabled
     if bpy.context.scene.avatar_toolkit.cleanup_shape_keys:
