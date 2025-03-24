@@ -13,7 +13,7 @@ Need a more stable toolset while Avatar Toolkit is in Alpha? Then please use Ble
 
 ## Blender version support policies.
 
-You can find them on the wiki here [HERE](https://avatartoolkit.xyz/wiki.html?version=0.1.0#what-is-avatar-toolkits-version-support-policy)
+You can find them on the wiki here [HERE](https://avatartoolkit.xyz/wiki.html?version=0.2.0#what-is-avatar-toolkits-version-support-policy)
 
 ## Features
 
@@ -22,8 +22,8 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/wiki
 ## Requirements
 
 1) Blender Version
-- Blender 4.3 or newer is required
-- Blender 4.3 is the current recommended version
+- Blender 4.4 or newer is required
+- Blender 4.4 is the current recommended version
 
 
 2) Python Requirements
@@ -38,7 +38,7 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/wiki
 Currently None.
 
 ## Installation
-You can find out how to install Avatar Toolkit [here](https://avatartoolkit.xyz/wiki.html?version=0.1.0#how-to-install-avatar-toolkit)
+You can find out how to install Avatar Toolkit [here](https://avatartoolkit.xyz/wiki.html?version=0.2.0#how-to-install-avatar-toolkit)
 
 ## Help
 
