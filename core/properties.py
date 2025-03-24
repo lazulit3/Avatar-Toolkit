@@ -18,6 +18,10 @@ from .common import get_armature_list, get_active_armature, get_all_meshes, Scen
 from ..functions.visemes import VisemePreview
 from ..functions.eye_tracking import set_rotation
 
+class ValidationMessageItem(PropertyGroup):
+    """Property group for validation message items"""
+    name: StringProperty(name="Message")
+
 class ZeroWeightBoneItem(PropertyGroup):
     """Property group for zero weight bone list items"""
     name: StringProperty(name="Bone Name")
@@ -25,10 +29,12 @@ class ZeroWeightBoneItem(PropertyGroup):
     has_children: BoolProperty(name="Has Children", default=False)
     is_deform: BoolProperty(name="Is Deform Bone", default=False)
 
+
 def update_validation_mode(self: PropertyGroup, context: Context) -> None:
     """Updates validation mode and saves preference"""
     logger.info(f"Updating validation mode to: {self.validation_mode}")
     save_preference("validation_mode", self.validation_mode)
+
 
 def update_logging_state(self: PropertyGroup, context: Context) -> None:
     """Updates logging state and configures logging"""
@@ -37,10 +43,18 @@ def update_logging_state(self: PropertyGroup, context: Context) -> None:
     from .logging_setup import configure_logging
     configure_logging(self.enable_logging)
 
+
 def update_shape_intensity(self: PropertyGroup, context: Context) -> None:
     """Updates shape key intensity and refreshes preview"""
     if self.viseme_preview_mode:
         VisemePreview.update_preview(context)
+
+
+def highlight_problem_bones(self: PropertyGroup, context: Context) -> None:
+    """Updates problem bone highlighting state and saves preference"""
+    logger.info(f"Updating problem bone highlighting to: {self.highlight_problem_bones}")
+    save_preference("highlight_problem_bones", self.highlight_problem_bones)
+
 
 class AvatarToolkitSceneProperties(PropertyGroup):
     """Property group containing Avatar Toolkit scene-level settings and properties"""
@@ -70,8 +84,8 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         if self.use_nodes:
             Object.Enum = [((i.image.name if i.image else i.name+"_image"),
                         (i.image.name if i.image else "node with no image..."),
-                        (i.image.name if i.image else i.name),index+1) 
-                        for index,i in enumerate(self.node_tree.nodes) 
+                        (i.image.name if i.image else i.name), index+1) 
+                        for index, i in enumerate(self.node_tree.nodes) 
                         if i.bl_idname == "ShaderNodeTexImage"]
             if not len(Object.Enum):
                 Object.Enum = [(t("TextureAtlas.error.label"), 
@@ -285,38 +299,37 @@ class AvatarToolkitSceneProperties(PropertyGroup):
     )
 
     viseme_preview_selection: EnumProperty(
-    name=t("Visemes.preview_selection"),
-    description=t("Visemes.preview_selection_desc"),
-    items=[
-        ('vrc.v_aa', 'AA', 'A as in "bat"'),
-        ('vrc.v_ch', 'CH', 'Ch as in "choose"'),
-        ('vrc.v_dd', 'DD', 'D as in "dog"'),
-        ('vrc.v_ih', 'IH', 'I as in "bit"'),
-        ('vrc.v_ff', 'FF', 'F as in "fox"'),
-        ('vrc.v_e', 'E', 'E as in "bet"'),
-        ('vrc.v_kk', 'KK', 'K as in "cat"'),
-        ('vrc.v_nn', 'NN', 'N as in "net"'),
-        ('vrc.v_oh', 'OH', 'O as in "hot"'),
-        ('vrc.v_ou', 'OU', 'O as in "go"'),
-        ('vrc.v_pp', 'PP', 'P as in "pat"'),
-        ('vrc.v_rr', 'RR', 'R as in "red"'),
-        ('vrc.v_sil', 'SIL', 'Silence'),
-        ('vrc.v_ss', 'SS', 'S as in "sit"'),
-        ('vrc.v_th', 'TH', 'Th as in "think"')
-    ],
-    update=lambda s, c: VisemePreview.update_preview(c)
-    
-)
+        name=t("Visemes.preview_selection"),
+        description=t("Visemes.preview_selection_desc"),
+        items=[
+            ('vrc.v_aa', 'AA', 'A as in "bat"'),
+            ('vrc.v_ch', 'CH', 'Ch as in "choose"'),
+            ('vrc.v_dd', 'DD', 'D as in "dog"'),
+            ('vrc.v_ih', 'IH', 'I as in "bit"'),
+            ('vrc.v_ff', 'FF', 'F as in "fox"'),
+            ('vrc.v_e', 'E', 'E as in "bet"'),
+            ('vrc.v_kk', 'KK', 'K as in "cat"'),
+            ('vrc.v_nn', 'NN', 'N as in "net"'),
+            ('vrc.v_oh', 'OH', 'O as in "hot"'),
+            ('vrc.v_ou', 'OU', 'O as in "go"'),
+            ('vrc.v_pp', 'PP', 'P as in "pat"'),
+            ('vrc.v_rr', 'RR', 'R as in "red"'),
+            ('vrc.v_sil', 'SIL', 'Silence'),
+            ('vrc.v_ss', 'SS', 'S as in "sit"'),
+            ('vrc.v_th', 'TH', 'Th as in "think"')
+        ],
+        update=lambda s, c: VisemePreview.update_preview(c)
+    )
     
     eye_tracking_type: EnumProperty(
-    name=t("EyeTracking.type"),
-    description=t("EyeTracking.type_desc"),
-    items=[
-        ('AV3', t("EyeTracking.type.av3"), t("EyeTracking.type.av3_desc")),
-        ('SDK2', t("EyeTracking.type.sdk2"), t("EyeTracking.type.sdk2_desc"))
-    ],
-    default='AV3'
-)
+        name=t("EyeTracking.type"),
+        description=t("EyeTracking.type_desc"),
+        items=[
+            ('AV3', t("EyeTracking.type.av3"), t("EyeTracking.type.av3_desc")),
+            ('SDK2', t("EyeTracking.type.sdk2"), t("EyeTracking.type.sdk2_desc"))
+        ],
+        default='AV3'
+    )
 
     eye_mode: EnumProperty(
         name=t("EyeTracking.mode"),
@@ -518,33 +531,100 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         description=t("Tools.merge_twist_bones_desc"),
         default=True
     )
-                
+
+    highlight_problem_bones: BoolProperty(
+        name=t("Settings.highlight_problem_bones"),
+        description=t("Settings.highlight_problem_bones_desc"),
+        default=get_preference("highlight_problem_bones", True),
+        update=highlight_problem_bones
+    )
+
+    show_scale_issues: BoolProperty(
+        name="Show Scale Issues",
+        default=False
+    )
+
+    tpose_validation_result: BoolProperty(
+        name="T-Pose Validation Result",
+        default=True
+    )
+    
+    tpose_validation_messages: CollectionProperty(
+        type=bpy.types.PropertyGroup,
+        name="T-Pose Validation Messages"
+    )
+    
+    show_tpose_validation: BoolProperty(
+        name="Show T-Pose Validation Results",
+        default=False
+    )
+
 def register() -> None:
     """Register the Avatar Toolkit property group"""
     logger.info("Registering Avatar Toolkit properties")
+    
+    # Clear any existing registrations to prevent conflicts
+    if hasattr(bpy.types.Scene, "avatar_toolkit"):
+        try:
+            del bpy.types.Scene.avatar_toolkit
+        except:
+            logger.warning("Failed to remove existing avatar_toolkit property")
+    
+    # Register classes
     try:
+        # Try to register all classes at once
         bpy.utils.register_class(ZeroWeightBoneItem)
+        bpy.utils.register_class(ValidationMessageItem)
         bpy.utils.register_class(AvatarToolkitSceneProperties)
-        
-        
-    except ValueError:
-        # Class already registered, we can continue
-        pass
+    except ValueError as e:
+        logger.warning(f"Class registration issue: {e}")
+        # Try to unregister first in case they're already registered
+        try:
+            # Try to unregister in reverse order
+            try:
+                bpy.utils.unregister_class(AvatarToolkitSceneProperties)
+            except:
+                pass
+            try:
+                bpy.utils.unregister_class(ValidationMessageItem)
+            except:
+                pass
+            try:
+                bpy.utils.unregister_class(ZeroWeightBoneItem)
+            except:
+                pass
+                
+            # Then register again
+            bpy.utils.register_class(ZeroWeightBoneItem)
+            bpy.utils.register_class(ValidationMessageItem)
+            bpy.utils.register_class(AvatarToolkitSceneProperties)
+        except Exception as e:
+            logger.error(f"Failed to recover from registration error: {e}")
+            raise
+    
+    # Register the property
     bpy.types.Scene.avatar_toolkit = PointerProperty(type=AvatarToolkitSceneProperties)
     logger.debug("Properties registered successfully")
+
 
 def unregister() -> None:
     """Unregister the Avatar Toolkit property group"""
     logger.info("Unregistering Avatar Toolkit properties")
+    
+    # Remove the property first
+    if hasattr(bpy.types.Scene, "avatar_toolkit"):
+        try:
+            del bpy.types.Scene.avatar_toolkit
+            logger.debug("Removed avatar_toolkit property")
+        except Exception as e:
+            logger.warning(f"Failed to remove avatar_toolkit property: {e}")
+    
+    # Then unregister the classes
     try:
-        del bpy.types.Scene.avatar_toolkit
-    except:
-        pass
-    try:
-        bpy.utils.unregister_class(ZeroWeightBoneItem)
         bpy.utils.unregister_class(AvatarToolkitSceneProperties)
-        
-    except RuntimeError:
-        pass
-    logger.debug("Properties unregistered successfully")
-
+        bpy.utils.unregister_class(ValidationMessageItem)
+        bpy.utils.unregister_class(ZeroWeightBoneItem)
+        logger.debug("Unregistered property classes")
+    except (RuntimeError, ValueError) as e:
+        logger.warning(f"Error during property class unregistration: {e}")
+        # Not fatal - continue

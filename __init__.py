@@ -18,8 +18,23 @@ def register():
     
     from .core import auto_load
     print("Starting registration")
+    
+    # Make sure to initialize logging first
+    from .core.logging_setup import configure_logging
+    configure_logging(False)
+    
+    # Then initialize the addon
     auto_load.init()
+    
+    # Register classes in proper order
     auto_load.register()
+    
+    # Verify property registration
+    import bpy
+    if not hasattr(bpy.types.Scene, "avatar_toolkit"):
+        from .core.properties import register as register_properties
+        register_properties()
+    
     print("Registration complete")
 
 def unregister():

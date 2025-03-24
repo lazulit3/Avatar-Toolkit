@@ -84,7 +84,7 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         # Armature Validation
         active_armature: Optional[Object] = get_active_armature(context)
         if active_armature:
-            is_valid, messages, is_acceptable = validate_armature(active_armature)
+            is_valid, messages, is_acceptable, hierarchy_messages, scale_messages, non_standard_messages = validate_armature(active_armature, detailed_messages=True)
             
             info_box = col.box()
             
@@ -121,23 +121,70 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                     validation_box = info_box.box()
                     row = validation_box.row()
                     row.alert = True
-                    row.prop(props, "show_non_standard", text=t("Validation.section.non_standard"), icon='TRIA_DOWN' if props.show_non_standard else 'TRIA_RIGHT', emboss=False)
+                    row.prop(props, "show_non_standard", text=t("Validation.section.non_standard"), 
+                            icon='TRIA_DOWN' if props.show_non_standard else 'TRIA_RIGHT', emboss=False)
                     if props.show_non_standard:
-                        for line in messages[1].split('\n'):
+                        if non_standard_messages:
+                            for message in non_standard_messages:
+                                for line in message.split('\n'):
+                                    sub_row = validation_box.row()
+                                    sub_row.alert = True
+                                    sub_row.label(text=line)
+                        else:
                             sub_row = validation_box.row()
-                            sub_row.alert = True
-                            sub_row.label(text=line)
+                            sub_row.label(text=t("Validation.no_non_standard_issues"))
                             
                     # Hierarchy Issues section
                     validation_box = info_box.box()
                     row = validation_box.row()
                     row.alert = True
-                    row.prop(props, "show_hierarchy", text=t("Validation.section.hierarchy"), icon='TRIA_DOWN' if props.show_hierarchy else 'TRIA_RIGHT', emboss=False)
+                    row.prop(props, "show_hierarchy", text=t("Validation.section.hierarchy"), 
+                            icon='TRIA_DOWN' if props.show_hierarchy else 'TRIA_RIGHT', emboss=False)
                     if props.show_hierarchy:
-                        for message in messages[2:]:
+                        if hierarchy_messages:
+                            for message in hierarchy_messages:
+                                sub_row = validation_box.row()
+                                sub_row.alert = True
+                                sub_row.label(text=message)
+                        else:
                             sub_row = validation_box.row()
-                            sub_row.alert = True
-                            sub_row.label(text=message)
+                            sub_row.label(text=t("Validation.no_hierarchy_issues"))
+
+                    # Scale Issues section
+                    validation_box = info_box.box()
+                    row = validation_box.row()
+                    row.alert = True
+                    row.prop(props, "show_scale_issues", text=t("Validation.section.scale_issues"), 
+                            icon='TRIA_DOWN' if props.show_scale_issues else 'TRIA_RIGHT', emboss=False)
+                    if props.show_scale_issues:
+                        if scale_messages:
+                            for scale_msg in scale_messages:
+                                sub_row = validation_box.row()
+                                sub_row.alert = True
+                                sub_row.label(text=scale_msg)
+                        else:
+                            sub_row = validation_box.row()
+                            sub_row.label(text=t("Validation.no_scale_issues"))
+
+                    pose_box = layout.box()
+                    col = pose_box.column(align=True)
+                    col.label(text=t("Validation.tpose.label"), icon='ARMATURE_DATA')
+                    col.separator(factor=0.5)
+                    col.operator("avatar_toolkit.validate_tpose", icon='CHECKMARK')
+
+                    if props.show_tpose_validation:
+                        validation_box = col.box()
+                        if props.tpose_validation_result:
+                            validation_box.label(text=t("Validation.tpose.valid"), icon='CHECKMARK')
+                        else:
+                            row = validation_box.row()
+                            row.alert = True
+                            row.label(text=t("Validation.tpose.warning"), icon='ERROR')
+                            
+                            for msg in props.tpose_validation_messages:
+                                row = validation_box.row()
+                                row.alert = True
+                                row.label(text=msg.name)
                 else:
                     # If no specific issues, show acceptable message
                     info_box.label(text=messages[0], icon='INFO')
