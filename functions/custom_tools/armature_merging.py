@@ -2,7 +2,7 @@ import bpy
 import numpy as np
 from typing import List, Optional, Dict, Set, Tuple, Any
 from bpy.types import Context, Object, Operator, ArmatureModifier, EditBone, VertexGroup, Mesh, ShapeKey
-
+from ...core.dictionaries import bone_names
 from ...core.logging_setup import logger
 from ...core.translations import t
 from ...core.common import (
@@ -10,7 +10,8 @@ from ...core.common import (
     fix_zero_length_bones,
     clear_unused_data_blocks,
     join_mesh_objects,
-    remove_unused_shapekeys
+    remove_unused_shapekeys,
+    simplify_bonename
 )
 
 class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
@@ -52,7 +53,6 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             wm.progress_update(80)
 
             # Get settings from scene properties
-            merge_all_bones: bool = context.scene.avatar_toolkit.merge_all_bones
             join_meshes: bool = context.scene.avatar_toolkit.join_meshes
 
             # Merge armatures
@@ -60,7 +60,6 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
                 base_armature_name,
                 merge_armature_name,
                 mesh_only=False,
-                merge_all_bones=merge_all_bones,
                 join_meshes=join_meshes,
                 operator=self
             )
@@ -100,16 +99,12 @@ def validate_parents_and_transforms(merge_armature: Object, base_armature: Objec
     base_parent: Optional[Object] = base_armature.parent
     
     if merge_parent or base_parent:
-        if context.scene.merge_all_bones:
-            for armature, parent in [(merge_armature, merge_parent), (base_armature, base_parent)]:
-                if parent:
-                    if not is_transform_clean(parent):
-                        logger.error("Parent transforms are not clean")
-                        return False
-                    bpy.data.objects.remove(parent, do_unlink=True)
-        else:
-            logger.error("Parent relationships need fixing")
-            return False
+        for armature, parent in [(merge_armature, merge_parent), (base_armature, base_parent)]:
+            if parent:
+                if not is_transform_clean(parent):
+                    logger.error("Parent transforms are not clean")
+                    return False
+                bpy.data.objects.remove(parent, do_unlink=True)
     return True
 
 def is_transform_clean(obj: Object) -> bool:
@@ -135,7 +130,6 @@ def merge_armatures(
     base_armature_name: str,
     merge_armature_name: str,
     mesh_only: bool,
-    merge_all_bones: bool = False,
     join_meshes: bool = False,
     operator: Optional[Operator] = None
 ) -> None:
@@ -152,6 +146,9 @@ def merge_armatures(
             operator.report({'ERROR'}, t('MergeArmature.error.notFound', name=merge_armature_name))
         return
 
+    # Store meshes that need to be reparented
+    meshes_to_reparent = [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj.parent == merge_armature]
+    
     # Check transforms early
     if not validate_merge_armature_transforms(base_armature, merge_armature, None, tolerance):
         if not bpy.context.scene.avatar_toolkit.apply_transforms:
@@ -174,25 +171,49 @@ def merge_armatures(
 
     # Store original parent relationships
     original_parents: Dict[str, Optional[str]] = {}
-    for bone in merge_armature.data.bones:
+    merge_armature_data: bpy.types.Armature = merge_armature.data
+    for bone in merge_armature_data.bones:
         original_parents[bone.name] = bone.parent.name if bone.parent else None
 
+    #create reverse lookup
+    reverse_bone_lookup = {}
+    for preferred_name, name_list in bone_names.items():
+        for name in name_list:
+            reverse_bone_lookup[name] = preferred_name
+    
     # Get base bone names
     base_bone_names: Set[str] = {bone.name for bone in base_armature.data.bones}
+
+    base_armature_standards: Dict[str,Optional[str]] = {}
+    for bone in base_bone_names:
+        if simplify_bonename(bone) in reverse_bone_lookup:
+            base_armature_standards[reverse_bone_lookup[simplify_bonename(bone)]] = bone
 
     # Switch to edit mode on merge armature and rename bones
     bpy.context.view_layer.objects.active = merge_armature
     bpy.ops.object.mode_set(mode='EDIT')
     
-    # Handle bone renaming based on merge_all_bones setting
-    for bone in merge_armature.data.edit_bones:
-        if not merge_all_bones:
-            # Only rename bones that don't exist in base armature
-            if bone.name not in base_bone_names:
-                bone.name += '.merge'
+    # Handle bone renaming/removing to target armature.
+    bone_names_source: list[str] = [bone.name for bone in merge_armature_data.edit_bones]
+    for bone in bone_names_source:
+        bone_name = bone
+        if bone_name not in base_bone_names: #not auto mergable to original
+            
+            if simplify_bonename(bone_name) in reverse_bone_lookup: #if is a standard bone through standard translation.
+                if reverse_bone_lookup[simplify_bonename(bone_name)] in base_armature_standards: #if this bone equals for example, "hips", does a bone that should be "hips" exist on our target armature?
+                    #if so, rename this bone to that one
+                    merge_armature_data.edit_bones[bone_name].name = base_armature_standards[reverse_bone_lookup[simplify_bonename(bone_name)]]
+                    bone_name = merge_armature_data.edit_bones[bone_name].name
+                    #adjust original parents list to point to the new name.
+                    for child_bone in merge_armature_data.edit_bones[bone_name]:
+                        original_parents[child_bone.name] = bone_name
+                    #then remove so it doesn't clash when merged.
+                    merge_armature_data.edit_bones.remove(merge_armature_data.edit_bones[bone_name])
+                    continue
+
+            #if it really doesn't have a counter part, just don't bother.
         else:
-            # Rename all bones from merge armature
-            bone.name += '.merge'
+            merge_armature_data.edit_bones.remove(merge_armature_data.edit_bones[bone_name])
 
     # Return to object mode
     bpy.ops.object.mode_set(mode='OBJECT')
@@ -204,23 +225,28 @@ def merge_armatures(
     bpy.context.view_layer.objects.active = base_armature
     bpy.ops.object.join()
 
+    # Explicitly set active object after join
+    bpy.context.view_layer.objects.active = base_armature
+    base_armature_data: bpy.types.Armature = base_armature.data
+
     # Restore parent relationships
     bpy.ops.object.mode_set(mode='EDIT')
-    for bone in base_armature.data.edit_bones:
-        base_name: str = bone.name.replace('.merge', '')
-        if base_name in original_parents:
-            parent_name: Optional[str] = original_parents[base_name]
+    for bone in base_armature_data.edit_bones:
+        if bone.name in original_parents:
+            parent_name: Optional[str] = original_parents[bone.name]
             if parent_name:
-                parent_bone: Optional[EditBone] = base_armature.data.edit_bones.get(parent_name)
+                parent_bone: Optional[EditBone] = base_armature_data.edit_bones.get(parent_name)
                 if parent_bone:
                     bone.parent = parent_bone
 
     bpy.ops.object.mode_set(mode='OBJECT')
 
-    # Update mesh parenting
-    for obj in bpy.data.objects:
-        if obj.type == 'MESH' and obj.parent == merge_armature:
-            obj.parent = base_armature
+    for mesh_obj in meshes_to_reparent:
+        if mesh_obj and mesh_obj.name in bpy.data.objects:
+            mesh_obj.parent = base_armature
+            for mod in mesh_obj.modifiers:
+                if mod.type == 'ARMATURE':
+                    mod.object = base_armature
 
     # Process vertex groups if not mesh_only
     if not mesh_only:
@@ -241,6 +267,8 @@ def merge_armatures(
             joined_mesh: Optional[Object] = join_mesh_objects(bpy.context, meshes_to_join)
             if joined_mesh:
                 logger.info(f"Joined meshes into {joined_mesh.name}")
+                # Ensure the joined mesh is properly parented
+                joined_mesh.parent = base_armature
 
     # Clean up shape keys if enabled
     if bpy.context.scene.avatar_toolkit.cleanup_shape_keys:
@@ -250,11 +278,6 @@ def merge_armatures(
 
     # Remove any remaining .merge bones
     bpy.context.view_layer.objects.active = base_armature
-    bpy.ops.object.mode_set(mode='EDIT')
-    edit_bones: List[EditBone] = base_armature.data.edit_bones
-    bones_to_remove: List[EditBone] = [bone for bone in edit_bones if bone.name.endswith('.merge')]
-    for bone in bones_to_remove:
-        edit_bones.remove(bone)
     bpy.ops.object.mode_set(mode='OBJECT')
 
     # Final cleanup
@@ -298,8 +321,7 @@ def adjust_merge_armature_transforms(
 def detect_bones_to_merge(
     base_edit_bones: bpy.types.ArmatureEditBones,
     merge_edit_bones: bpy.types.ArmatureEditBones,
-    tolerance: float,
-    merge_all_bones: bool
+    tolerance: float
 ) -> List[str]:
     """Detect corresponding bones between base and merge armatures using smart detection and position tolerance"""
     bones_to_merge: List[str] = []
@@ -314,7 +336,7 @@ def detect_bones_to_merge(
         merge_bone_position: np.ndarray = np.array(merge_bone.head)
         found_match: bool = False
 
-        if merge_all_bones and merge_bone.name in base_bones_positions:
+        if merge_bone.name in base_bones_positions:
             # If merging same bones by name
             bones_to_merge.append(merge_bone.name)
             found_match = True

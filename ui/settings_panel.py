@@ -42,6 +42,7 @@ class AvatarToolKit_PT_SettingsPanel(Panel):
     def draw(self, context: Context) -> None:
         """Draw the settings panel layout with language selection"""
         layout: UILayout = self.layout
+        props = context.scene.avatar_toolkit
         
         # Language Settings
         lang_box: UILayout = layout.box()
@@ -50,7 +51,7 @@ class AvatarToolKit_PT_SettingsPanel(Panel):
         row.scale_y = 1.2
         row.label(text=t("Settings.language"), icon='WORLD')
         col.separator()
-        col.prop(context.scene.avatar_toolkit, "language", text="")
+        col.prop(props, "language", text="")
         
         # Validation Settings
         val_box: UILayout = layout.box()
@@ -59,18 +60,31 @@ class AvatarToolKit_PT_SettingsPanel(Panel):
         row.scale_y = 1.2
         row.label(text=t("Settings.validation_mode"), icon='CHECKMARK')
         col.separator()
-        col.prop(context.scene.avatar_toolkit, "validation_mode", text="")
+        col.prop(props, "validation_mode", text="")
+        
+        # Bone Highlighting Settings
+        bone_box: UILayout = layout.box()
+        col = bone_box.column(align=True)
+        row = col.row()
+        row.scale_y = 1.2
+        row.label(text=t("Settings.bone_highlighting"), icon='BONE_DATA')
+        col.separator()
+        col.prop(props, "highlight_problem_bones")
+        if props.highlight_problem_bones:
+            col.operator("avatar_toolkit.highlight_problem_bones", icon='COLOR')
+        else:
+            col.operator("avatar_toolkit.clear_bone_highlighting", icon='X')
 
         # Debug Settings
         debug_box = layout.box()
         col = debug_box.column()
         row = col.row(align=True)
-        row.prop(context.scene.avatar_toolkit, "debug_expand", 
-                icon="TRIA_DOWN" if context.scene.avatar_toolkit.debug_expand 
+        row.prop(props, "debug_expand", 
+                icon="TRIA_DOWN" if props.debug_expand 
                 else "TRIA_RIGHT", 
                 icon_only=True, emboss=False)
         row.label(text=t("Settings.debug"), icon='CONSOLE')
         
-        if context.scene.avatar_toolkit.debug_expand:
+        if props.debug_expand:
             col = debug_box.column(align=True)
-            col.prop(context.scene.avatar_toolkit, "enable_logging")
+            col.prop(props, "enable_logging")

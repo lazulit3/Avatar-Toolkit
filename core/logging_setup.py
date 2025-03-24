@@ -1,8 +1,10 @@
 import logging
+import traceback
 from typing import Optional, Any
 from bpy.types import Context
 
 logger = logging.getLogger('avatar_toolkit')
+_original_error = logger.error
 
 def configure_logging(enabled: bool = False) -> None:
     """Configure logging for Avatar Toolkit"""
@@ -18,6 +20,15 @@ def configure_logging(enabled: bool = False) -> None:
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
+        
+        def error_with_traceback(msg, *args, **kwargs):
+            if kwargs.get('exc_info', False) or isinstance(msg, Exception):
+                full_msg = f"{msg}\n{traceback.format_exc()}"
+                _original_error(full_msg, *args, **{**kwargs, 'exc_info': False})
+            else:
+                _original_error(msg, *args, **kwargs)
+            
+        logger.error = error_with_traceback
 
 def update_logging_state(self: Any, context: Context) -> None:
     """Update logging state based on user preference"""
@@ -25,3 +36,10 @@ def update_logging_state(self: Any, context: Context) -> None:
     enabled = self.enable_logging
     save_preference("enable_logging", enabled)
     configure_logging(enabled)
+
+def highlight_problem_bones(self: Any, context: Context) -> None:
+    """Log when problem bones are highlighted"""
+    from .addon_preferences import save_preference
+    enabled = self.highlight_problem_bones
+    save_preference("highlight_problem_bones", enabled)
+    logger.debug(f"Problem bone highlighting {'enabled' if enabled else 'disabled'}")

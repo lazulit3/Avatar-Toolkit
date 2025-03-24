@@ -354,3 +354,590 @@ resonite_translations = {
     'thumb_2_r': "thumb2.R",
     'thumb_3_r': "thumb3.R"
 }
+
+standard_bones = {
+    # Core Structure
+    'hips': 'Hips',
+    'spine': 'Spine',
+    'chest': 'Chest',
+    'upper_chest': 'Chest.Up',
+    'neck': 'Neck',
+    'head': 'Head',
+    
+    # Arms
+    'left_arm': 'UpperArm.L',
+    'left_elbow': 'LowerArm.L',
+    'left_wrist': 'Hand.L',
+    'right_arm': 'UpperArm.R',
+    'right_elbow': 'LowerArm.R',
+    'right_wrist': 'Hand.R',
+    
+    # Legs
+    'left_leg': 'UpperLeg.L',
+    'left_knee': 'LowerLeg.L',
+    'left_ankle': 'Foot.L',
+    'left_toe': 'Toes.L',
+    'right_leg': 'UpperLeg.R',
+    'right_knee': 'LowerLeg.R',
+    'right_ankle': 'Foot.R',
+    'right_toe': 'Toes.R',
+    
+    # Fingers Left
+    'thumb_1_l': 'Thumb1.L',
+    'thumb_2_l': 'Thumb2.L',
+    'thumb_3_l': 'Thumb3.L',
+    'index_1_l': 'Index1.L',
+    'index_2_l': 'Index2.L',
+    'index_3_l': 'Index3.L',
+    'middle_1_l': 'Middle1.L',
+    'middle_2_l': 'Middle2.L',
+    'middle_3_l': 'Middle3.L',
+    'ring_1_l': 'Ring1.L',
+    'ring_2_l': 'Ring2.L',
+    'ring_3_l': 'Ring3.L',
+    'pinkie_1_l': 'Pinky1.L',
+    'pinkie_2_l': 'Pinky2.L',
+    'pinkie_3_l': 'Pinky3.L',
+    
+    # Fingers Right
+    'thumb_1_r': 'Thumb1.R',
+    'thumb_2_r': 'Thumb2.R',
+    'thumb_3_r': 'Thumb3.R',
+    'index_1_r': 'Index1.R',
+    'index_2_r': 'Index2.R',
+    'index_3_r': 'Index3.R',
+    'middle_1_r': 'Middle1.R',
+    'middle_2_r': 'Middle2.R',
+    'middle_3_r': 'Middle3.R',
+    'ring_1_r': 'Ring1.R',
+    'ring_2_r': 'Ring2.R',
+    'ring_3_r': 'Ring3.R',
+    'pinkie_1_r': 'Pinky1.R',
+    'pinkie_2_r': 'Pinky2.R',
+    'pinkie_3_r': 'Pinky3.R',
+    
+    # Eyes
+    'left_eye': 'Eye.L',
+    'right_eye': 'Eye.R'
+}
+
+bone_hierarchy = [
+    ('Hips', 'Spine'),
+    ('Spine', 'Chest'),
+    ('Chest', 'Chest.Up'),
+    ('Chest.Up', 'Neck'),
+    ('Neck', 'Head'),
+    ('Head', 'Eye.L'),
+    ('Head', 'Eye.R'),
+    
+    # Left Arm Chain
+    ('Chest.Up', 'UpperArm.L'),
+    ('UpperArm.L', 'LowerArm.L'),
+    ('LowerArm.L', 'Hand.L'),
+    
+    # Right Arm Chain
+    ('Chest.Up', 'UpperArm.R'),
+    ('UpperArm.R', 'LowerArm.R'),
+    ('LowerArm.R', 'Hand.R'),
+    
+    # Left Leg Chain
+    ('Hips', 'UpperLeg.L'),
+    ('UpperLeg.L', 'LowerLeg.L'),
+    ('LowerLeg.L', 'Foot.L'),
+    ('Foot.L', 'Toes.L'),
+    
+    # Right Leg Chain
+    ('Hips', 'UpperLeg.R'),
+    ('UpperLeg.R', 'LowerLeg.R'),
+    ('LowerLeg.R', 'Foot.R'),
+    ('Foot.R', 'Toes.R')
+]
+
+finger_hierarchy = {
+    'left': [
+        ('Hand.L', 'Thumb1.L', 'Thumb2.L', 'Thumb3.L'),
+        ('Hand.L', 'Index1.L', 'Index2.L', 'Index3.L'),
+        ('Hand.L', 'Middle1.L', 'Middle2.L', 'Middle3.L'),
+        ('Hand.L', 'Ring1.L', 'Ring2.L', 'Ring3.L'),
+        ('Hand.L', 'Pinky1.L', 'Pinky2.L', 'Pinky3.L')
+    ],
+    'right': [
+        ('Hand.R', 'Thumb1.R', 'Thumb2.R', 'Thumb3.R'),
+        ('Hand.R', 'Index1.R', 'Index2.R', 'Index3.R'),
+        ('Hand.R', 'Middle1.R', 'Middle2.R', 'Middle3.R'),
+        ('Hand.R', 'Ring1.R', 'Ring2.R', 'Ring3.R'),
+        ('Hand.R', 'Pinky1.R', 'Pinky2.R', 'Pinky3.R')
+    ]
+}
+
+acceptable_bone_hierarchy = [
+    # Right side chain
+    ('Hips', 'Chest'),
+    ('Chest', 'Shoulder.R'),
+    ('Shoulder.R', 'Arm.R'),
+    ('Arm.R', 'Elbow.R'),
+    ('Elbow.R', 'Wrist.R'),
+    ('Hips', 'Leg.R'),
+    ('Leg.R', 'Knee.R'),
+    ('Knee.R', 'Foot.R'),
+    ('Foot.R', 'Toes.R'),
+    
+    # Left side chain
+    ('Chest', 'Shoulder.L'),
+    ('Shoulder.L', 'Arm.L'),
+    ('Arm.L', 'Elbow.L'),
+    ('Elbow.L', 'Wrist.L'),
+    ('Hips', 'Leg.L'),
+    ('Leg.L', 'Knee.L'),
+    ('Knee.L', 'Foot.L'),
+    ('Foot.L', 'Toes.L'),
+
+    # Head and Eyes
+    ('Chest', 'Neck'),
+    ('Neck', 'Head'),
+    ('Head', 'Eye_L'),
+    ('Head', 'Eye_R'),
+    ('Head', 'LeftEye'),
+    ('Head', 'RightEye'),
+        
+    # Unity humanoid naming
+    ('Hips', 'Spine'),
+    ('Spine', 'Chest'),
+    ('Chest', 'UpperChest'),
+    ('UpperChest', 'Neck'),
+    ('Neck', 'Head'),
+    ('Head', 'LeftEye'),
+    ('Head', 'RightEye'),
+    
+]
+
+acceptable_bone_names = {
+    'hips': ['Hips', 'pelvis', 'root', 'Root', 'ROOT'],
+    'chest': ['Chest', 'spine1', 'Spine1', 'spine_01', 'SPINE1', 'Spine01'],
+    'neck': ['Neck', 'neck_01', 'Neck01'],
+    'head': ['Head', 'head_01', 'Head01'],
+    'eye_l': ['Eye_L', 'LeftEye', 'lefteye', 'eye_left', 'EyeLeft'],
+    'eye_r': ['Eye_R', 'RightEye', 'righteye', 'eye_right', 'EyeRight'],
+    
+    'shoulder_r': ['Shoulder.R', 'clavicle_r', 'ClavicleRight', 'RightShoulder'],
+    'arm_r': ['Arm.R', 'upperarm_r', 'UpperArmRight', 'RightArm'],
+    'elbow_r': ['Elbow.R', 'lowerarm_r', 'ForearmRight', 'RightForeArm'],
+    'wrist_r': ['Wrist.R', 'hand_r', 'HandRight', 'RightHand'],
+    'leg_r': ['Leg.R', 'thigh_r', 'ThighRight', 'RightLeg', 'RightUpLeg'],
+    'knee_r': ['Knee.R', 'calf_r', 'CalfRight', 'RightShin', 'RightLowerLeg'],
+    'foot_r': ['Foot.R', 'foot_r', 'FootRight', 'RightFoot'],
+    'toes_r': ['Toes.R', 'ball_r', 'ToeRight', 'RightToeBase'],
+    
+    'shoulder_l': ['Shoulder.L', 'clavicle_l', 'ClavicleLeft', 'LeftShoulder'],
+    'arm_l': ['Arm.L', 'upperarm_l', 'UpperArmLeft', 'LeftArm'],
+    'elbow_l': ['Elbow.L', 'lowerarm_l', 'ForearmLeft', 'LeftForeArm'],
+    'wrist_l': ['Wrist.L', 'hand_l', 'HandLeft', 'LeftHand'],
+    'leg_l': ['Leg.L', 'thigh_l', 'ThighLeft', 'LeftLeg', 'LeftUpLeg'],
+    'knee_l': ['Knee.L', 'calf_l', 'CalfLeft', 'LeftShin', 'LeftLowerLeg'],
+    'foot_l': ['Foot.L', 'foot_l', 'FootLeft', 'LeftFoot'],
+    'toes_l': ['Toes.L', 'ball_l', 'ToeLeft', 'LeftToeBase'],
+    
+    # Add finger bones for left hand
+    'thumb_0_l': ['Thumb0_L'],
+    'thumb_1_l': ['Thumb1_L'],
+    'thumb_2_l': ['Thumb2_L'],
+    'index_1_l': ['IndexFinger1_L'],
+    'index_2_l': ['IndexFinger2_L'],
+    'index_3_l': ['IndexFinger3_L'],
+    'middle_1_l': ['MiddleFinger1_L'],
+    'middle_2_l': ['MiddleFinger2_L'],
+    'middle_3_l': ['MiddleFinger3_L'],
+    'ring_1_l': ['RingFinger1_L'],
+    'ring_2_l': ['RingFinger2_L'],
+    'ring_3_l': ['RingFinger3_L'],
+    
+    # Add finger bones for right hand
+    'thumb_0_r': ['Thumb0_R', 'ThumbO_R'],
+    'thumb_1_r': ['Thumb1_R'],
+    'thumb_2_r': ['Thumb2_R'],
+    'index_1_r': ['IndexFinger1_R'],
+    'index_2_r': ['IndexFinger2_R'],
+    'index_3_r': ['IndexFinger3_R'],
+    'middle_1_r': ['MiddleFinger1_R'],
+    'middle_2_r': ['MiddleFinger2_R'],
+    'middle_3_r': ['MiddleFinger3_R'],
+    'ring_1_r': ['RingFinger1_R'],
+    'ring_2_r': ['RingFinger2_R'],
+    'ring_3_r': ['RingFinger3_R'],
+    
+    'breast_upper_1_l': ['BreastUpper1_L'],
+    'breast_upper_2_l': ['BreastUpper2_L'],
+    'breast_upper_1_r': ['BreastUpper1_R'],
+    'breast_upper_2_r': ['BreastUpper2_R'],
+
+    'ear_upper_l': ['UpperEar.L', 'Upper Ear.L', 'Upper Ear_L'],
+    'ear_upper_r': ['UpperEar.R', 'Upper Ear.R', 'Upper Ear_R'],
+    'ear_lower_l': ['LowerEar.L', 'Lower Ear.L', 'Lower Ear_L'],
+    'ear_lower_r': ['LowerEar.R', 'Lower Ear.R', 'Lower Ear_R'],
+
+    'ears_upper': ['Ears Upper', 'EarsUpper', 'ears_upper'],
+    'ears_lower': ['Ears Lower', 'EarsLower', 'ears_lower']
+}
+
+rigify_unity_names = {
+    "DEF-spine": "Hips",
+    "DEF-spine.001": "Spine",
+    "DEF-spine.002": "Chest",
+    "DEF-spine.003": "UpperChest",
+    "DEF-neck": "Neck",
+    "DEF-head": "Head",
+    "DEF-shoulder.L": "LeftShoulder",
+    "DEF-upper_arm.L": "LeftUpperArm",
+    "DEF-forearm.L": "LeftLowerArm",
+    "DEF-hand.L": "LeftHand",
+    "DEF-shoulder.R": "RightShoulder",
+    "DEF-upper_arm.R": "RightUpperArm",
+    "DEF-forearm.R": "RightLowerArm",
+    "DEF-hand.R": "RightHand",
+    "DEF-thigh.L": "LeftUpperLeg",
+    "DEF-shin.L": "LeftLowerLeg",
+    "DEF-foot.L": "LeftFoot",
+    "DEF-toe.L": "LeftToes",
+    "DEF-thigh.R": "RightUpperLeg",
+    "DEF-shin.R": "RightLowerLeg",
+    "DEF-foot.R": "RightFoot",
+    "DEF-toe.R": "RightToes"
+}
+
+rigify_basic_unity_names = {
+    "spine": "Hips",
+    "spine.001": "Spine",
+    "spine.002": "Chest",
+    "spine.003": "UpperChest",
+    "neck": "Neck",
+    "head": "Head",
+    "shoulder.L": "LeftShoulder",
+    "upper_arm.L": "LeftUpperArm",
+    "forearm.L": "LeftLowerArm",
+    "hand.L": "LeftHand",
+    "shoulder.R": "RightShoulder",
+    "upper_arm.R": "RightUpperArm",
+    "forearm.R": "RightLowerArm",
+    "hand.R": "RightHand",
+    "thigh.L": "LeftUpperLeg",
+    "shin.L": "LeftLowerLeg",
+    "foot.L": "LeftFoot",
+    "toe.L": "LeftToes",
+    "thigh.R": "RightUpperLeg",
+    "shin.R": "RightLowerLeg",
+    "foot.R": "RightFoot",
+    "toe.R": "RightToes"
+}
+
+rigify_unnecessary_bones = [
+    'face',
+    'ear.l', 'ear.r',
+    'forehead',
+    'cheek.t.l', 'cheek.t.r',
+    'cheek.b.l', 'cheek.b.r',
+    'brow.t.l', 'brow.t.r',
+    'brow.b.l', 'brow.b.r',
+    'jaw',
+    'chin',
+    'nose',
+    'temple.l', 'temple.r',
+    'teeth',
+    'lip',
+    'lid',
+    'heel',
+    'pelvis.'
+]
+
+# Non-standard bone mappings to standard bones
+non_standard_mappings = {
+    'hips': [
+        'mixamorig:Hips', 'mixamorig_Hips', 
+        'ORG-spine', 'spine', 'root',
+        'hip', 'pelvis'
+    ],
+    'spine': [
+        'mixamorig:Spine', 'mixamorig_Spine',
+        'ORG-spine.001', 'spine.001',
+        'abdomenLower', 'lowerback'
+    ],
+    'chest': [
+        'mixamorig:Spine1', 'mixamorig_Spine1',
+        'ORG-spine.002', 'spine.002',
+        'abdomenUpper', 'upperback', 'spine1'
+    ],
+    'upper_chest': [
+        'mixamorig:Spine2', 'mixamorig_Spine2',
+        'ORG-spine.003', 'spine.003',
+        'chestLower', 'chest', 'spine2'
+    ],
+    'neck': [
+        'mixamorig:Neck', 'mixamorig_Neck',
+        'ORG-spine.004', 'spine.004', 'neck',
+        'neckLower'
+    ],
+    'head': [
+        'mixamorig:Head', 'mixamorig_Head',
+        'ORG-spine.005', 'spine.005', 'face', 'head'
+    ],
+    
+    'left_shoulder': [
+        'mixamorig:LeftShoulder', 'mixamorig_LeftShoulder',
+        'ORG-shoulder.L', 'shoulder.L',
+        'lCollar', 'lShldr', 'lClavicle'
+    ],
+    'left_arm': [
+        'mixamorig:LeftArm', 'mixamorig_LeftArm',
+        'ORG-upper_arm.L', 'upper_arm.L',
+        'lShldrBend', 'lShldrTwist', 'lArm'
+    ],
+    'left_elbow': [
+        'mixamorig:LeftForeArm', 'mixamorig_LeftForeArm',
+        'ORG-forearm.L', 'forearm.L',
+        'lForearmBend', 'lElbow', 'lForeArm'
+    ],
+    'left_wrist': [
+        'mixamorig:LeftHand', 'mixamorig_LeftHand',
+        'ORG-hand.L', 'hand.L',
+        'lHand', 'lWrist'
+    ],
+    
+    'right_shoulder': [
+        'mixamorig:RightShoulder', 'mixamorig_RightShoulder',
+        'ORG-shoulder.R', 'shoulder.R',
+        'rCollar', 'rShldr', 'rClavicle'
+    ],
+    'right_arm': [
+        'mixamorig:RightArm', 'mixamorig_RightArm',
+        'ORG-upper_arm.R', 'upper_arm.R',
+        'rShldrBend', 'rShldrTwist', 'rArm'
+    ],
+    'right_elbow': [
+        'mixamorig:RightForeArm', 'mixamorig_RightForeArm',
+        'ORG-forearm.R', 'forearm.R',
+        'rForearmBend', 'rElbow', 'rForeArm'
+    ],
+    'right_wrist': [
+        'mixamorig:RightHand', 'mixamorig_RightHand',
+        'ORG-hand.R', 'hand.R',
+        'rHand', 'rWrist'
+    ],
+    
+    'left_leg': [
+        'mixamorig:LeftUpLeg', 'mixamorig_LeftUpLeg',
+        'ORG-thigh.L', 'thigh.L',
+        'lThighBend', 'lThigh'
+    ],
+    'left_knee': [
+        'mixamorig:LeftLeg', 'mixamorig_LeftLeg',
+        'ORG-shin.L', 'shin.L',
+        'lShin', 'lKnee', 'lLeg'
+    ],
+    'left_ankle': [
+        'mixamorig:LeftFoot', 'mixamorig_LeftFoot',
+        'ORG-foot.L', 'foot.L',
+        'lFoot', 'lAnkle'
+    ],
+    'left_toe': [
+        'mixamorig:LeftToeBase', 'mixamorig_LeftToeBase',
+        'ORG-toe.L', 'toe.L',
+        'lToe'
+    ],
+    
+    'right_leg': [
+        'mixamorig:RightUpLeg', 'mixamorig_RightUpLeg',
+        'ORG-thigh.R', 'thigh.R',
+        'rThighBend', 'rThigh'
+    ],
+    'right_knee': [
+        'mixamorig:RightLeg', 'mixamorig_RightLeg',
+        'ORG-shin.R', 'shin.R',
+        'rShin', 'rKnee', 'rLeg'
+    ],
+    'right_ankle': [
+        'mixamorig:RightFoot', 'mixamorig_RightFoot',
+        'ORG-foot.R', 'foot.R',
+        'rFoot', 'rAnkle'
+    ],
+    'right_toe': [
+        'mixamorig:RightToeBase', 'mixamorig_RightToeBase',
+        'ORG-toe.R', 'toe.R',
+        'rToe'
+    ],
+    
+    'thumb_1_l': [
+        'mixamorig:LeftHandThumb1', 'mixamorig_LeftHandThumb1',
+        'ORG-thumb.01.L', 'thumb.01.L',
+        'lThumb1'
+    ],
+    'thumb_2_l': [
+        'mixamorig:LeftHandThumb2', 'mixamorig_LeftHandThumb2',
+        'ORG-thumb.02.L', 'thumb.02.L',
+        'lThumb2'
+    ],
+    'thumb_3_l': [
+        'mixamorig:LeftHandThumb3', 'mixamorig_LeftHandThumb3',
+        'ORG-thumb.03.L', 'thumb.03.L',
+        'lThumb3'
+    ],
+    
+    'index_1_l': [
+        'mixamorig:LeftHandIndex1', 'mixamorig_LeftHandIndex1',
+        'ORG-f_index.01.L', 'f_index.01.L',
+        'lIndex1'
+    ],
+    'index_2_l': [
+        'mixamorig:LeftHandIndex2', 'mixamorig_LeftHandIndex2',
+        'ORG-f_index.02.L', 'f_index.02.L',
+        'lIndex2'
+    ],
+    'index_3_l': [
+        'mixamorig:LeftHandIndex3', 'mixamorig_LeftHandIndex3',
+        'ORG-f_index.03.L', 'f_index.03.L',
+        'lIndex3'
+    ],
+    
+    'middle_1_l': [
+        'mixamorig:LeftHandMiddle1', 'mixamorig_LeftHandMiddle1',
+        'ORG-f_middle.01.L', 'f_middle.01.L',
+        'lMid1'
+    ],
+    'middle_2_l': [
+        'mixamorig:LeftHandMiddle2', 'mixamorig_LeftHandMiddle2',
+        'ORG-f_middle.02.L', 'f_middle.02.L',
+        'lMid2'
+    ],
+    'middle_3_l': [
+        'mixamorig:LeftHandMiddle3', 'mixamorig_LeftHandMiddle3',
+        'ORG-f_middle.03.L', 'f_middle.03.L',
+        'lMid3'
+    ],
+    
+    'ring_1_l': [
+        'mixamorig:LeftHandRing1', 'mixamorig_LeftHandRing1',
+        'ORG-f_ring.01.L', 'f_ring.01.L',
+        'lRing1'
+    ],
+    'ring_2_l': [
+        'mixamorig:LeftHandRing2', 'mixamorig_LeftHandRing2',
+        'ORG-f_ring.02.L', 'f_ring.02.L',
+        'lRing2'
+    ],
+    'ring_3_l': [
+        'mixamorig:LeftHandRing3', 'mixamorig_LeftHandRing3',
+        'ORG-f_ring.03.L', 'f_ring.03.L',
+        'lRing3'
+    ],
+    
+    'pinkie_1_l': [
+        'mixamorig:LeftHandPinky1', 'mixamorig_LeftHandPinky1',
+        'ORG-f_pinky.01.L', 'f_pinky.01.L',
+        'lPinky1'
+    ],
+    'pinkie_2_l': [
+        'mixamorig:LeftHandPinky2', 'mixamorig_LeftHandPinky2',
+        'ORG-f_pinky.02.L', 'f_pinky.02.L',
+        'lPinky2'
+    ],
+    'pinkie_3_l': [
+        'mixamorig:LeftHandPinky3', 'mixamorig_LeftHandPinky3',
+        'ORG-f_pinky.03.L', 'f_pinky.03.L',
+        'lPinky3'
+    ],
+    
+    'thumb_1_r': [
+        'mixamorig:RightHandThumb1', 'mixamorig_RightHandThumb1',
+        'ORG-thumb.01.R', 'thumb.01.R',
+        'rThumb1'
+    ],
+    'thumb_2_r': [
+        'mixamorig:RightHandThumb2', 'mixamorig_RightHandThumb2',
+        'ORG-thumb.02.R', 'thumb.02.R',
+        'rThumb2'
+    ],
+    'thumb_3_r': [
+        'mixamorig:RightHandThumb3', 'mixamorig_RightHandThumb3',
+        'ORG-thumb.03.R', 'thumb.03.R',
+        'rThumb3'
+    ],
+    
+    'index_1_r': [
+        'mixamorig:RightHandIndex1', 'mixamorig_RightHandIndex1',
+        'ORG-f_index.01.R', 'f_index.01.R',
+        'rIndex1'
+    ],
+    'index_2_r': [
+        'mixamorig:RightHandIndex2', 'mixamorig_RightHandIndex2',
+        'ORG-f_index.02.R', 'f_index.02.R',
+        'rIndex2'
+    ],
+    'index_3_r': [
+        'mixamorig:RightHandIndex3', 'mixamorig_RightHandIndex3',
+        'ORG-f_index.03.R', 'f_index.03.R',
+        'rIndex3'
+    ],
+    
+    'middle_1_r': [
+        'mixamorig:RightHandMiddle1', 'mixamorig_RightHandMiddle1',
+        'ORG-f_middle.01.R', 'f_middle.01.R',
+        'rMid1'
+    ],
+    'middle_2_r': [
+        'mixamorig:RightHandMiddle2', 'mixamorig_RightHandMiddle2',
+        'ORG-f_middle.02.R', 'f_middle.02.R',
+        'rMid2'
+    ],
+    'middle_3_r': [
+        'mixamorig:RightHandMiddle3', 'mixamorig_RightHandMiddle3',
+        'ORG-f_middle.03.R', 'f_middle.03.R',
+        'rMid3'
+    ],
+    
+    'ring_1_r': [
+        'mixamorig:RightHandRing1', 'mixamorig_RightHandRing1',
+        'ORG-f_ring.01.R', 'f_ring.01.R',
+        'rRing1'
+    ],
+    'ring_2_r': [
+        'mixamorig:RightHandRing2', 'mixamorig_RightHandRing2',
+        'ORG-f_ring.02.R', 'f_ring.02.R',
+        'rRing2'
+    ],
+    'ring_3_r': [
+        'mixamorig:RightHandRing3', 'mixamorig_RightHandRing3',
+        'ORG-f_ring.03.R', 'f_ring.03.R',
+        'rRing3'
+    ],
+    
+    'pinkie_1_r': [
+        'mixamorig:RightHandPinky1', 'mixamorig_RightHandPinky1',
+        'ORG-f_pinky.01.R', 'f_pinky.01.R',
+        'rPinky1'
+    ],
+    'pinkie_2_r': [
+        'mixamorig:RightHandPinky2', 'mixamorig_RightHandPinky2',
+        'ORG-f_pinky.02.R', 'f_pinky.02.R',
+        'rPinky2'
+    ],
+    'pinkie_3_r': [
+        'mixamorig:RightHandPinky3', 'mixamorig_RightHandPinky3',
+        'ORG-f_pinky.03.R', 'f_pinky.03.R',
+        'rPinky3'
+    ],
+    
+    'left_eye': [
+        'mixamorig:LeftEye', 'mixamorig_LeftEye',
+        'ORG-eye.L', 'eye.L',
+        'lEye'
+    ],
+    'right_eye': [
+        'mixamorig:RightEye', 'mixamorig_RightEye',
+        'ORG-eye.R', 'eye.R',
+        'rEye'
+    ]
+}
+
+for category, mappings in non_standard_mappings.items():
+    if category in bone_names:
+        bone_names[category].extend(mappings)
+    else:
+        bone_names[category] = mappings

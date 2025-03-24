@@ -18,11 +18,11 @@ from ..core.common import (
     get_active_armature,
     get_all_meshes,
     get_armature_list,
-    validate_armature,
     validate_mesh_for_pose,
     cache_vertex_positions,
     apply_vertex_positions
 )
+from ..core.armature_validation import validate_armature
 
 VALID_EYE_NAMES: Dict[str, List[str]] = {
     'left': ['LeftEye', 'Eye_L', 'eye_L', 'eye.L', 'EyeLeft', 'left_eye', 'l_eye'],
@@ -405,6 +405,14 @@ def set_rotation(self, context):
     if not eye_left or not eye_right:
         StartTestingButton.execute(StartTestingButton, context)
         return None
+
+    # Check if rotation data is available
+    if not eye_left_rot or len(eye_left_rot) < 3 or not eye_right_rot or len(eye_right_rot) < 3:
+        # Initialize rotation data if missing
+        eye_left.rotation_mode = 'XYZ'
+        eye_left_rot = list(eye_left.rotation_euler)
+        eye_right.rotation_mode = 'XYZ'
+        eye_right_rot = list(eye_right.rotation_euler)
 
     eye_left.rotation_mode = 'XYZ'
     eye_right.rotation_mode = 'XYZ'
@@ -898,9 +906,24 @@ class ResetEyeTrackingButton(Operator):
 
     def execute(self, context):
         global eye_left, eye_right, eye_left_data, eye_right_data, eye_left_rot, eye_right_rot
-        eye_left = eye_right = eye_left_data = eye_right_data = None
-        eye_left_rot = eye_right_rot = []
+        
         context.scene.avatar_toolkit.eye_mode = 'CREATION'
+        context.scene.avatar_toolkit.eye_rotation_x = 0
+        context.scene.avatar_toolkit.eye_rotation_y = 0
+        
+        eye_left = None
+        eye_right = None
+        eye_left_data = None
+        eye_right_data = None
+        eye_left_rot = []
+        eye_right_rot = []
+        
+        mesh_name = context.scene.avatar_toolkit.mesh_name_eye
+        mesh = bpy.data.objects.get(mesh_name)
+        if mesh and mesh.data.shape_keys:
+            for shape_key in mesh.data.shape_keys.key_blocks:
+                shape_key.value = 0
+                
         return {'FINISHED'}
 
 def validate_weights(mesh_obj: Object, vertex_group: str) -> bool:
