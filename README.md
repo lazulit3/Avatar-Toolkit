@@ -32,7 +32,7 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/wiki
 
 3) Recommended Setup
 - Download Blender directly from https://blender.org
-- Use Blender 4.3 for the best experience
+- Use Blender 4.4 for the best experience
 
 #### Additional Plugins Requirements.
 Currently None.
