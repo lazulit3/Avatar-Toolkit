@@ -55,6 +55,13 @@ class AvatarToolKit_PT_ToolsPanel(Panel):
         col.separator(factor=0.5)
         col.operator("avatar_toolkit.create_digitigrade", text=t("Tools.create_digitigrade"), icon='BONE_DATA')
         
+        # Standardization Tools
+        standardize_box: UILayout = bone_box.box()
+        col = standardize_box.column(align=True)
+        col.label(text=t("Tools.standardize_title"), icon='OUTLINER_OB_ARMATURE')
+        col.separator(factor=0.5)
+        col.operator("avatar_toolkit.standardize_armature", icon='CHECKMARK')
+
         # Weight Tools
         weight_box: UILayout = bone_box.box()
         col = weight_box.column(align=True)
