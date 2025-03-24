@@ -7,8 +7,6 @@ from bpy.types import Operator, Context
 from bpy_extras.io_utils import ImportHelper
 from typing import Optional, Callable, Dict, List, Union, Set
 from ..common import clear_default_objects
-from .import_pmx import import_pmx
-from .import_pmd import import_pmd
 from ..translations import t
 
 # Configure logging
@@ -122,13 +120,6 @@ import_types: Dict[str, ImportMethod] = {
         method=lambda directory, filepath: bpy.ops.tuxedo.import_mmd_animation(directory=directory, filepath=filepath)
     ),
     "vrm": lambda directory, files, filepath: bpy.ops.import_scene.vrm(filepath=filepath),
-    "pmx": lambda directory, files, filepath: import_pmx(bpy.context, filepath, 
-        scale=1.0,
-        use_mipmap=True,
-        sph_blend_factor=1.0,
-        spa_blend_factor=1.0
-    ),
-    "pmd": lambda directory, files, filepath: import_pmd(filepath),
     "animx": (lambda directory, files, filepath : bpy.ops.avatar_toolkit.animx_importer(directory=directory,files=files,filepath=filepath)),
 }
 
