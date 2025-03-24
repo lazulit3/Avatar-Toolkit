@@ -36,3 +36,10 @@ def update_logging_state(self: Any, context: Context) -> None:
     enabled = self.enable_logging
     save_preference("enable_logging", enabled)
     configure_logging(enabled)
+
+def highlight_problem_bones(self: Any, context: Context) -> None:
+    """Log when problem bones are highlighted"""
+    from .addon_preferences import save_preference
+    enabled = self.highlight_problem_bones
+    save_preference("highlight_problem_bones", enabled)
+    logger.debug(f"Problem bone highlighting {'enabled' if enabled else 'disabled'}")

@@ -498,32 +498,77 @@ acceptable_bone_hierarchy = [
     ('Head', 'Eye_L'),
     ('Head', 'Eye_R'),
     ('Head', 'LeftEye'),
-    ('Head', 'RightEye')
+    ('Head', 'RightEye'),
+        
+    # Unity humanoid naming
+    ('Hips', 'Spine'),
+    ('Spine', 'Chest'),
+    ('Chest', 'UpperChest'),
+    ('UpperChest', 'Neck'),
+    ('Neck', 'Head'),
+    ('Head', 'LeftEye'),
+    ('Head', 'RightEye'),
+    
 ]
 
 acceptable_bone_names = {
-    'hips': ['Hips'],
-    'chest': ['Chest'],
-    'neck': ['Neck'],
-    'head': ['Head'],
-    'eye_l': ['Eye_L', 'LeftEye'],
-    'eye_r': ['Eye_R', 'RightEye'],
-    'shoulder_r': ['Shoulder.R'],
-    'arm_r': ['Arm.R'],
-    'elbow_r': ['Elbow.R'],
-    'wrist_r': ['Wrist.R'],
-    'leg_r': ['Leg.R'],
-    'knee_r': ['Knee.R'],
-    'foot_r': ['Foot.R'],
-    'toes_r': ['Toes.R'],
-    'shoulder_l': ['Shoulder.L'],
-    'arm_l': ['Arm.L'],
-    'elbow_l': ['Elbow.L'],
-    'wrist_l': ['Wrist.L'],
-    'leg_l': ['Leg.L'],
-    'knee_l': ['Knee.L'],
-    'foot_l': ['Foot.L'],
-    'toes_l': ['Toes.L']
+    'hips': ['Hips', 'pelvis', 'root', 'Root', 'ROOT'],
+    'chest': ['Chest', 'spine1', 'Spine1', 'spine_01', 'SPINE1', 'Spine01'],
+    'neck': ['Neck', 'neck_01', 'Neck01'],
+    'head': ['Head', 'head_01', 'Head01'],
+    'eye_l': ['Eye_L', 'LeftEye', 'lefteye', 'eye_left', 'EyeLeft'],
+    'eye_r': ['Eye_R', 'RightEye', 'righteye', 'eye_right', 'EyeRight'],
+    
+    'shoulder_r': ['Shoulder.R', 'clavicle_r', 'ClavicleRight', 'RightShoulder'],
+    'arm_r': ['Arm.R', 'upperarm_r', 'UpperArmRight', 'RightArm'],
+    'elbow_r': ['Elbow.R', 'lowerarm_r', 'ForearmRight', 'RightForeArm'],
+    'wrist_r': ['Wrist.R', 'hand_r', 'HandRight', 'RightHand'],
+    'leg_r': ['Leg.R', 'thigh_r', 'ThighRight', 'RightLeg', 'RightUpLeg'],
+    'knee_r': ['Knee.R', 'calf_r', 'CalfRight', 'RightShin', 'RightLowerLeg'],
+    'foot_r': ['Foot.R', 'foot_r', 'FootRight', 'RightFoot'],
+    'toes_r': ['Toes.R', 'ball_r', 'ToeRight', 'RightToeBase'],
+    
+    'shoulder_l': ['Shoulder.L', 'clavicle_l', 'ClavicleLeft', 'LeftShoulder'],
+    'arm_l': ['Arm.L', 'upperarm_l', 'UpperArmLeft', 'LeftArm'],
+    'elbow_l': ['Elbow.L', 'lowerarm_l', 'ForearmLeft', 'LeftForeArm'],
+    'wrist_l': ['Wrist.L', 'hand_l', 'HandLeft', 'LeftHand'],
+    'leg_l': ['Leg.L', 'thigh_l', 'ThighLeft', 'LeftLeg', 'LeftUpLeg'],
+    'knee_l': ['Knee.L', 'calf_l', 'CalfLeft', 'LeftShin', 'LeftLowerLeg'],
+    'foot_l': ['Foot.L', 'foot_l', 'FootLeft', 'LeftFoot'],
+    'toes_l': ['Toes.L', 'ball_l', 'ToeLeft', 'LeftToeBase'],
+    
+    # Add finger bones for left hand
+    'thumb_0_l': ['Thumb0_L'],
+    'thumb_1_l': ['Thumb1_L'],
+    'thumb_2_l': ['Thumb2_L'],
+    'index_1_l': ['IndexFinger1_L'],
+    'index_2_l': ['IndexFinger2_L'],
+    'index_3_l': ['IndexFinger3_L'],
+    'middle_1_l': ['MiddleFinger1_L'],
+    'middle_2_l': ['MiddleFinger2_L'],
+    'middle_3_l': ['MiddleFinger3_L'],
+    'ring_1_l': ['RingFinger1_L'],
+    'ring_2_l': ['RingFinger2_L'],
+    'ring_3_l': ['RingFinger3_L'],
+    
+    # Add finger bones for right hand
+    'thumb_0_r': ['Thumb0_R', 'ThumbO_R'],
+    'thumb_1_r': ['Thumb1_R'],
+    'thumb_2_r': ['Thumb2_R'],
+    'index_1_r': ['IndexFinger1_R'],
+    'index_2_r': ['IndexFinger2_R'],
+    'index_3_r': ['IndexFinger3_R'],
+    'middle_1_r': ['MiddleFinger1_R'],
+    'middle_2_r': ['MiddleFinger2_R'],
+    'middle_3_r': ['MiddleFinger3_R'],
+    'ring_1_r': ['RingFinger1_R'],
+    'ring_2_r': ['RingFinger2_R'],
+    'ring_3_r': ['RingFinger3_R'],
+    
+    'breast_upper_1_l': ['BreastUpper1_L'],
+    'breast_upper_2_l': ['BreastUpper2_L'],
+    'breast_upper_1_r': ['BreastUpper1_R'],
+    'breast_upper_2_r': ['BreastUpper2_R']
 }
 
 rigify_unity_names = {
