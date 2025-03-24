@@ -278,50 +278,66 @@ def validate_meshes(meshes: List[Object]) -> Tuple[bool, str]:
         return False, t("Optimization.non_mesh_objects")
     return True, ""
 
-def join_mesh_objects(context: Context, meshes: List[Object], progress: Optional[ProgressTracker] = None) -> Optional[Object]:
-    """Combines multiple mesh objects into a single mesh with proper cleanup and UV fixing"""
-    try:
-        # Store UV maps before joining
-        uv_maps_data = {}
-        for mesh in meshes:
-            uv_maps_data[mesh.name] = {uv.name: uv.data.copy() for uv in mesh.data.uv_layers}
+def fast_uv_fix(obj: Object) -> None:
+    """Fast UV coordinate fixing for joined meshes"""
+    if not obj or not obj.data or not obj.data.uv_layers:
+        return
+        
+    current_mode = bpy.context.mode
+    
+    if current_mode != 'EDIT_MESH':
+        bpy.ops.object.mode_set(mode='EDIT')
+        
+    bpy.ops.mesh.select_all(action='SELECT')
+    
+    # Process all UV layers at once
+    bpy.ops.uv.select_all(action='SELECT')
+    bpy.ops.uv.pack_islands(margin=0.001)
+    
+    if current_mode != 'EDIT_MESH':
+        bpy.ops.object.mode_set(mode=current_mode)
 
+def join_mesh_objects(context: Context, meshes: List[Object], progress: Optional[ProgressTracker] = None) -> Optional[Object]:
+    """Combines multiple mesh objects into a single mesh with optimized performance"""
+    try:
+        if not meshes:
+            return None
+            
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
         
-        for mesh in meshes:
+        # Create a list of valid meshes
+        valid_meshes = [mesh for mesh in meshes if mesh.name in bpy.data.objects]
+        if not valid_meshes:
+            return None
+            
+        for mesh in valid_meshes:
             mesh.select_set(True)
         
-        if context.selected_objects:
-            context.view_layer.objects.active = context.selected_objects[0]
+        context.view_layer.objects.active = valid_meshes[0]
+        
+        if progress:
+            progress.step(t("Optimization.joining_meshes"))
             
-            if progress:
-                progress.step(t("Optimization.joining_meshes"))
-            bpy.ops.object.join()
+        bpy.ops.object.join()
+        joined_mesh = context.active_object
+        
+        if progress:
+            progress.step(t("Optimization.applying_transforms"))
             
-            if progress:
-                progress.step(t("Optimization.applying_transforms"))
-            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        
+        if progress:
+            progress.step(t("Optimization.fixing_uvs"))
             
-            if progress:
-                progress.step(t("Optimization.fixing_uvs"))
-            fix_uv_coordinates(context)
-            
-            # Restore UV maps after joining
-            joined_mesh = context.active_object
-            for uv_name, uv_data in uv_maps_data.items():
-                for map_name, map_data in uv_data.items():
-                    if map_name not in joined_mesh.data.uv_layers:
-                        joined_mesh.data.uv_layers.new(name=map_name)
-                    joined_mesh.data.uv_layers[map_name].data.foreach_set("uv", map_data)
-            
-            return context.active_object 
-            
-        return None
+        fast_uv_fix(joined_mesh)
+        
+        return joined_mesh
             
     except Exception as e:
         logger.error(f"Failed to join meshes: {str(e)}")
         return None
+
 
 def fix_uv_coordinates(context: Context) -> None:
     """Normalizes and fixes UV coordinates for the active mesh object"""
