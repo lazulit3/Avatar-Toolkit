@@ -570,6 +570,24 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         default=False
     )
 
+    standardize_fix_names: BoolProperty(
+        name=t("Tools.standardize_fix_names"),
+        description=t("Tools.standardize_fix_names_desc"),
+        default=True
+    )
+
+    standardize_fix_hierarchy: BoolProperty(
+        name=t("Tools.standardize_fix_hierarchy"),
+        description=t("Tools.standardize_fix_hierarchy_desc"),
+        default=True
+    )
+
+    standardize_fix_scale: BoolProperty(
+        name=t("Tools.standardize_fix_scale"),
+        description=t("Tools.standardize_fix_scale_desc"),
+        default=True
+    )
+
 def register() -> None:
     """Register the Avatar Toolkit property group"""
     logger.info("Registering Avatar Toolkit properties")
