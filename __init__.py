@@ -9,13 +9,14 @@ def show_version_error_popup():
         self.layout.label(text="Sorry, this version of Avatar Toolkit does not work on this version of Blender.")
         self.layout.label(text="Please check the GitHub repository for the correct version for your Blender.")
         self.layout.operator("wm.url_open", text="Open GitHub Repository").url = "https://github.com/teamneoneko/Avatar-Toolkit"
-    
+   
     bpy.context.window_manager.popup_menu(draw, title="Avatar Toolkit Version Error", icon='ERROR')
 
 def register():
     # Check Blender version first
+    import bpy
     version = bpy.app.version
-    if version[0] > 4 or (version[0] == 4 and version[1] > 3):
+    if version[0] > 4 or (version[0] == 4 and version[1] >= 5): 
         show_version_error_popup()
         return
     
@@ -35,8 +36,22 @@ def register():
     
     from .core import auto_load
     print("Starting registration")
+    
+    # Make sure to initialize logging first
+    from .core.logging_setup import configure_logging
+    configure_logging(False)
+    
+    # Then initialize the addon
     auto_load.init()
+    
+    # Register classes in proper order
     auto_load.register()
+    
+    # Verify property registration
+    if not hasattr(bpy.types.Scene, "avatar_toolkit"):
+        from .core.properties import register as register_properties
+        register_properties()
+    
     print("Registration complete")
 
 def unregister():
