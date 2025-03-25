@@ -168,6 +168,7 @@
 
     "Tools.label": "Tools",
     "Tools.general_title": "General Tools",
+    "Tools.select_armature": "Select an Armature",
     "Tools.convert_resonite": "Convert to Resonite",
     "Tools.convert_resonite_desc": "Convert model for use in Resonite",
     "Tools.convert_resonite.operation": "Converting to Resonite",

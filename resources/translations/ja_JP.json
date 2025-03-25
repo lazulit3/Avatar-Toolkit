@@ -168,6 +168,7 @@
 
     "Tools.label": "ツール",
     "Tools.general_title": "一般ツール",
+    "Tools.select_armature": "アーマチュアを選択",
     "Tools.convert_resonite": "Resoniteに変換",
     "Tools.convert_resonite_desc": "Resoniteで使用するためにモデルを変換",
     "Tools.convert_resonite.operation": "Resoniteに変換中",

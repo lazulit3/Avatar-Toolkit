@@ -168,6 +168,7 @@
 
     "Tools.label": "도구",
     "Tools.general_title": "일반 도구",
+    "Tools.select_armature": "아마추어 선택",
     "Tools.convert_resonite": "Resonite로 변환",
     "Tools.convert_resonite_desc": "Resonite에서 사용하기 위해 모델 변환",
     "Tools.convert_resonite.operation": "Resonite로 변환 중",
