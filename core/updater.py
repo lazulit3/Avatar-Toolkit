@@ -17,11 +17,17 @@ from typing import Dict, List, Tuple, Optional, Set, Any
 
 GITHUB_REPO = "teamneoneko/Avatar-Toolkit"
 
+# Define which version series this installation can update to
+# For example: ["0.1"] means only look for 0.1.x updates
+# ["0.2", "0.3"] would look for both 0.2.x and 0.3.x updates
+ALLOWED_VERSION_SERIES = ["0.1"]  # Change this based on which version you're building
+
 is_checking_for_update: bool = False
 update_needed: bool = False
 latest_version: Optional[str] = None
 latest_version_str: str = ''
 version_list: Optional[Dict[str, List[str]]] = None
+last_manual_check_time: float = 0
 
 main_dir: str = os.path.dirname(os.path.dirname(__file__))
 downloads_dir: str = os.path.join(main_dir, "downloads")
@@ -34,7 +40,9 @@ class AvatarToolkit_OT_CheckForUpdate(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     def execute(self, context: bpy.types.Context) -> Set[str]:
+        global last_manual_check_time
         check_for_update_background()
+        last_manual_check_time = time.time()  # Reset the timer on manual check
         return {'FINISHED'}
 
 
@@ -80,7 +88,16 @@ class AvatarToolkit_PT_UpdaterPanel(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context: bpy.types.Context) -> None:
+        global last_manual_check_time
         layout = self.layout
+        
+        # Auto-check for updates when panel is drawn, but not too frequently
+        current_time = time.time()
+        if current_time - last_manual_check_time > 300:  # 5 minutes between auto-checks
+            if not is_checking_for_update and not update_needed:
+                check_for_update_background()
+                last_manual_check_time = current_time
+            
         draw_updater_panel(context, layout)
 
 
@@ -158,11 +175,23 @@ def get_github_releases() -> bool:
     return True
 
 def check_for_update_available() -> bool:
-    global latest_version, latest_version_str
+    global latest_version, latest_version_str, version_list
     if not version_list:
         return False
 
-    latest_version = max(version_list.keys(), key=lambda v: [int(x) for x in v.split('.')])
+    # Filter versions by allowed version series
+    compatible_versions = {}
+    for v, info in version_list.items():
+        for prefix in ALLOWED_VERSION_SERIES:
+            if v.startswith(prefix):
+                compatible_versions[v] = info
+                break
+    
+    if not compatible_versions:
+        print(f"No compatible versions found in series: {', '.join(ALLOWED_VERSION_SERIES)}")
+        return False
+    
+    latest_version = max(compatible_versions.keys(), key=lambda v: [int(x) for x in v.split('.')])
     latest_version_str = latest_version
 
     current_version = get_current_version()
@@ -195,11 +224,37 @@ def update_now(latest: bool = False) -> None:
     if not version_list:
         print("No version list available. Please check for updates first.")
         return
-        
+    
     if latest:
-        update_link = version_list[latest_version_str][0]
+        # Filter compatible versions
+        compatible_versions = {}
+        for v, info in version_list.items():
+            for prefix in ALLOWED_VERSION_SERIES:
+                if v.startswith(prefix):
+                    compatible_versions[v] = info
+                    break
+        
+        if not compatible_versions:
+            print(f"No compatible versions found in series: {', '.join(ALLOWED_VERSION_SERIES)}")
+            return
+        
+        latest_compatible = max(compatible_versions.keys(), key=lambda v: [int(x) for x in v.split('.')])
+        update_link = version_list[latest_compatible][0]
     else:
-        update_link = version_list[bpy.context.scene.avatar_toolkit_updater_version_list][0]
+        selected_version = bpy.context.scene.avatar_toolkit_updater_version_list
+        
+        # Check if selected version is compatible
+        is_compatible = False
+        for prefix in ALLOWED_VERSION_SERIES:
+            if selected_version.startswith(prefix):
+                is_compatible = True
+                break
+                
+        if not is_compatible:
+            print(f"Selected version {selected_version} is not in allowed series: {', '.join(ALLOWED_VERSION_SERIES)}")
+            return
+        
+        update_link = version_list[selected_version][0]
 
     download_file(update_link)
     ui_refresh()
@@ -274,7 +329,17 @@ def finish_update(error: str = '') -> None:
     ui_refresh()
 
 def get_version_list(self, context: bpy.types.Context) -> List[Tuple[str, str, str]]:
-    return [(v, v, '') for v in version_list.keys()] if version_list else []
+    if not version_list:
+        return []
+    
+    compatible_versions = []
+    for v in version_list.keys():
+        for prefix in ALLOWED_VERSION_SERIES:
+            if v.startswith(prefix):
+                compatible_versions.append(v)
+                break
+    
+    return [(v, v, '') for v in compatible_versions]
 
 def draw_updater_panel(context: bpy.types.Context, layout: bpy.types.UILayout) -> None:
     box = layout.box()
@@ -284,6 +349,12 @@ def draw_updater_panel(context: bpy.types.Context, layout: bpy.types.UILayout) -
     row = col.row()
     row.scale_y = 1.2
     row.label(text=t('Updater.label'), icon='DOWNARROW_HLT')
+    
+    col.separator()
+    
+    # Show compatibility info
+    col.label(text=f"Update series: {', '.join(s + '.x' for s in ALLOWED_VERSION_SERIES)}", icon='INFO')
+    col.label(text=f"Blender version: {bpy.app.version_string}", icon='BLENDER')
     
     col.separator()
     
