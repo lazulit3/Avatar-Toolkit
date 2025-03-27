@@ -138,9 +138,8 @@ def iter_deps_from_parent_id(cls: Type, my_classes_by_idname: Dict[str, Type]) -
 
 def get_dependency_from_annotation(value: Any) -> Optional[Type]:
     """Get dependency type from a type annotation"""
-    if isinstance(value, tuple) and len(value) == 2:
-        if value[0] in (bpy.props.PointerProperty, bpy.props.CollectionProperty):
-            return value[1]["type"]
+    if isinstance(value, bpy.props._PropertyDeferred):
+        return value.keywords.get("type")
     return None
 
 def iter_classes_to_register(modules: List[Any]) -> Generator[Type, None, None]:
