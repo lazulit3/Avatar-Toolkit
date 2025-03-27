@@ -1,6 +1,5 @@
 import os
 import bpy
-import sys
 import typing
 import inspect
 import pkgutil
@@ -24,7 +23,6 @@ def init() -> None:
     global modules
     global ordered_classes
 
-    # Configure logging first
     from .logging_setup import configure_logging
     configure_logging(False)
     
@@ -32,7 +30,10 @@ def init() -> None:
     configure_logging(get_preference("enable_logging", False))
 
     print("Auto-load init starting")
-    modules = get_all_submodules(Path(__file__).parent.parent)
+    
+    package_name = __package__.rsplit('.', 1)[0]
+    directory = Path(__file__).parent.parent
+    modules = get_all_submodules(directory, package_name)
     ordered_classes = get_ordered_classes_to_register(modules)
     print(f"Found modules: {modules}")
     print(f"Found classes: {ordered_classes}")
@@ -78,93 +79,29 @@ def unregister() -> None:
         if hasattr(module, "unregister"):
             module.unregister()
 
-def get_manifest_id() -> str:
-    """Get the addon ID from the manifest file"""
-    manifest_path = Path(__file__).parent.parent / "blender_manifest.toml"
-    with open(manifest_path, "rb") as f:
-        manifest = tomllib.load(f)
-    return manifest["id"]
-
-def get_all_submodules(directory: Path) -> List[Any]:
+def get_all_submodules(directory: Path, package_name: str) -> List[Any]:
     """Discover and import all submodules in the given directory"""
-    modules = []
-    
-    addon_folder_name = directory.name
-    
-    # Add the parent directory to sys.path so Python can find our module
-    parent_dir = str(directory.parent)
-    if parent_dir not in sys.path:
-        sys.path.append(parent_dir)
-        print(f"Added {parent_dir} to sys.path")
-    
-    # Try to detect if we're in the default Blender extension path
-    is_default_path = False
-    try:
-        import bl_ext.user_default
-        is_default_path = True
-        print("Detected default Blender extension path")
-    except ImportError:
-        print("Using custom installation path")
-    
-    for root, dirs, files in os.walk(directory):
-        if "__pycache__" in root:
-            continue
-        
-        path = Path(root)
-        
-        if path == directory:
-            if is_default_path:
-                package_name = f"bl_ext.user_default.{addon_folder_name}"
-            else:
-                package_name = addon_folder_name
-        else:
-            relative_path = path.relative_to(directory).as_posix().replace('/', '.')
-            if is_default_path:
-                package_name = f"bl_ext.user_default.{addon_folder_name}.{relative_path}"
-            else:
-                package_name = f"{addon_folder_name}.{relative_path}"
-        
-        for name in sorted(iter_module_names(path)):
-            if is_default_path:
-                try:
-                    # First try the default Blender extension path
-                    module = importlib.import_module(f"{package_name}.{name}")
-                    modules.append(module)
-                    print(f"Successfully imported {name} from {package_name}")
-                except ImportError as e:
-                    # Fall back to direct import
-                    try:
-                        direct_package = f"{addon_folder_name}.{relative_path}" if path != directory else addon_folder_name
-                        module = importlib.import_module(f"{direct_package}.{name}")
-                        modules.append(module)
-                        print(f"Successfully imported {name} from {direct_package} (fallback)")
-                    except ImportError as e2:
-                        print(f"Error importing {name}: {e} / {e2}")
-            else:
-                # For custom path, just use direct import
-                try:
-                    module = importlib.import_module(f"{package_name}.{name}")
-                    modules.append(module)
-                    print(f"Successfully imported {name} from {package_name}")
-                except ImportError as e:
-                    print(f"Error importing {name} from {package_name}: {e}")
-    
-    return modules
+    return list(iter_submodules(directory, package_name))
 
-def iter_submodules(path: Path, package_name: str) -> Generator[Any, None, None]:
+def iter_submodules(directory: Path, package_name: str) -> Generator[Any, None, None]:
     """Iterate through submodules in a package"""
-    for name in sorted(iter_module_names(path)):
-        yield importlib.import_module("." + name, package_name)
+    for name in sorted(iter_submodule_names(directory)):
+        try:
+            yield importlib.import_module("." + name, package_name)
+            print(f"Successfully imported {name} from {package_name}")
+        except ImportError as e:
+            print(f"Error importing {name} from {package_name}: {e}")
 
-def iter_module_names(path: Path) -> Generator[str, None, None]:
+def iter_submodule_names(path: Path, root: str = "") -> Generator[str, None, None]:
     """Iterate through module names in a directory"""
     print(f"Scanning path: {path}")
-    modules_list = list(pkgutil.iter_modules([str(path)]))
-    print(f"Found these modules: {modules_list}")
-    for _, module_name, is_pkg in modules_list:
-        if not is_pkg:
-            print(f"Found module: {module_name}")
-            yield module_name
+    for _, module_name, is_package in pkgutil.iter_modules([str(path)]):
+        if is_package:
+            sub_path = path / module_name
+            sub_root = root + module_name + "."
+            yield from iter_submodule_names(sub_path, sub_root)
+        else:
+            yield root + module_name
 
 def get_ordered_classes_to_register(modules: List[Any]) -> List[Type]:
     """Get a topologically sorted list of classes to register"""
@@ -172,28 +109,44 @@ def get_ordered_classes_to_register(modules: List[Any]) -> List[Type]:
 
 def get_register_deps_dict(modules: List[Any]) -> Dict[Type, Set[Type]]:
     """Get dependencies dictionary for class registration"""
+    my_classes = set(iter_classes_to_register(modules))
+    my_classes_by_idname = {cls.bl_idname: cls for cls in my_classes if hasattr(cls, "bl_idname")}
+    
     deps_dict = {}
-    classes_to_register = set(iter_classes_to_register(modules))
-    for cls in classes_to_register:
-        deps_dict[cls] = set(iter_own_register_deps(cls, classes_to_register))
+    for cls in my_classes:
+        deps_dict[cls] = set()
+        deps_dict[cls].update(iter_deps_from_annotations(cls, my_classes))
+        deps_dict[cls].update(iter_deps_from_parent_id(cls, my_classes_by_idname))
+    
     return deps_dict
 
-def iter_own_register_deps(cls: Type, classes_to_register: Set[Type]) -> Generator[Type, None, None]:
-    """Iterate through a class's own registration dependencies"""
-    yield from (dep for dep in iter_register_deps(cls) if dep in classes_to_register)
-
-def iter_register_deps(cls: Type) -> Generator[Type, None, None]:
-    """Iterate through all registration dependencies of a class"""
+def iter_deps_from_annotations(cls: Type, my_classes: Set[Type]) -> Generator[Type, None, None]:
+    """Iterate through dependencies from class annotations"""
     for value in typing.get_type_hints(cls, {}, {}).values():
         dependency = get_dependency_from_annotation(value)
-        if dependency is not None:
+        if dependency is not None and dependency in my_classes:
             yield dependency
+
+def iter_deps_from_parent_id(cls: Type, my_classes_by_idname: Dict[str, Type]) -> Generator[Type, None, None]:
+    """Iterate through dependencies from panel parent IDs"""
+    if bpy.types.Panel in cls.__bases__:
+        parent_idname = getattr(cls, "bl_parent_id", None)
+        if parent_idname is not None:
+            parent_cls = my_classes_by_idname.get(parent_idname)
+            if parent_cls is not None:
+                yield parent_cls
 
 def get_dependency_from_annotation(value: Any) -> Optional[Type]:
     """Get dependency type from a type annotation"""
-    if isinstance(value, tuple) and len(value) == 2:
-        if value[0] in (bpy.props.PointerProperty, bpy.props.CollectionProperty):
-            return value[1]["type"]
+    blender_version = bpy.app.version
+    
+    if blender_version >= (2, 93):
+        if isinstance(value, bpy.props._PropertyDeferred):
+            return value.keywords.get("type")
+    else:
+        if isinstance(value, tuple) and len(value) == 2:
+            if value[0] in (bpy.props.PointerProperty, bpy.props.CollectionProperty):
+                return value[1]["type"]
     return None
 
 def iter_classes_to_register(modules: List[Any]) -> Generator[Type, None, None]:
@@ -224,7 +177,8 @@ def get_register_base_types() -> Set[Type]:
         "Panel", "Operator", "PropertyGroup",
         "AddonPreferences", "Header", "Menu",
         "Node", "NodeSocket", "NodeTree",
-        "UIList", "RenderEngine"
+        "UIList", "RenderEngine",
+        "Gizmo", "GizmoGroup",
     ])
 
 def toposort(deps_dict: Dict[Type, Set[Type]]) -> List[Type]:
@@ -232,25 +186,15 @@ def toposort(deps_dict: Dict[Type, Set[Type]]) -> List[Type]:
     sorted_list = []
     sorted_values = set()
     
-    panels_to_sort = [(value, deps) for value, deps in deps_dict.items() 
-                      if hasattr(value, 'bl_parent_id')]
-    
-    base_panels = [(value, deps) for value, deps in deps_dict.items() 
-                   if not hasattr(value, 'bl_parent_id')]
-    
-    for value, deps in base_panels:
-        if len(deps) == 0:
-            sorted_list.append(value)
-            sorted_values.add(value)
-    
-    while len(deps_dict) > len(sorted_values):
+    while len(deps_dict) > 0:
         unsorted = []
         for value, deps in deps_dict.items():
-            if value not in sorted_values:
-                if len(deps - sorted_values) == 0:
-                    sorted_list.append(value)
-                    sorted_values.add(value)
-                else:
-                    unsorted.append(value)
+            if len(deps) == 0:
+                sorted_list.append(value)
+                sorted_values.add(value)
+            else:
+                unsorted.append(value)
+        
+        deps_dict = {value: deps_dict[value] - sorted_values for value in unsorted}
     
     return sorted_list
