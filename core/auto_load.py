@@ -39,7 +39,14 @@ def init() -> None:
 
 def register() -> None:
     """Register all discovered classes and modules"""
+    global modules, ordered_classes
+    
     print("Registering classes")
+    
+    if not ordered_classes:
+        print("Warning: No classes to register")
+        ordered_classes = []
+    
     for cls in ordered_classes:
         print(f"Registering: {cls}")
         try:
@@ -47,6 +54,10 @@ def register() -> None:
         except ValueError:
             continue
 
+    if not modules:
+        print("Warning: No modules to register")
+        modules = []
+        
     for module in modules:
         if module.__name__ == __name__:
             continue
@@ -77,18 +88,67 @@ def get_manifest_id() -> str:
 def get_all_submodules(directory: Path) -> List[Any]:
     """Discover and import all submodules in the given directory"""
     modules = []
-    addon_id = get_manifest_id()
+    
+    addon_folder_name = directory.name
+    
+    # Add the parent directory to sys.path so Python can find our module
+    parent_dir = str(directory.parent)
+    if parent_dir not in sys.path:
+        sys.path.append(parent_dir)
+        print(f"Added {parent_dir} to sys.path")
+    
+    # Try to detect if we're in the default Blender extension path
+    is_default_path = False
+    try:
+        import bl_ext.user_default
+        is_default_path = True
+        print("Detected default Blender extension path")
+    except ImportError:
+        print("Using custom installation path")
+    
     for root, dirs, files in os.walk(directory):
         if "__pycache__" in root:
             continue
+        
         path = Path(root)
+        
         if path == directory:
-            package_name = f"bl_ext.user_default.{addon_id}"
+            if is_default_path:
+                package_name = f"bl_ext.user_default.{addon_folder_name}"
+            else:
+                package_name = addon_folder_name
         else:
             relative_path = path.relative_to(directory).as_posix().replace('/', '.')
-            package_name = f"bl_ext.user_default.{addon_id}.{relative_path}"
+            if is_default_path:
+                package_name = f"bl_ext.user_default.{addon_folder_name}.{relative_path}"
+            else:
+                package_name = f"{addon_folder_name}.{relative_path}"
+        
         for name in sorted(iter_module_names(path)):
-            modules.append(importlib.import_module(f".{name}", package_name))
+            if is_default_path:
+                try:
+                    # First try the default Blender extension path
+                    module = importlib.import_module(f"{package_name}.{name}")
+                    modules.append(module)
+                    print(f"Successfully imported {name} from {package_name}")
+                except ImportError as e:
+                    # Fall back to direct import
+                    try:
+                        direct_package = f"{addon_folder_name}.{relative_path}" if path != directory else addon_folder_name
+                        module = importlib.import_module(f"{direct_package}.{name}")
+                        modules.append(module)
+                        print(f"Successfully imported {name} from {direct_package} (fallback)")
+                    except ImportError as e2:
+                        print(f"Error importing {name}: {e} / {e2}")
+            else:
+                # For custom path, just use direct import
+                try:
+                    module = importlib.import_module(f"{package_name}.{name}")
+                    modules.append(module)
+                    print(f"Successfully imported {name} from {package_name}")
+                except ImportError as e:
+                    print(f"Error importing {name} from {package_name}: {e}")
+    
     return modules
 
 def iter_submodules(path: Path, package_name: str) -> Generator[Any, None, None]:
