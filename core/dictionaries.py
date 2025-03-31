@@ -1,8 +1,8 @@
 # GPL Licence
 
-
 # Bone names from https://github.com/triazo/immersive_scaler/
-# Note from @989onan: Please make sure to make your names are lowercase in this array. I banged my head metaphorically till I figured that out...
+# Note from @989onan: Please make sure to make your names are lowercase in this array, or it will never find a match. I banged my head metaphorically till I figured that out...
+# Note2: Remove all "_", ".", and " " (space) from your values array or it will also not ever find a match!!!!
 # Taken from Tuxedo/Cats
 bone_names = {
     # Right side bones
@@ -254,26 +254,26 @@ bone_names = {
 
 # Add VRM bone name variations
 bone_names.update({
-    'hips': bone_names['hips'] + ['j_bip_c_hips', 'j_hips', 'vrm_hips'],
-    'spine': bone_names['spine'] + ['j_bip_c_spine', 'j_spine', 'vrm_spine'],
-    'chest': bone_names['chest'] + ['j_bip_c_chest', 'j_chest', 'vrm_chest'],
-    'upper_chest': bone_names['upper_chest'] + ['j_bip_c_upper_chest', 'j_upper_chest', 'vrm_upperchest'],
-    'neck': bone_names['neck'] + ['j_bip_c_neck', 'j_neck', 'vrm_neck'],
-    'head': bone_names['head'] + ['j_bip_c_head', 'j_head', 'vrm_head'],
+    'hips': bone_names['hips'] + ['jbipchips', 'jhips', 'vrmhips'],
+    'spine': bone_names['spine'] + ['jbipcspine', 'jspine', 'vrmspine'],
+    'chest': bone_names['chest'] + ['jbipcchest', 'jchest', 'vrmchest'],
+    'upper_chest': bone_names['upperchest'] + ['jbipcupperchest', 'jupperchest', 'vrmupperchest'],
+    'neck': bone_names['neck'] + ['jbipcneck', 'jneck', 'vrmneck'],
+    'head': bone_names['head'] + ['jbipchead', 'jhead', 'vrmhead'],
     
     # VRM specific finger naming
-    'thumb_0_l': bone_names['thumb_0_l'] + ['thumb_metacarpal_l', 'j_thumb1_l'],
-    'index_0_l': bone_names['index_0_l'] + ['index_metacarpal_l', 'j_index1_l'],
-    'middle_0_l': bone_names['middle_0_l'] + ['middle_metacarpal_l', 'j_middle1_l'],
-    'ring_0_l': bone_names['ring_0_l'] + ['ring_metacarpal_l', 'j_ring1_l'],
-    'pinkie_0_l': bone_names['pinkie_0_l'] + ['little_metacarpal_l', 'j_little1_l'],
+    'thumb_0_l': bone_names['thumb_0_l'] + ['thumbmetacarpall', 'jthumb1l'],
+    'index_0_l': bone_names['index_0_l'] + ['indexmetacarpall', 'jindex1l'],
+    'middle_0_l': bone_names['middle_0_l'] + ['middlemetacarpall', 'jmiddle1l'],
+    'ring_0_l': bone_names['ring_0_l'] + ['ringmetacarpall', 'jring1l'],
+    'pinkie_0_l': bone_names['pinkie_0_l'] + ['littlemetacarpall', 'jlittle1l'],
     
     # Mirror for right side
-    'thumb_0_r': bone_names['thumb_0_r'] + ['thumb_metacarpal_r', 'j_thumb1_r'],
-    'index_0_r': bone_names['index_0_r'] + ['index_metacarpal_r', 'j_index1_r'],
-    'middle_0_r': bone_names['middle_0_r'] + ['middle_metacarpal_r', 'j_middle1_r'],
-    'ring_0_r': bone_names['ring_0_r'] + ['ring_metacarpal_r', 'j_ring1_r'],
-    'pinkie_0_r': bone_names['pinkie_0_r'] + ['little_metacarpal_r', 'j_little1_r']
+    'thumb_0_r': bone_names['thumb_0_r'] + ['thumbmetacarpalr', 'jthumb1r'],
+    'index_0_r': bone_names['index_0_r'] + ['indexmetacarpalr', 'jindex1r'],
+    'middle_0_r': bone_names['middle_0_r'] + ['middlemetacarpalr', 'jmiddle1r'],
+    'ring_0_r': bone_names['ring_0_r'] + ['ringmetacarpalr', 'jring1r'],
+    'pinkie_0_r': bone_names['pinkie_0_r'] + ['littlemetacarpalr', 'jlittle1r']
 })
 
 # array taken from cats
@@ -354,3 +354,13 @@ resonite_translations = {
     'thumb_2_r': "thumb2.R",
     'thumb_3_r': "thumb3.R"
 }
+
+
+# Create reverse lookup dictionary (conversion/translation)
+reverse_bone_lookup = {}
+for preferred_name, name_list in bone_names.items():
+    for name in name_list:
+        reverse_bone_lookup[name] = preferred_name
+
+
+
