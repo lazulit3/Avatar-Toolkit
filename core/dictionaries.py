@@ -5,7 +5,9 @@
 # Note2: Remove all "_", ".", and " " (space) from your values array or it will also not ever find a match!!!!
 # Taken from Tuxedo/Cats
 
-from .common import simplify_bonename
+def simplify_bonename(name: str) -> str:
+    """Simplify bone name by removing spaces, underscores, dots and converting to lowercase"""
+    return name.lower().translate(dict.fromkeys(map(ord, u" _.")))
 
 bone_names = {
     # Right side bones
