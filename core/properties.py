@@ -592,46 +592,7 @@ def register() -> None:
     """Register the Avatar Toolkit property group"""
     logger.info("Registering Avatar Toolkit properties")
     
-    # Clear any existing registrations to prevent conflicts
-    if hasattr(bpy.types.Scene, "avatar_toolkit"):
-        try:
-            del bpy.types.Scene.avatar_toolkit
-        except:
-            logger.warning("Failed to remove existing avatar_toolkit property")
-    
-    # Register classes
-    try:
-        # Try to register all classes at once
-        bpy.utils.register_class(ZeroWeightBoneItem)
-        bpy.utils.register_class(ValidationMessageItem)
-        bpy.utils.register_class(AvatarToolkitSceneProperties)
-    except ValueError as e:
-        logger.warning(f"Class registration issue: {e}")
-        # Try to unregister first in case they're already registered
-        try:
-            # Try to unregister in reverse order
-            try:
-                bpy.utils.unregister_class(AvatarToolkitSceneProperties)
-            except:
-                pass
-            try:
-                bpy.utils.unregister_class(ValidationMessageItem)
-            except:
-                pass
-            try:
-                bpy.utils.unregister_class(ZeroWeightBoneItem)
-            except:
-                pass
-                
-            # Then register again
-            bpy.utils.register_class(ZeroWeightBoneItem)
-            bpy.utils.register_class(ValidationMessageItem)
-            bpy.utils.register_class(AvatarToolkitSceneProperties)
-        except Exception as e:
-            logger.error(f"Failed to recover from registration error: {e}")
-            raise
-    
-    # Register the property
+    # Only register the property, not the classes (auto_load will handle that)
     bpy.types.Scene.avatar_toolkit = PointerProperty(type=AvatarToolkitSceneProperties)
     logger.debug("Properties registered successfully")
 
@@ -640,20 +601,11 @@ def unregister() -> None:
     """Unregister the Avatar Toolkit property group"""
     logger.info("Unregistering Avatar Toolkit properties")
     
-    # Remove the property first
+    # Remove the property
     if hasattr(bpy.types.Scene, "avatar_toolkit"):
         try:
             del bpy.types.Scene.avatar_toolkit
             logger.debug("Removed avatar_toolkit property")
         except Exception as e:
             logger.warning(f"Failed to remove avatar_toolkit property: {e}")
-    
-    # Then unregister the classes
-    try:
-        bpy.utils.unregister_class(AvatarToolkitSceneProperties)
-        bpy.utils.unregister_class(ValidationMessageItem)
-        bpy.utils.unregister_class(ZeroWeightBoneItem)
-        logger.debug("Unregistered property classes")
-    except (RuntimeError, ValueError) as e:
-        logger.warning(f"Error during property class unregistration: {e}")
         # Not fatal - continue

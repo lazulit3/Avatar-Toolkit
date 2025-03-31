@@ -280,6 +280,17 @@ class AvatarToolKit_OT_AtlasMaterials(Operator):
                                 mesh.materials[i] = atlased_mat.material
                         progress.step(f"Updated materials for {obj.name}")
 
+            MaterialListBool.old_list.pop(context.scene.name, None)
+            was_open = context.scene.avatar_toolkit.texture_atlas_Has_Mat_List_Shown
+            context.scene.avatar_toolkit.texture_atlas_Has_Mat_List_Shown = False
+
+            if was_open:
+                bpy.ops.avatar_toolkit.expand_section_materials()
+            
+            for area in context.screen.areas:
+                if area.type == 'VIEW_3D':
+                    area.tag_redraw()
+
             logger.info("Material atlas creation completed successfully")
             self.report({'INFO'}, t("TextureAtlas.atlas_completed"))
             return {"FINISHED"}
