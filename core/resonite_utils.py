@@ -3,15 +3,16 @@ import bpy
 import bpy_extras
 from numpy import double
 from typing import Set, Dict
+import re
 
-from .common import get_active_armature, simplify_bonename, ProgressTracker
+from .common import get_active_armature, simplify_bonename, validate_armature, ProgressTracker, identify_bones
 from bpy.types import Context, Operator
 from ..core.translations import t
 from ..core.dictionaries import bone_names, resonite_translations
 from ..core.logging_setup import logger
 from ..core.armature_validation import validate_armature
 
-import re
+
 from .resonite_loader import resonite_animx, resonite_types
 import os
 
@@ -65,30 +66,21 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
         untranslated_bones: Set[str] = set()
         simplified_names: Dict[str, str] = {}
 
-        # Create reverse lookup dictionary
-        reverse_bone_lookup = {}
-        for preferred_name, name_list in bone_names.items():
-            for name in name_list:
-                reverse_bone_lookup[name] = preferred_name
-
         try:
             context.view_layer.objects.active = armature
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.object.mode_set(mode='OBJECT')
-
+            arm_data: bpy.types.Armature = armature.data
             # Cache simplified bone names
-            for bone in armature.data.bones:
-                simplified_names[bone.name] = simplify_bonename(bone.name)
+            for bone in arm_data.bones:
+                bone.name = re.compile(re.escape("<noik>"), re.IGNORECASE).sub("", bone.name)
 
-            total_bones = len(armature.data.bones)
+            total_bones = len(arm_data.bones)
             with ProgressTracker(context, total_bones, t("Tools.convert_resonite.operation")) as progress:
-                for bone in armature.data.bones:
-                    # Remove any existing "<noik>" tags
-                    bone.name = re.compile(re.escape("<noik>"), re.IGNORECASE).sub("", bone.name)
-                    simplified_name = simplified_names[bone.name]
+                for key_simple,bone_name in identify_bones(arm_data,context).items():
 
-                    if simplified_name in reverse_bone_lookup and reverse_bone_lookup[simplified_name] in resonite_translations:
-                        new_name = resonite_translations[reverse_bone_lookup[simplified_name]]
+                    if key_simple in resonite_translations:
+                        new_name = resonite_translations[key_simple]
                         logger.debug(f"Translating bone: {bone.name} -> {new_name}")
                         bone.name = new_name
                     else:

@@ -18,6 +18,7 @@ from bpy.utils import register_class
 from ..core.logging_setup import logger
 from ..core.translations import t
 from ..core.dictionaries import bone_names
+from .dictionaries import reverse_bone_lookup, bone_names
 
 class SceneMatClass(PropertyGroup):
     mat: PointerProperty(type=Material)
@@ -385,6 +386,19 @@ def clear_unused_data_blocks() -> int:
 def simplify_bonename(name: str) -> str:
     """Simplify bone name by removing spaces, underscores, dots and converting to lowercase"""
     return name.lower().translate(dict.fromkeys(map(ord, u" _.")))
+
+
+def identify_bones(arm_data: bpy.types.Armature, context: bpy.types.Context) -> Dict[str,str]:
+    """Identify bone names in an armature based on our reverse dictionary, so there is no confusion to what a bone is.
+    Essentially makes a dictionary of keys from dictionaries.bone_names like "hips", and the corosponding value is the bone that can be mapped to that key."""
+    returned: Dict[str,str] = {}
+    for bone in arm_data.bones:
+        
+        simplified_name = simplify_bonename(bone.name)
+
+        if simplified_name in reverse_bone_lookup:
+            returned[reverse_bone_lookup[simplified_name]] = bone.name
+    return returned
 
 def duplicate_bone_chain(bones: List[EditBone]) -> List[EditBone]:
     """Duplicate a chain of bones while preserving hierarchy"""
