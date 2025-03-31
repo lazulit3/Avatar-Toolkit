@@ -218,7 +218,7 @@ class AvatarToolKit_OT_AtlasMaterials(Operator):
                         canvas.save(filepath=os.path.join(save_dir, new_image_name+".png"))
                     except Exception as save_error:
                         logger.error(f"Failed to save atlas texture: {str(save_error)}")
-                        self.report({'WARNING'}, f"Could not save texture to disk. Atlas will work in memory only.")
+                        self.report({'WARNING'}, f"Could not save texture to disk, This may be due to a lack of permissions.")
                     
                     setattr(atlased_mat, type_name, canvas)
                     progress.step(f"Created {type_name} atlas")
