@@ -4,6 +4,9 @@
 # Note from @989onan: Please make sure to make your names are lowercase in this array, or it will never find a match. I banged my head metaphorically till I figured that out...
 # Note2: Remove all "_", ".", and " " (space) from your values array or it will also not ever find a match!!!!
 # Taken from Tuxedo/Cats
+
+from .common import simplify_bonename
+
 bone_names = {
     # Right side bones
     "right_shoulder": [
@@ -354,11 +357,6 @@ resonite_translations = {
     'thumb_2_r': "thumb2.R",
     'thumb_3_r': "thumb3.R"
 }
-# Create reverse lookup dictionary (conversion/translation)
-reverse_bone_lookup = {}
-for preferred_name, name_list in bone_names.items():
-    for name in name_list:
-        reverse_bone_lookup[name] = preferred_name
 
 
 
@@ -948,3 +946,15 @@ for category, mappings in non_standard_mappings.items():
         bone_names[category].extend(mappings)
     else:
         bone_names[category] = mappings
+
+
+# Since data set is very poisoned by bone names that aren't simplified (And as such will not map properly using the function) we will just force convert them to the proper format at the end here. - @989onan
+for standard, mappings in bone_names:
+    for i in len(mappings):
+        bone_names[standard][i] = simplify_bonename(mappings[i])
+
+# Create reverse lookup dictionary (conversion/translation)
+reverse_bone_lookup = {}
+for preferred_name, name_list in bone_names.items():
+    for name in name_list:
+        reverse_bone_lookup[name] = preferred_name
