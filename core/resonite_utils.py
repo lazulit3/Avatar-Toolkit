@@ -10,6 +10,7 @@ from bpy.types import Context, Operator
 from ..core.translations import t
 from ..core.dictionaries import bone_names, resonite_translations
 from ..core.logging_setup import logger
+from ..core.armature_validation import validate_armature
 
 
 from .resonite_loader import resonite_animx, resonite_types
@@ -51,7 +52,7 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        is_valid, _ = validate_armature(armature)
+        is_valid, _, _ = validate_armature(armature)
         return is_valid
 
     def execute(self, context: Context) -> Set[str]:

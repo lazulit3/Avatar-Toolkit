@@ -9,10 +9,10 @@ from ..core.logging_setup import logger
 from ..core.translations import t
 from ..core.common import (
     get_active_armature,
-    validate_armature,
     get_all_meshes,
     validate_mesh_for_pose
 )
+from ..core.armature_validation import validate_armature
 
 class VisemeCache:
     """Manages caching of generated viseme shape data for performance optimization"""
@@ -35,6 +35,7 @@ class VisemePreview:
     _preview_data: Dict[str, float] = {}
     _active: bool = False
     _preview_shapes: Optional[OrderedDict] = None
+    _mesh_name: str = "" 
     
     @classmethod
     def start_preview(cls, context: Context, mesh: Object, shapes: List[str]) -> bool:
@@ -43,6 +44,7 @@ class VisemePreview:
             
         cls._active = True
         cls._preview_data = {}
+        cls._mesh_name = mesh.name 
         
         # Store original values
         for shape_key in mesh.data.shape_keys.key_blocks:
@@ -79,7 +81,11 @@ class VisemePreview:
         if not cls._active or not cls._preview_shapes:
             return
             
-        mesh = context.active_object
+        # Get the mesh by name instead of using active object
+        mesh = bpy.data.objects.get(cls._mesh_name)
+        if not mesh:
+            return
+            
         props = context.scene.avatar_toolkit
         viseme_data = cls._preview_shapes.get(props.viseme_preview_selection)
         if viseme_data:
@@ -116,6 +122,7 @@ class VisemePreview:
         cls._active = False
         cls._preview_data.clear()
         cls._preview_shapes = None
+        cls._mesh_name = ""
 
 class ATOOLKIT_OT_preview_visemes(Operator):
     """Operator for previewing viseme shapes in real-time"""
@@ -126,7 +133,6 @@ class ATOOLKIT_OT_preview_visemes(Operator):
     
     @classmethod
     def poll(cls, context: Context) -> bool:
-        # Check if we're in object mode
         if context.mode != 'OBJECT':
             return False
             
@@ -138,19 +144,18 @@ class ATOOLKIT_OT_preview_visemes(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        valid, _ = validate_armature(armature)
+        valid, _, _ = validate_armature(armature)
         return valid and mesh_obj and mesh_obj.type == 'MESH'
-
     
     def execute(self, context: Context) -> Set[str]:
         props = context.scene.avatar_toolkit
-        mesh = context.active_object
+        mesh = bpy.data.objects.get(props.viseme_mesh)
         
         if props.viseme_preview_mode:
             VisemePreview.end_preview(mesh)
             props.viseme_preview_mode = False
         else:
-            if not mesh.data.shape_keys:
+            if not mesh or not mesh.data.shape_keys:
                 self.report({'ERROR'}, t("Visemes.error.no_shapekeys"))
                 return {'CANCELLED'}
                 
@@ -197,15 +202,14 @@ class ATOOLKIT_OT_create_visemes(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        valid, _ = validate_armature(armature)
+        valid, _, _ = validate_armature(armature)
         return valid and mesh_obj and mesh_obj.type == 'MESH'
-
 
     def execute(self, context: Context) -> Set[str]:
         props = context.scene.avatar_toolkit
-        mesh = context.active_object
+        mesh = bpy.data.objects.get(props.viseme_mesh)  # Changed from context.active_object
         
-        if not mesh.data.shape_keys:
+        if not mesh or not mesh.data.shape_keys:
             self.report({'ERROR'}, t("Visemes.error.no_shapekeys"))
             return {'CANCELLED'}
             
@@ -280,7 +284,7 @@ class ATOOLKIT_OT_create_visemes(Operator):
                 continue
             
             # Create new shape key
-            self.mix_shapekey(context, renamed_shapes, data['mix'], key)
+            self.mix_shapekey(context, renamed_shapes, data['mix'], key, mesh)  # Added mesh parameter
             
             # Cache the new shape key data
             shape_data = [v.co.copy() for v in mesh.data.shape_keys.key_blocks[key].data]
@@ -293,14 +297,16 @@ class ATOOLKIT_OT_create_visemes(Operator):
         mesh.active_shape_key_index = 0
         wm.progress_end()
         
-    def mix_shapekey(self, context: Context, shapes: List[str], mix_data: List, new_name: str) -> None:
+    def mix_shapekey(self, context: Context, shapes: List[str], mix_data: List, new_name: str, mesh: Object) -> None:  # Added mesh parameter
         """Creates a new shape key by mixing existing ones"""
-        mesh = context.active_object
         
         # Remove existing shape key if it exists
         if new_name in mesh.data.shape_keys.key_blocks:
             mesh.active_shape_key_index = mesh.data.shape_keys.key_blocks.find(new_name)
+            old_active = context.view_layer.objects.active
+            context.view_layer.objects.active = mesh
             bpy.ops.object.shape_key_remove()
+            context.view_layer.objects.active = old_active
         
         # Reset all shape keys
         for shapekey in mesh.data.shape_keys.key_blocks:
@@ -313,7 +319,10 @@ class ATOOLKIT_OT_create_visemes(Operator):
                 shapekey.value = value
         
         # Create mixed shape key
+        old_active = context.view_layer.objects.active
+        context.view_layer.objects.active = mesh
         mesh.shape_key_add(name=new_name, from_mix=True)
+        context.view_layer.objects.active = old_active
         
         # Reset values and restore shape key settings
         for shapekey in mesh.data.shape_keys.key_blocks:
@@ -356,3 +365,4 @@ class ATOOLKIT_OT_create_visemes(Operator):
         props.mouth_a = current_names[0]
         props.mouth_o = current_names[1]
         props.mouth_ch = current_names[2]
+

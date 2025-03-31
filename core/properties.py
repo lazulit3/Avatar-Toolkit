@@ -14,14 +14,27 @@ from .logging_setup import logger
 from .translations import t, get_languages_list, update_language
 from .addon_preferences import get_preference, save_preference
 from .updater import get_version_list
-from .common import get_armature_list, get_active_armature, get_all_meshes
+from .common import get_armature_list, get_active_armature, get_all_meshes, SceneMatClass
 from ..functions.visemes import VisemePreview
 from ..functions.eye_tracking import set_rotation
+
+class ValidationMessageItem(PropertyGroup):
+    """Property group for validation message items"""
+    name: StringProperty(name="Message")
+
+class ZeroWeightBoneItem(PropertyGroup):
+    """Property group for zero weight bone list items"""
+    name: StringProperty(name="Bone Name")
+    selected: BoolProperty(name="Selected", default=True)
+    has_children: BoolProperty(name="Has Children", default=False)
+    is_deform: BoolProperty(name="Is Deform Bone", default=False)
+
 
 def update_validation_mode(self: PropertyGroup, context: Context) -> None:
     """Updates validation mode and saves preference"""
     logger.info(f"Updating validation mode to: {self.validation_mode}")
     save_preference("validation_mode", self.validation_mode)
+
 
 def update_logging_state(self: PropertyGroup, context: Context) -> None:
     """Updates logging state and configures logging"""
@@ -30,13 +43,142 @@ def update_logging_state(self: PropertyGroup, context: Context) -> None:
     from .logging_setup import configure_logging
     configure_logging(self.enable_logging)
 
+
 def update_shape_intensity(self: PropertyGroup, context: Context) -> None:
     """Updates shape key intensity and refreshes preview"""
     if self.viseme_preview_mode:
         VisemePreview.update_preview(context)
 
+def highlight_problem_bones(self: PropertyGroup, context: Context) -> None:
+    """Updates problem bone highlighting state and saves preference"""
+    logger.info(f"Updating problem bone highlighting to: {self.highlight_problem_bones}")
+    save_preference("highlight_problem_bones", self.highlight_problem_bones)
+
+def get_mesh_objects(self, context):
+    meshes = [(obj.name, obj.name, "") for obj in bpy.data.objects if obj.type == 'MESH']
+    if not meshes:
+        return [('NONE', t("Visemes.no_meshes"), '')]
+    return meshes
+
 class AvatarToolkitSceneProperties(PropertyGroup):
     """Property group containing Avatar Toolkit scene-level settings and properties"""
+
+    show_found_bones: BoolProperty(
+        name="Show Found Bones",
+        default=False
+    )
+    
+    show_non_standard: BoolProperty(
+        name="Show Non-Standard Bones", 
+        default=False
+    )
+
+    show_hierarchy: BoolProperty(
+        name="Show Hierarchy Issues",
+        default=False
+    )
+
+    material_search_filter: StringProperty(
+        name=t("TextureAtlas.search_materials"),
+        description=t("TextureAtlas.search_materials_desc"),
+        default=""
+    )
+
+    def get_texture_node_list(self: Material, context: Context) -> list[tuple]:
+        if self.use_nodes:
+            Object.Enum = [((i.image.name if i.image else i.name+"_image"),
+                        (i.image.name if i.image else "node with no image..."),
+                        (i.image.name if i.image else i.name), index+1) 
+                        for index, i in enumerate(self.node_tree.nodes) 
+                        if i.bl_idname == "ShaderNodeTexImage"]
+            if not len(Object.Enum):
+                Object.Enum = [(t("TextureAtlas.error.label"), 
+                            t("TextureAtlas.no_images_error.desc"),
+                            t("TextureAtlas.error.label"), 0)]
+        else:
+            Object.Enum = [(t("TextureAtlas.error.label"),
+                        t("TextureAtlas.no_nodes_error.desc"),
+                        t("TextureAtlas.error.label"), 0)]
+        Object.Enum.append((t("TextureAtlas.none.label"),
+                        t("TextureAtlas.none.label"),
+                        t("TextureAtlas.none.label"), 0))
+        return Object.Enum
+
+    Material.texture_atlas_albedo = EnumProperty(
+        name=t("TextureAtlas.albedo"),
+        description=t("TextureAtlas.texture_use_atlas.desc").format(name=t("TextureAtlas.albedo").lower()),
+        default=0,
+        items=get_texture_node_list
+    )
+
+    Material.texture_atlas_normal = EnumProperty(
+        name=t("TextureAtlas.normal"),
+        description=t("TextureAtlas.texture_use_atlas.desc").format(name=t("TextureAtlas.normal").lower()),
+        default=0,
+        items=get_texture_node_list
+    )
+
+    Material.texture_atlas_emission = EnumProperty(
+        name=t("TextureAtlas.emission"),
+        description=t("TextureAtlas.texture_use_atlas.desc").format(name=t("TextureAtlas.emission").lower()),
+        default=0,
+        items=get_texture_node_list
+    )
+
+    Material.texture_atlas_ambient_occlusion = EnumProperty(
+        name=t("TextureAtlas.ambient_occlusion"),
+        description=t("TextureAtlas.texture_use_atlas.desc").format(name=t("TextureAtlas.ambient_occlusion").lower()),
+        default=0,
+        items=get_texture_node_list
+    )
+
+    Material.texture_atlas_height = EnumProperty(
+        name=t("TextureAtlas.height"),
+        description=t("TextureAtlas.texture_use_atlas.desc").format(name=t("TextureAtlas.height").lower()),
+        default=0,
+        items=get_texture_node_list
+    )
+
+    Material.texture_atlas_roughness = EnumProperty(
+        name=t("TextureAtlas.roughness"),
+        description=t("TextureAtlas.texture_use_atlas.desc").format(name=t("TextureAtlas.roughness").lower()),
+        default=0,
+        items=get_texture_node_list
+    )
+
+    list_only_mode: BoolProperty(
+        name=t("Tools.list_only_mode"),
+        description=t("Tools.list_only_mode_desc"),
+        default=False
+    )
+
+    Material.include_in_atlas = BoolProperty(
+        name=t("TextureAtlas.include_in_atlas"),
+        description=t("TextureAtlas.include_in_atlas_desc"),
+        default=False
+    )
+
+    Material.material_expanded = BoolProperty(
+        name=t("TextureAtlas.material_expanded"),
+        description=t("TextureAtlas.material_expanded_desc"),
+        default=False
+    )
+
+    texture_atlas_Has_Mat_List_Shown: BoolProperty(
+        name=t("TextureAtlas.list_shown"),
+        description=t("TextureAtlas.list_shown_desc"),
+        default=False
+    )
+
+    texture_atlas_material_index: IntProperty(
+        default=-1,
+        get=lambda self: -1,
+        set=lambda self, context: None
+    )
+
+    materials: CollectionProperty(
+        type=SceneMatClass
+    )
     
     avatar_toolkit_updater_version_list: EnumProperty(
         items=get_version_list,
@@ -151,9 +293,10 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         description=t("Visemes.mouth_ch_desc")
     )
 
-    viseme_mesh: StringProperty(
+    viseme_mesh: EnumProperty(
         name=t("Visemes.mesh_select"),
         description=t("Visemes.mesh_select_desc"),
+        items=get_mesh_objects
     )
 
     shape_intensity: FloatProperty(
@@ -167,38 +310,37 @@ class AvatarToolkitSceneProperties(PropertyGroup):
     )
 
     viseme_preview_selection: EnumProperty(
-    name=t("Visemes.preview_selection"),
-    description=t("Visemes.preview_selection_desc"),
-    items=[
-        ('vrc.v_aa', 'AA', 'A as in "bat"'),
-        ('vrc.v_ch', 'CH', 'Ch as in "choose"'),
-        ('vrc.v_dd', 'DD', 'D as in "dog"'),
-        ('vrc.v_ih', 'IH', 'I as in "bit"'),
-        ('vrc.v_ff', 'FF', 'F as in "fox"'),
-        ('vrc.v_e', 'E', 'E as in "bet"'),
-        ('vrc.v_kk', 'KK', 'K as in "cat"'),
-        ('vrc.v_nn', 'NN', 'N as in "net"'),
-        ('vrc.v_oh', 'OH', 'O as in "hot"'),
-        ('vrc.v_ou', 'OU', 'O as in "go"'),
-        ('vrc.v_pp', 'PP', 'P as in "pat"'),
-        ('vrc.v_rr', 'RR', 'R as in "red"'),
-        ('vrc.v_sil', 'SIL', 'Silence'),
-        ('vrc.v_ss', 'SS', 'S as in "sit"'),
-        ('vrc.v_th', 'TH', 'Th as in "think"')
-    ],
-    update=lambda s, c: VisemePreview.update_preview(c)
-    
-)
+        name=t("Visemes.preview_selection"),
+        description=t("Visemes.preview_selection_desc"),
+        items=[
+            ('vrc.v_aa', 'AA', 'A as in "bat"'),
+            ('vrc.v_ch', 'CH', 'Ch as in "choose"'),
+            ('vrc.v_dd', 'DD', 'D as in "dog"'),
+            ('vrc.v_ih', 'IH', 'I as in "bit"'),
+            ('vrc.v_ff', 'FF', 'F as in "fox"'),
+            ('vrc.v_e', 'E', 'E as in "bet"'),
+            ('vrc.v_kk', 'KK', 'K as in "cat"'),
+            ('vrc.v_nn', 'NN', 'N as in "net"'),
+            ('vrc.v_oh', 'OH', 'O as in "hot"'),
+            ('vrc.v_ou', 'OU', 'O as in "go"'),
+            ('vrc.v_pp', 'PP', 'P as in "pat"'),
+            ('vrc.v_rr', 'RR', 'R as in "red"'),
+            ('vrc.v_sil', 'SIL', 'Silence'),
+            ('vrc.v_ss', 'SS', 'S as in "sit"'),
+            ('vrc.v_th', 'TH', 'Th as in "think"')
+        ],
+        update=lambda s, c: VisemePreview.update_preview(c)
+    )
     
     eye_tracking_type: EnumProperty(
-    name=t("EyeTracking.type"),
-    description=t("EyeTracking.type_desc"),
-    items=[
-        ('AV3', t("EyeTracking.type.av3"), t("EyeTracking.type.av3_desc")),
-        ('SDK2', t("EyeTracking.type.sdk2"), t("EyeTracking.type.sdk2_desc"))
-    ],
-    default='AV3'
-)
+        name=t("EyeTracking.type"),
+        description=t("EyeTracking.type_desc"),
+        items=[
+            ('AV3', t("EyeTracking.type.av3"), t("EyeTracking.type.av3_desc")),
+            ('SDK2', t("EyeTracking.type.sdk2"), t("EyeTracking.type.sdk2_desc"))
+        ],
+        default='AV3'
+    )
 
     eye_mode: EnumProperty(
         name=t("EyeTracking.mode"),
@@ -337,12 +479,6 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         default=""
     )
 
-    merge_all_bones: BoolProperty(
-        name=t('MergeArmature.merge_all'),
-        description=t('MergeArmature.merge_all_desc'),
-        default=True
-    )
-
     apply_transforms: BoolProperty(
         name=t('MergeArmature.apply_transforms'),
         description=t('MergeArmature.apply_transforms_desc'),
@@ -361,33 +497,115 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         default=True
     )
 
+    preserve_parent_bones: BoolProperty(
+        name=t("Tools.preserve_parent_bones"),
+        description=t("Tools.preserve_parent_bones_desc"),
+        default=True
+    )
+
+    target_bone_type: EnumProperty(
+        name=t("Tools.target_bone_type"),
+        description=t("Tools.target_bone_type_desc"),
+        items=[
+            ('ALL', t("Tools.target_all_bones"), ""),
+            ('DEFORM', t("Tools.target_deform_bones"), ""),
+            ('NON_DEFORM', t("Tools.target_non_deform_bones"), "")
+        ],
+        default='ALL'
+    )
+
+    zero_weight_bones: CollectionProperty(
+        type=ZeroWeightBoneItem,
+        name="Zero Weight Bones",
+        description="List of bones with zero weights"
+    )
+    
+    zero_weight_bones_index: IntProperty(
+        name="Zero Weight Bone Index",
+        default=0
+    )
+
+    list_only_mode: BoolProperty(
+        name=t("Tools.list_only_mode"),
+        description=t("Tools.list_only_mode_desc"),
+        default=False
+    )
+
     cleanup_shape_keys: BoolProperty(
         name=t('MergeArmature.cleanup_shape_keys'),
         description=t('MergeArmature.cleanup_shape_keys_desc'),
+        default=True
+    )
+      
+    merge_twist_bones: BoolProperty(
+        name=t("Tools.merge_twist_bones"),
+        description=t("Tools.merge_twist_bones_desc"),
+        default=True
+    )
+
+    highlight_problem_bones: BoolProperty(
+        name=t("Settings.highlight_problem_bones"),
+        description=t("Settings.highlight_problem_bones_desc"),
+        default=get_preference("highlight_problem_bones", True),
+        update=highlight_problem_bones
+    )
+
+    show_scale_issues: BoolProperty(
+        name="Show Scale Issues",
+        default=False
+    )
+
+    tpose_validation_result: BoolProperty(
+        name="T-Pose Validation Result",
+        default=True
+    )
+    
+    tpose_validation_messages: CollectionProperty(
+        type=bpy.types.PropertyGroup,
+        name="T-Pose Validation Messages"
+    )
+    
+    show_tpose_validation: BoolProperty(
+        name="Show T-Pose Validation Results",
+        default=False
+    )
+
+    standardize_fix_names: BoolProperty(
+        name=t("Tools.standardize_fix_names"),
+        description=t("Tools.standardize_fix_names_desc"),
+        default=True
+    )
+
+    standardize_fix_hierarchy: BoolProperty(
+        name=t("Tools.standardize_fix_hierarchy"),
+        description=t("Tools.standardize_fix_hierarchy_desc"),
+        default=True
+    )
+
+    standardize_fix_scale: BoolProperty(
+        name=t("Tools.standardize_fix_scale"),
+        description=t("Tools.standardize_fix_scale_desc"),
         default=True
     )
 
 def register() -> None:
     """Register the Avatar Toolkit property group"""
     logger.info("Registering Avatar Toolkit properties")
-    try:
-        bpy.utils.register_class(AvatarToolkitSceneProperties)
-    except ValueError:
-        # Class already registered, we can continue
-        pass
+    
+    # Only register the property, not the classes (auto_load will handle that)
     bpy.types.Scene.avatar_toolkit = PointerProperty(type=AvatarToolkitSceneProperties)
     logger.debug("Properties registered successfully")
+
 
 def unregister() -> None:
     """Unregister the Avatar Toolkit property group"""
     logger.info("Unregistering Avatar Toolkit properties")
-    try:
-        del bpy.types.Scene.avatar_toolkit
-    except:
-        pass
-    try:
-        bpy.utils.unregister_class(AvatarToolkitSceneProperties)
-    except RuntimeError:
-        pass
-    logger.debug("Properties unregistered successfully")
-
+    
+    # Remove the property
+    if hasattr(bpy.types.Scene, "avatar_toolkit"):
+        try:
+            del bpy.types.Scene.avatar_toolkit
+            logger.debug("Removed avatar_toolkit property")
+        except Exception as e:
+            logger.warning(f"Failed to remove avatar_toolkit property: {e}")
+        # Not fatal - continue

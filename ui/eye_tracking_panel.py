@@ -43,6 +43,16 @@ class AvatarToolKit_PT_EyeTrackingPanel(Panel):
         row.prop(toolkit, "eye_tracking_type", expand=True)
 
         if toolkit.eye_tracking_type == 'SDK2':
+            # SDK2 Warning Box
+            warning_box: UILayout = layout.box()
+            col: UILayout = warning_box.column(align=True)
+            col.label(text=t("EyeTracking.sdk2_warning"), icon='INFO')
+            col.separator(factor=0.5)
+            col.label(text=t("EyeTracking.sdk2_warning_detail1"))
+            col.label(text=t("EyeTracking.sdk2_warning_detail2"))
+            col.label(text=t("EyeTracking.sdk2_warning_detail3"))
+            col.label(text=t("EyeTracking.sdk2_warning_detail4"))
+            
             # Mode Selection Box
             mode_box: UILayout = layout.box()
             col: UILayout = mode_box.column(align=True)
