@@ -262,7 +262,7 @@ bone_names.update({
     'hips': bone_names['hips'] + ['jbipchips', 'jhips', 'vrmhips'],
     'spine': bone_names['spine'] + ['jbipcspine', 'jspine', 'vrmspine'],
     'chest': bone_names['chest'] + ['jbipcchest', 'jchest', 'vrmchest'],
-    'upper_chest': bone_names['upperchest'] + ['jbipcupperchest', 'jupperchest', 'vrmupperchest'],
+    'upper_chest': bone_names['upper_chest'] + ['jbipcupperchest', 'jupperchest', 'vrmupperchest'],
     'neck': bone_names['neck'] + ['jbipcneck', 'jneck', 'vrmneck'],
     'head': bone_names['head'] + ['jbipchead', 'jhead', 'vrmhead'],
     
@@ -951,8 +951,8 @@ for category, mappings in non_standard_mappings.items():
 
 
 # Since data set is very poisoned by bone names that aren't simplified (And as such will not map properly using the function) we will just force convert them to the proper format at the end here. - @989onan
-for standard, mappings in bone_names:
-    for i in len(mappings):
+for standard, mappings in bone_names.items():
+    for i in range(len(mappings)):
         bone_names[standard][i] = simplify_bonename(mappings[i])
 
 # Create reverse lookup dictionary (conversion/translation)
