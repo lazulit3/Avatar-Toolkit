@@ -489,6 +489,10 @@
     "TextureAtlas.how_to_use_2": "2. '재질 불러오기'를 클릭하여 시작",
     "TextureAtlas.load_error": "재질 로딩 오류. 자세한 내용은 콘솔을 확인하세요.",
     "TextureAtlas.material_not_included": "재질이 아틀라스에 포함되지 않았습니다",
+    "TextureAtlas.save_file_first": "텍스처 아틀라스를 만들기 전에 Blender 파일을 저장하세요",
+    "TextureAtlas.save_file_instructions": "파일 > 다른 이름으로 저장... 을 사용하거나 아래 버튼을 클릭하세요:",
+    "TextureAtlas.save_file_button": "Blender 파일 저장",
+    "TextureAtlas.save_file_required": "파일 저장 필요",
 
     "Settings.label": "설정",
     "Settings.language": "언어",

@@ -489,6 +489,10 @@
     "TextureAtlas.how_to_use_2": "2. Click 'Load Materials' to begin",
     "TextureAtlas.load_error": "Error loading materials. Check console for details.",
     "TextureAtlas.material_not_included": "Material is not included in atlas",
+    "TextureAtlas.save_file_first": "Please save your Blender file before creating a texture atlas",
+    "TextureAtlas.save_file_instructions": "Use File > Save As... or click the button below:",
+    "TextureAtlas.save_file_button": "Save Blender File",
+    "TextureAtlas.save_file_required": "Save File Required",
 
     "Settings.label": "Settings",
     "Settings.language": "Language",

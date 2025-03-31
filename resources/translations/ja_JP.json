@@ -489,6 +489,10 @@
     "TextureAtlas.how_to_use_2": "2. 「マテリアルを読み込む」をクリックして開始",
     "TextureAtlas.load_error": "マテリアルの読み込みエラー。詳細はコンソールを確認してください。",
     "TextureAtlas.material_not_included": "マテリアルはアトラスに含まれていません",
+    "TextureAtlas.save_file_first": "テクスチャアトラスを作成する前に、Blenderファイルを保存してください",
+    "TextureAtlas.save_file_instructions": "ファイル > 名前を付けて保存... を使用するか、下のボタンをクリックしてください：",
+    "TextureAtlas.save_file_button": "Blenderファイルを保存",
+    "TextureAtlas.save_file_required": "ファイルの保存が必要です",
 
     "Settings.label": "設定",
     "Settings.language": "言語",
