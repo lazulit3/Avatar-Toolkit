@@ -21,3 +21,7 @@ wheels = [
   "./wheels/lz4-4.4.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
   "./wheels/lz4-4.4.3-cp311-cp311-win_amd64.whl"
 ]
+
+[permissions]
+network = "For the auto updater to work, you need to allow network access"
+files = "Import/Export files, saving atlas images, saving preferences"

@@ -229,6 +229,16 @@ class AvatarToolKit_PT_TextureAtlasPanel(Panel):
             info_col.label(text=t("TextureAtlas.description_1"), icon='INFO')
             info_col.label(text=t("TextureAtlas.description_2"))
             
+            if not bpy.data.filepath:
+                warning_box = layout.box()
+                warning_col = warning_box.column()
+                warning_col.scale_y = 0.9
+                warning_col.alert = True
+                warning_col.label(text=t("TextureAtlas.save_file_first"), icon='ERROR')
+                warning_col.label(text=t("TextureAtlas.save_file_instructions"))
+                warning_col.operator("wm.save_as_mainfile", text=t("TextureAtlas.save_file_button"), icon='FILE_TICK')
+                layout.separator(factor=0.5)
+            
             layout.separator(factor=0.5)
             box = layout.box()
             row = box.row(align=True)
