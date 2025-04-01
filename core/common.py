@@ -383,11 +383,6 @@ def clear_unused_data_blocks() -> int:
                       if isinstance(getattr(bpy.data, attr), bpy.types.bpy_prop_collection))
     return initial_count - final_count
 
-def simplify_bonename(name: str) -> str:
-    """Simplify bone name by removing spaces, underscores, dots and converting to lowercase"""
-    return name.lower().translate(dict.fromkeys(map(ord, u" _.")))
-
-
 def identify_bones(arm_data: bpy.types.Armature, context: bpy.types.Context) -> Dict[str,str]:
     """Identify bone names in an armature based on our reverse dictionary, so there is no confusion to what a bone is.
     Essentially makes a dictionary of keys from dictionaries.bone_names like "hips", and the corosponding value is the bone that can be mapped to that key."""
