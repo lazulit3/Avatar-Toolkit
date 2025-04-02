@@ -5,10 +5,10 @@ from numpy import double
 from typing import Set, Dict
 import re
 
-from .common import get_active_armature, simplify_bonename, validate_armature, ProgressTracker, identify_bones
+from .common import get_active_armature, ProgressTracker, identify_bones
 from bpy.types import Context, Operator
 from ..core.translations import t
-from ..core.dictionaries import bone_names, resonite_translations
+from ..core.dictionaries import bone_names, resonite_translations, simplify_bonename
 from ..core.logging_setup import logger
 from ..core.armature_validation import validate_armature
 
