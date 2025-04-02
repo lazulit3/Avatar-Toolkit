@@ -113,7 +113,6 @@ def validate_armature(armature: Object, detailed_messages: bool = False) -> Unio
                     non_standard_bones.append(bone_name)
         
         if non_standard_bones:
-            logger.warning(f"Found {len(non_standard_bones)} non-standard bones")
             non_standard_list = "\n".join([f"- {bone}" for bone in non_standard_bones])
             non_standard_messages.append(t("Armature.validation.non_standard_bones", bones=non_standard_list))
             

@@ -2,6 +2,8 @@ import bpy
 from typing import Set, List, Tuple, Any
 from bpy.types import Panel, Context, UILayout, Operator, Event, WindowManager
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
+from ..functions.custom_tools.mesh_attachment import AvatarToolkit_OT_AttachMesh
+from ..functions.custom_tools.armature_merging import AvatarToolkit_OT_MergeArmature
 from ..core.translations import t
 from ..core.common import (
     get_active_armature,

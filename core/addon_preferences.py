@@ -6,9 +6,14 @@ from ..core.logging_setup import logger
 from bpy.types import AddonPreferences
 from typing import Any, Dict
 
-# Get the directory of the current file
-PREFERENCES_DIR = os.path.dirname(os.path.abspath(__file__))
-PREFERENCES_FILE = os.path.join(PREFERENCES_DIR, "preferences.json")
+# Get the user preferences directory instead of addon directory
+def get_preferences_path():
+    user_path = bpy.utils.resource_path('USER')
+    addon_prefs_dir = os.path.join(user_path, "config", "avatar_toolkit_prefs")
+    os.makedirs(addon_prefs_dir, exist_ok=True)
+    return os.path.join(addon_prefs_dir, "preferences.json")
+
+PREFERENCES_FILE = get_preferences_path()
 
 def get_current_version():
     main_dir = os.path.dirname(os.path.dirname(__file__))
