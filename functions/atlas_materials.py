@@ -137,6 +137,10 @@ class AvatarToolKit_OT_AtlasMaterials(Operator):
 
     @classmethod
     def poll(cls, context: Context) -> bool:
+        # Only allow operation if the file is saved and materials are selected.
+        if not bpy.data.filepath:
+            cls.poll_message_set(t("TextureAtlas.save_file_first"))
+            return False
         return context.scene.avatar_toolkit.texture_atlas_Has_Mat_List_Shown
     
     def execute(self, context: Context) -> set:
@@ -208,8 +212,14 @@ class AvatarToolKit_OT_AtlasMaterials(Operator):
                                         image_pixels[int(((k*w)+i)*4)+channel]
 
                     canvas.pixels[:] = canvas_pixels[:]
-                    canvas.save(filepath=os.path.join(os.path.dirname(bpy.data.filepath),
-                                                    new_image_name+".png"))
+                    
+                    try:
+                        save_dir = os.path.dirname(bpy.data.filepath)
+                        canvas.save(filepath=os.path.join(save_dir, new_image_name+".png"))
+                    except Exception as save_error:
+                        logger.error(f"Failed to save atlas texture: {str(save_error)}")
+                        self.report({'WARNING'}, f"Could not save texture to disk, This may be due to a lack of permissions.")
+                    
                     setattr(atlased_mat, type_name, canvas)
                     progress.step(f"Created {type_name} atlas")
 
@@ -279,6 +289,17 @@ class AvatarToolKit_OT_AtlasMaterials(Operator):
                             if mat_slot.material and mat_slot.material.include_in_atlas:
                                 mesh.materials[i] = atlased_mat.material
                         progress.step(f"Updated materials for {obj.name}")
+
+            MaterialListBool.old_list.pop(context.scene.name, None)
+            was_open = context.scene.avatar_toolkit.texture_atlas_Has_Mat_List_Shown
+            context.scene.avatar_toolkit.texture_atlas_Has_Mat_List_Shown = False
+
+            if was_open:
+                bpy.ops.avatar_toolkit.expand_section_materials()
+            
+            for area in context.screen.areas:
+                if area.type == 'VIEW_3D':
+                    area.tag_redraw()
 
             logger.info("Material atlas creation completed successfully")
             self.report({'INFO'}, t("TextureAtlas.atlas_completed"))

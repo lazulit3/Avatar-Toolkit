@@ -13,38 +13,23 @@ def show_version_error_popup():
     bpy.context.window_manager.popup_menu(draw, title="Avatar Toolkit Version Error", icon='ERROR')
 
 def register():
-    # Check Blender version first
     import bpy
     version = bpy.app.version
     if version[0] > 4 or (version[0] == 4 and version[1] >= 5): 
         show_version_error_popup()
         return
-    
-    # Add wheel installation check
-    try:
-        import lz4
-    except ImportError:
-        import sys
-        import os
-        import site
-        import pip
-        wheels_dir = os.path.join(os.path.dirname(__file__), "wheels")
-        for wheel in os.listdir(wheels_dir):
-            if wheel.endswith(".whl"):
-                pip.main(['install', os.path.join(wheels_dir, wheel)])
-                site.addsitedir(site.getsitepackages()[0])
-    
-    from .core import auto_load
+        
     print("Starting registration")
     
-    # Make sure to initialize logging first
+    # Import modules using relative imports
+    from . import core
+    from .core import auto_load
     from .core.logging_setup import configure_logging
+    
+    # Initialize logging
     configure_logging(False)
     
-    # Then initialize the addon
     auto_load.init()
-    
-    # Register classes in proper order
     auto_load.register()
     
     # Verify property registration

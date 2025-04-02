@@ -11,8 +11,8 @@ from ...core.common import (
     clear_unused_data_blocks,
     join_mesh_objects,
     remove_unused_shapekeys,
-    simplify_bonename
 )
+from ...core.dictionaries import simplify_bonename
 
 class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
     """Operator for merging two armatures together with their associated meshes"""
