@@ -138,32 +138,49 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
             
             
             #find which vertices merge on all shapekeys using bmesh, a fast way of doing it - @989onan
-            final_merged_vertex_group = [i for i in range(0,len(mesh['mesh'].data.vertices))]
+            #final_merged_vertex_group = [i for i in range(0,len(mesh['mesh'].data.vertices))]
+            final_merged_vertex_group: dict[set[int],list[int]] = []
             for shape in mesh["shapekeys"]:
                 select_obj(context, shape, target_mode='EDIT')
                 bmesh_mesh: bmesh.types.BMesh = bmesh.from_edit_mesh(shape.data)
                 selected_verts: list[bmesh.types.BMVert] = [vert for vert in bmesh_mesh.verts if vert.select == True]
                 i: int = 0
-                merged_vertices: set[int] = set()
+                merged_vertices: dict[set[int],list[int]] = {} #make a list of sets which act as pairs. the pairs being sets means it doesn't matter if element 0 is at index 1, it is still considered the same pair
                 mergers: dict[bmesh.types.BMVert, bmesh.types.BMVert]
                 for name,mergers in bmesh.ops.find_doubles(bmesh_mesh,verts=selected_verts,dist=merge_distance).items():
                     for source_vert,target_vert in mergers.items():
-                        merged_vertices.add(source_vert.index)
-                        merged_vertices.add(target_vert.index)
+                        pair: set[int] = set()
+                        pair.add(source_vert.index)
+                        pair.add(target_vert.index)
+                        frozen_pair = frozenset(pair)
+                        merged_vertices[frozen_pair] = [source_vert.index,target_vert.index] #put the pairs we have found into a list.
                     
-                    final_merged_vertex_group = [v for v in final_merged_vertex_group if v in merged_vertices]
-                
+                if(final_merged_vertex_group == []): #populate list if it is empty
+                    final_merged_vertex_group = merged_vertices
+                new_dict: dict[set[int],list[int]] = {}
+
+                #update our final list, keeping pairs that exist on all shapekeys and not just one.
+                for key,value in final_merged_vertex_group.items():
+                    if key in merged_vertices.keys():
+                        new_dict[key] = value
+                final_merged_vertex_group = new_dict 
+            
+            #create an edit mesh and ensure it's vertex table
             select_obj(context, mesh['mesh'], target_mode='EDIT')
             data_mesh: bpy.types.Mesh = mesh['mesh'].data
+            mappings: dict[bmesh.types.BMVert,bmesh.types.BMVert] = {}
             bmesh_mesh: bmesh.types.BMesh = bmesh.from_edit_mesh(data_mesh)
-            mergable_on_all_shapes: list[bmesh.types.BMVert] = [vert for vert in bmesh_mesh.verts if vert.index in final_merged_vertex_group]
-            
-            mappings: dict[bmesh.types.BMVert,bmesh.types.BMVert] = bmesh.ops.find_doubles(bmesh_mesh,verts=mergable_on_all_shapes,dist=merge_distance)["targetmap"]
+            bmesh_mesh.verts.ensure_lookup_table()
 
+            #turn our pairs into a dictionary, which allows for merging vertices based on the shared pairs.
+            for key,value in final_merged_vertex_group.items():
+                mappings[bmesh_mesh.verts[value[0]]] = bmesh_mesh.verts[value[1]]
+
+            #weld the verts and update the source mesh
             bmesh.ops.weld_verts(bmesh_mesh,targetmap=mappings)
             bmesh.update_edit_mesh(data_mesh, destructive=True)
 
-
+            #delete the shapekey reading meshes.
             for shape in mesh["shapekeys"]: 
                 bpy.data.objects.remove(shape)
 
