@@ -15,10 +15,9 @@ from bpy.types import (Context, Object, Modifier, EditBone, Operator, Material,
 from functools import lru_cache
 from bpy.props import PointerProperty, IntProperty, StringProperty
 from bpy.utils import register_class
-from ..core.logging_setup import logger
-from ..core.translations import t
-from ..core.dictionaries import bone_names
-from .dictionaries import reverse_bone_lookup, bone_names
+from .logging_setup import logger
+from .translations import t
+from .dictionaries import reverse_bone_lookup, simplify_bonename
 
 class SceneMatClass(PropertyGroup):
     mat: PointerProperty(type=Material)
@@ -383,7 +382,7 @@ def clear_unused_data_blocks() -> int:
                       if isinstance(getattr(bpy.data, attr), bpy.types.bpy_prop_collection))
     return initial_count - final_count
 
-def identify_bones(arm_data: bpy.types.Armature, context: bpy.types.Context) -> Dict[str,str]:
+def identify_bones(arm_data: bpy.types.Armature) -> Dict[str,str]:
     """Identify bone names in an armature based on our reverse dictionary, so there is no confusion to what a bone is.
     Essentially makes a dictionary of keys from dictionaries.bone_names like "hips", and the corosponding value is the bone that can be mapped to that key."""
     returned: Dict[str,str] = {}

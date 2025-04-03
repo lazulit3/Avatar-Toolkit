@@ -205,6 +205,8 @@
     "Tools.zero_weight_bones_found": "Zero weight bones found: {bones}",
     "Tools.remove_selected_bones": "Remove Selected Bones",
     "Tools.remove_selected_bones_desc": "Remove selected zero weight bones from armature",
+    "Tools.flip_pose_frames": "Flip Selected Armature Key Frames",
+    "Tools.flip_pose_frames_desc": "Takes the selected keyframes and sets them to a mirrored pose, gotten from the opposite side of the armature on that frame.\nSelecting the entire animation's keyframes will flip the entire animation.",
     "Tools.bones_removed": "Removed {count} bones",
     "Tools.vertex_groups_removed": "Removed {count} vertex groups.",
     "Tools.clean_constraints": "Delete Bone Constraints",

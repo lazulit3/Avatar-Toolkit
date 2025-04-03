@@ -3,7 +3,6 @@ from os import replace
 from re import S
 from types import FrameType
 
-import lz4.block
 from . import resonite_types
 from . import common
 

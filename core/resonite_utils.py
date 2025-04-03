@@ -77,7 +77,7 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
 
             total_bones = len(arm_data.bones)
             with ProgressTracker(context, total_bones, t("Tools.convert_resonite.operation")) as progress:
-                for key_simple,bone_name in identify_bones(arm_data,context).items():
+                for key_simple,bone_name in identify_bones(arm_data).items():
 
                     if key_simple in resonite_translations:
                         new_name = resonite_translations[key_simple]

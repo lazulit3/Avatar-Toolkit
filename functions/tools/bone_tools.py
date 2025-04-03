@@ -9,6 +9,7 @@ from ...core.common import (
     ProgressTracker,
     restore_bone_transforms,
     remove_unused_vertex_groups,
+    identify_bones,
 )
 from ...core.armature_validation import validate_armature, validate_bone_hierarchy
 
@@ -303,4 +304,111 @@ class AvatarToolKit_OT_RemoveSelectedBones(Operator):
         toolkit.zero_weight_bones.clear()
         
         self.report({'INFO'}, t("Tools.bones_removed", count=len(selected_bones)))
+        return {'FINISHED'}
+
+
+class AvatarToolKit_OT_FlipCurrentKeyFrames(Operator):
+    """Operator to flip the selected bone keyframes using blender's flip pose."""
+    bl_idname = "avatar_toolkit.flip_pose_frames"
+    bl_label = t("Tools.flip_pose_frames")
+    bl_description = t("Tools.flip_pose_frames_desc")
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context: Context) -> bool:
+        """Check if operator can be executed"""
+        armature = get_active_armature(context)
+        if not armature:
+            return False
+        if context.mode != 'POSE':
+            return False
+        if not armature.animation_data:
+            return False
+        valid, _, _ = validate_armature(armature)
+        return valid
+
+    def execute(self, context: Context) -> set[str]:
+        armature = get_active_armature(context)
+
+        
+
+        armature_data: bpy.types.Armature = armature.data
+
+        standard_mappings: Dict[str,str] = identify_bones(armature_data)
+
+        
+
+        
+        # Do we need this? If flipping in the future has issues, then uncommenting this may help - @989onan
+        #To make sure our flip pose is extremely reliable, we're gonna temp rename all bones to standard names to make the posing work.
+        #for standard,bone_name in standard_mappings.items():
+        #    armature_data.bones[bone_name].name = standard
+        
+        #save our selection
+        selected: list[bool] = [False] * len(armature_data.bones)
+        armature_data.bones.foreach_get("select", selected) 
+        #select everything
+        armature_data.bones.foreach_set("select", [False] * len(armature_data.bones)) 
+
+
+        
+        #create a set for every frame time where we need to key a keyframe for the flipped pose
+        times: Dict[float,list[bpy.types.FCurve]] = {}
+        for curve in armature.animation_data.action.fcurves:
+            if not curve.data_path.startswith("pose"):
+                continue
+            for point in curve.keyframe_points:
+                if point.select_control_point:
+                    if point.co.x not in times:
+                        times[point.co.x] = []
+                
+                    times[point.co.x].append(curve)
+
+        for time,curves in times.items():
+            context.scene.frame_set(frame=int(time), subframe=float(time-float(int(time))))
+            armature_data.bones.foreach_set("select", [True] * len(armature_data.bones)) 
+            bpy.ops.pose.copy()
+            armature_data.bones.foreach_set("select", [False] * len(armature_data.bones)) 
+            bpy.ops.pose.paste(flipped=True,selected_mask=False)
+            
+
+            
+
+            for curve in curves:
+
+                bone_name: str = curve.data_path.replace("pose.bones[\"","")
+                bone_name = bone_name[:bone_name.index("\"")]
+                
+                armature_data.bones[bone_name].select = True
+
+                bpy.ops.pose.select_mirror(extend=False)
+
+                #this can get the opposite side bone's data path and key it, if it is ever needed - @989onan
+                #for bone in armature_data.bones:
+                #    if bone.select == True:
+                #        bone_name = bone.name
+                #        break
+                #new_path = curve.data_path[:curve.data_path.index("[")+1]+"\""+bone_name+"\""+curve.data_path[curve.data_path.index("]"):]
+
+                if armature.keyframe_insert(data_path=curve.data_path, index=curve.array_index, frame=time):
+                    #if armature.keyframe_insert(data_path=new_path, index=curve.array_index, frame=time):
+                    continue
+                self.report({'ERROR'}, f"Keyframe insertion for key with data path \"{curve.data_path}\" and frame {time} failed!")
+                return {'FINISHED'}
+
+
+                    
+        
+
+
+
+
+        
+        # Do we need this? If flipping in the future has issues, then uncommenting this may help - @989onan
+        #bring our names back as to not break their model.
+        #for standard,bone_name in standard_mappings.items():
+        #    armature_data.bones[standard].name = bone_name
+
+        # restore selection
+        armature_data.bones.foreach_set("select", selected) 
         return {'FINISHED'}

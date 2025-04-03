@@ -7,23 +7,17 @@ from ..core.translations import t
 from ..core.resonite_utils import AvatarToolkit_OT_ConvertResonite
 from ..functions.tools.mesh_separation import AvatarToolKit_OT_SeparateByLooseParts, AvatarToolKit_OT_SeparateByMaterials
 from ..functions.tools.additional_tools import AvatarToolkit_OT_ApplyTransforms, AvatarToolkit_OT_CleanShapekeys
-from ..functions.tools.bone_tools import AvatarToolKit_OT_CreateDigitigradeLegs, AvatarToolKit_OT_DeleteBoneConstraints, AvatarToolKit_OT_RemoveSelectedBones, AvatarToolKit_OT_RemoveZeroWeightBones, AvatarToolKit_OT_RemoveZeroWeightVertexGroups
+from ..functions.tools.bone_tools import (
+    AvatarToolKit_OT_CreateDigitigradeLegs, 
+    AvatarToolKit_OT_DeleteBoneConstraints, 
+    AvatarToolKit_OT_RemoveSelectedBones, 
+    AvatarToolKit_OT_RemoveZeroWeightBones, 
+    AvatarToolKit_OT_RemoveZeroWeightVertexGroups,
+    AvatarToolKit_OT_FlipCurrentKeyFrames
+)
 from ..functions.tools.standardize_armature import AvatarToolkit_OT_StandardizeArmature
 from ..functions.tools.merge_tools import AvatarToolkit_OT_MergeToActive, AvatarToolkit_OT_MergeToParent, AvatarToolkit_OT_ConnectBones
 from ..functions.tools.rigify_converter import AvatarToolkit_OT_ConvertRigifyToUnity
-
-
-class AVATAR_TOOLKIT_UL_ZeroWeightBones(UIList):
-    """UI List for displaying zero weight bones with selection options"""
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            row = layout.row(align=True)
-            row.prop(item, "selected", text="")
-            row.label(text=item.name)
-            if item.has_children:
-                row.label(text="", icon='OUTLINER_OB_ARMATURE')
-            if item.is_deform:
-                row.label(text="", icon='MOD_ARMATURE')
 
 class AvatarToolKit_PT_ToolsPanel(Panel):
     """Panel containing various tools for avatar customization and optimization"""
@@ -63,6 +57,8 @@ class AvatarToolKit_PT_ToolsPanel(Panel):
         col.label(text=t("Tools.bone_title"), icon='BONE_DATA')
         col.separator(factor=0.5)
         col.operator(AvatarToolKit_OT_CreateDigitigradeLegs.bl_idname, text=t("Tools.create_digitigrade"), icon='BONE_DATA')
+        col.operator(AvatarToolKit_OT_FlipCurrentKeyFrames.bl_idname,text=t("Tools.flip_pose_frames"),icon="ACTION")
+
         
         # Standardization Tools
         standardize_box: UILayout = bone_box.box()
@@ -121,3 +117,16 @@ class AvatarToolKit_PT_ToolsPanel(Panel):
         col.separator(factor=0.5)
         col.operator(AvatarToolkit_OT_ConvertRigifyToUnity.bl_idname, icon='ARMATURE_DATA')
         col.prop(context.scene.avatar_toolkit, "merge_twist_bones")
+
+
+class AVATAR_TOOLKIT_UL_ZeroWeightBones(UIList):
+    """UI List for displaying zero weight bones with selection options"""
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            row = layout.row(align=True)
+            row.prop(item, "selected", text="")
+            row.label(text=item.name)
+            if item.has_children:
+                row.label(text="", icon='OUTLINER_OB_ARMATURE')
+            if item.is_deform:
+                row.label(text="", icon='MOD_ARMATURE')

@@ -12,7 +12,7 @@ class AvatarToolKit_PT_UVTools(Panel):
     bl_region_type = 'UI'
     bl_category = "UV Tools"
     bl_parent_id = AvatarToolKit_PT_UVPanel.bl_idname
-    bl_order = 3
+    bl_order = 0
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context: Context) -> None:
