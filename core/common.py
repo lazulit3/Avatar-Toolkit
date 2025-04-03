@@ -535,6 +535,18 @@ def add_armature_modifier(mesh: Object, armature: Object) -> None:
     modifier: Modifier = mesh.modifiers.new('Armature', 'ARMATURE')
     modifier.object = armature
 
+def get_modifiers(self: Optional[Any] = None, context: Optional[Context] = None) -> List[Tuple[str, str, str]]:
+    returned: List[Tuple[str, str, str]] = []
+    if context.active_object == None:
+        return returned
+    if context.active_object.type != "MESH":
+        return returned
+    for mod in context.active_object.modifiers:
+        returned.append((mod.name,mod.name,""))
+
+    return returned
+
+
 def get_shapekeys(context: Context, 
                   names: List[str], 
                   is_mouth: bool, 

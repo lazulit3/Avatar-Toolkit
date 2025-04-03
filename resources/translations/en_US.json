@@ -219,6 +219,8 @@
     "Tools.clean_weights_threshold_desc": "Minimum weight value to consider a bone as weighted",
     "Tools.find_shortest_seam_path": "Find Shortest Seam Path",
     "Tools.find_shortest_seam_path_desc": "Find shortest path of seams between two selected vertices connected to seams.",
+    "Tools.apply_modifier_on_shapekey_obj":"Apply Modifier on Shapekey Object",
+    "Tools.apply_modifier_on_shapekey_obj_desc":"Applies a modifier on an object regardless of it having shapekeys.",
     "Tools.merge_title": "Merge Tools",
     "Tools.merge_to_active": "Merge to Active",
     "Tools.merge_to_active_desc": "Merge selected bones to active bone",
