@@ -14,7 +14,7 @@ Avatar Toolkit simplifies the workflow for avatar creation and optimization by p
 
 The addon is built with a focus on user experience, reducing the number of steps needed to prepare avatars while offering powerful customization options for advanced users. Avatar Toolkit aims to be a complete replacement for Cats Blender Plugin and its unofficial variants, with a modern codebase designed specifically for current Blender versions and minimal dependencies on third-party plugins.
 
-Join the Neoneko Discord here: https://discord.nenoneko.xyz
+Join the Neoneko Discord here: https://discord.neoneko.xyz
 
 Need a more stable toolset while Avatar Toolkit is in Alpha? Then please use Blender 4.x and use our Unofficial Cats Blender Plugin which you can find [here](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-).
 
