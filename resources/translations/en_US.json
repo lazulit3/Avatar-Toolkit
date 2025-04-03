@@ -167,6 +167,7 @@
     "Optimization.remove_doubles_completed": "Remove doubles completed successfully",
 
     "Tools.label": "Tools",
+    "Tools.mesh_title": "Mesh Tools",
     "Tools.general_title": "General Tools",
     "Tools.select_armature": "Select an Armature",
     "Tools.convert_resonite": "Convert to Resonite",
@@ -216,6 +217,8 @@
     "Tools.clean_weights_success": "Removed {count} zero-weight bones",
     "Tools.clean_weights_threshold": "Weight Threshold",
     "Tools.clean_weights_threshold_desc": "Minimum weight value to consider a bone as weighted",
+    "Tools.find_shortest_seam_path": "Find Shortest Seam Path",
+    "Tools.find_shortest_seam_path_desc": "Find shortest path of seams between two selected vertices connected to seams.",
     "Tools.merge_title": "Merge Tools",
     "Tools.merge_to_active": "Merge to Active",
     "Tools.merge_to_active_desc": "Merge selected bones to active bone",

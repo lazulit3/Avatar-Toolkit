@@ -18,6 +18,7 @@ from ..functions.tools.bone_tools import (
 from ..functions.tools.standardize_armature import AvatarToolkit_OT_StandardizeArmature
 from ..functions.tools.merge_tools import AvatarToolkit_OT_MergeToActive, AvatarToolkit_OT_MergeToParent, AvatarToolkit_OT_ConnectBones
 from ..functions.tools.rigify_converter import AvatarToolkit_OT_ConvertRigifyToUnity
+from ..functions.tools.general_mesh_tools import AvatarToolkit_OT_SelectShortestSeamPath
 
 class AvatarToolKit_PT_ToolsPanel(Panel):
     """Panel containing various tools for avatar customization and optimization"""
@@ -59,6 +60,13 @@ class AvatarToolKit_PT_ToolsPanel(Panel):
         col.operator(AvatarToolKit_OT_CreateDigitigradeLegs.bl_idname, text=t("Tools.create_digitigrade"), icon='BONE_DATA')
         col.operator(AvatarToolKit_OT_FlipCurrentKeyFrames.bl_idname,text=t("Tools.flip_pose_frames"),icon="ACTION")
 
+        # Mesh Tools
+        mesh_box: UILayout = layout.box()
+        col = mesh_box.column(align=True)
+        col.label(text=t("Tools.mesh_title"), icon='MESH_DATA')
+        col.separator(factor=0.5)
+        col.operator(AvatarToolkit_OT_SelectShortestSeamPath.bl_idname,text=t("Tools.find_shortest_seam_path"),icon="MESH_DATA")
+        
         
         # Standardization Tools
         standardize_box: UILayout = bone_box.box()
