@@ -3,11 +3,18 @@
 ## Avatar Toolkit is in Alpha, There will be issues, please ensure you report them!. If using a Alpha plugin isn't your fancy you can find Cats Blender Plugin [HERE](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-)!
 #### Avatar Toolkit is in Alpha and will contain issues, please ensure you report them!
 
-A new modern tool designed to shorten steps needed to import and optimize models into VRChat, Resonite and other similar games.
+Avatar Toolkit is a modern, Blender addon designed to streamline the process of preparing 3D avatars for virtual platforms including VRChat, ChilloutVR, Resonite, and other similar applications.
 
-With the Avatar Toolkit it only takes a few minutes to upload your model into VRChat, Resonite and other similar games.
+## What is Avatar Toolkit?
+Avatar Toolkit simplifies the workflow for avatar creation and optimization by providing an all-in-one solution that:
+- Automates complex optimization processes like mesh joining and vertex merging.
+- Provides advanced tools for eye tracking setup and viseme configuration.
+- Offers specialized armature utilities including bone name conversion for different platforms.
+- Includes performance-focused optimization tools so you can optimize your avatar for platforms like VRChat and ChilloutVR.
 
-Join the Neoneko Discord here: https://discord.catsblenderplugin.xyz
+The addon is built with a focus on user experience, reducing the number of steps needed to prepare avatars while offering powerful customization options for advanced users. Avatar Toolkit aims to be a complete replacement for Cats Blender Plugin and its unofficial variants, with a modern codebase designed specifically for current Blender versions and minimal dependencies on third-party plugins.
+
+Join the Neoneko Discord here: https://discord.neoneko.xyz
 
 Need a more stable toolset while Avatar Toolkit is in Alpha? Then please use Blender 4.x and use our Unofficial Cats Blender Plugin which you can find [here](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-).
 
