@@ -3,6 +3,9 @@ from typing import Set
 from bpy.types import Panel, Context, UILayout, Operator
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
 from ..core.translations import t
+from ..functions.optimization.materials_tools import AvatarToolkit_OT_CombineMaterials
+from ..functions.optimization.remove_doubles import AvatarToolkit_OT_RemoveDoubles,AvatarToolkit_OT_RemoveDoublesAdvanced
+from ..functions.optimization.mesh_tools import AvatarToolkit_OT_JoinAllMeshes, AvatarToolkit_OT_JoinSelectedMeshes
 
 class AvatarToolKit_PT_OptimizationPanel(Panel):
     """Panel containing mesh and material optimization tools for avatar optimization"""
@@ -26,7 +29,7 @@ class AvatarToolKit_PT_OptimizationPanel(Panel):
         col.separator(factor=0.5)
                 
         # Material Operations
-        col.operator("avatar_toolkit.combine_materials", icon='MATERIAL')
+        col.operator(AvatarToolkit_OT_CombineMaterials.bl_idname, icon='MATERIAL')
         
         # Mesh Cleanup Box
         cleanup_box: UILayout = layout.box()
@@ -36,8 +39,8 @@ class AvatarToolKit_PT_OptimizationPanel(Panel):
         
         # Remove Doubles Row
         row: UILayout = col.row(align=True)
-        row.operator("avatar_toolkit.remove_doubles", icon='MESH_DATA')
-        row.operator("avatar_toolkit.remove_doubles_advanced", icon='PREFERENCES')
+        row.operator(AvatarToolkit_OT_RemoveDoubles.bl_idname, icon='MESH_DATA')
+        row.operator(AvatarToolkit_OT_RemoveDoublesAdvanced.bl_idname, icon='PREFERENCES')
         
         # Join Meshes Box
         join_box: UILayout = layout.box()
@@ -47,5 +50,5 @@ class AvatarToolKit_PT_OptimizationPanel(Panel):
         
         # Join Meshes Row
         row: UILayout = col.row(align=True)
-        row.operator("avatar_toolkit.join_all_meshes", icon='OBJECT_DATA')
-        row.operator("avatar_toolkit.join_selected_meshes", icon='RESTRICT_SELECT_OFF')
+        row.operator(AvatarToolkit_OT_JoinAllMeshes.bl_idname, icon='OBJECT_DATA')
+        row.operator(AvatarToolkit_OT_JoinSelectedMeshes.bl_idname, icon='RESTRICT_SELECT_OFF')

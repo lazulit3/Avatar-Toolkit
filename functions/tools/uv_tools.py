@@ -31,6 +31,8 @@ class AvatarToolkit_OT_AlignUVEdgesToTarget(Operator):
                 return False
         if not context.space_data:
             return False
+        if not hasattr(context.space_data, "show_uvedit"):
+            return False
         if not context.space_data.show_uvedit:
             return False
         if context.scene.tool_settings.use_uv_select_sync:

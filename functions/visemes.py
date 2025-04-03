@@ -124,7 +124,7 @@ class VisemePreview:
         cls._preview_shapes = None
         cls._mesh_name = ""
 
-class ATOOLKIT_OT_preview_visemes(Operator):
+class AvatarToolkit_OT_PreviewVisemes(Operator):
     """Operator for previewing viseme shapes in real-time"""
     bl_idname: str = "avatar_toolkit.preview_visemes"
     bl_label: str = t("Visemes.preview_label")
@@ -181,7 +181,7 @@ def validate_deformation(mesh, mix_data):
     mesh_size = max(mesh.dimensions)
     return max_deform < (mesh_size * 0.4)
 
-class ATOOLKIT_OT_create_visemes(Operator):
+class AvatarToolkit_OT_CreateVisemes(Operator):
     """Operator for generating VRChat-compatible viseme shape keys"""
     bl_idname: str = "avatar_toolkit.create_visemes"
     bl_label: str = t("Visemes.create_label")

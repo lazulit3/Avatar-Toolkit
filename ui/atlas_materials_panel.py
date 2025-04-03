@@ -97,14 +97,14 @@ class AvatarToolKit_UL_MaterialTextureAtlasProperties(UIList):
         row = layout.row(align=True)
         row.scale_y = 1.2
         
-        row.operator("avatar_toolkit.select_all_materials", text="", icon='CHECKBOX_HLT', 
+        row.operator(AvatarToolKit_OT_SelectAllMaterials.bl_idname, text="", icon='CHECKBOX_HLT', 
                     emboss=True).tooltip = t("TextureAtlas.select_all_tooltip")
-        row.operator("avatar_toolkit.select_none_materials", text="", icon='CHECKBOX_DEHLT', 
+        row.operator(AvatarToolKit_OT_SelectNoneMaterials.bl_idname, text="", icon='CHECKBOX_DEHLT', 
                     emboss=True).tooltip = t("TextureAtlas.select_none_tooltip")
         row.separator(factor=0.5)
-        row.operator("avatar_toolkit.expand_all_materials", text="", icon='DISCLOSURE_TRI_DOWN', 
+        row.operator(AvatarToolKit_OT_ExpandAllMaterials.bl_idname, text="", icon='DISCLOSURE_TRI_DOWN', 
                     emboss=True).tooltip = t("TextureAtlas.expand_all_tooltip")
-        row.operator("avatar_toolkit.collapse_all_materials", text="", icon='DISCLOSURE_TRI_RIGHT', 
+        row.operator(AvatarToolKit_OT_CollapseAllMaterials.bl_idname, text="", icon='DISCLOSURE_TRI_RIGHT', 
                     emboss=True).tooltip = t("TextureAtlas.collapse_all_tooltip")
         
         row.separator(factor=1.0)

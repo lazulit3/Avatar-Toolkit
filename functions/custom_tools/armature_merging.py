@@ -7,6 +7,7 @@ from ...core.translations import t
 from ...core.common import (
     get_all_meshes,
     fix_zero_length_bones,
+    remove_unused_vertex_groups,
     clear_unused_data_blocks,
     join_mesh_objects,
     remove_unused_shapekeys,
@@ -174,7 +175,7 @@ def merge_armatures(
     merge_armature_data: bpy.types.Armature = merge_armature.data
     for bone in merge_armature_data.bones:
         original_parents[bone.name] = bone.parent.name if bone.parent else None
-        
+
     # Switch to edit mode on merge armature and rename bones
     bpy.context.view_layer.objects.active = merge_armature
     bpy.ops.object.mode_set(mode='EDIT')
@@ -376,20 +377,6 @@ def mix_vertex_groups(mesh: Object, vg_from_name: str, vg_to_name: str) -> None:
     weights_combined: np.ndarray = np.clip(weights_from + weights_to, 0.0, 1.0)
     vg_to.add(range(num_vertices), weights_combined.tolist(), 'REPLACE')
     mesh.vertex_groups.remove(vg_from)
-
-def remove_unused_vertex_groups(mesh: Object) -> None:
-    """Remove vertex groups with no weights"""
-    for vg in mesh.vertex_groups:
-        has_weights: bool = False
-        for vert in mesh.data.vertices:
-            for group in vert.groups:
-                if group.group == vg.index and group.weight > 0.001:
-                    has_weights = True
-                    break
-            if has_weights:
-                break
-        if not has_weights:
-            mesh.vertex_groups.remove(vg)
 
 def apply_armature_to_mesh(armature: Object, mesh: Object) -> None:
     """Apply armature deformation to mesh"""

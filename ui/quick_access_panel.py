@@ -23,7 +23,10 @@ from ..functions.pose_mode import (
     AvatarToolkit_OT_ApplyPoseAsShapekey,
     AvatarToolkit_OT_ApplyPoseAsRest
 )
-from ..core.armature_validation import validate_armature
+from ..core.armature_validation import validate_armature, AvatarToolkit_OT_ValidateTPose
+from ..core.importers.importer import AvatarToolKit_OT_Import
+from ..core.resonite_utils import AvatarToolKit_OT_ExportResonite
+from ..functions.tools.standardize_armature import AvatarToolkit_OT_StandardizeArmature
 
 class AvatarToolKit_OT_ExportFBX(Operator):
     """Export selected objects as FBX"""
@@ -41,8 +44,8 @@ class AvatarToolKit_MT_ExportMenu(Menu):
 
     def draw(self, context: Context) -> None:
         layout: UILayout = self.layout
-        layout.operator("avatar_toolkit.export_fbx", text=t("QuickAccess.export_fbx"))
-        layout.operator("avatar_toolkit.export_resonite", text=t("QuickAccess.export_resonite"))
+        layout.operator(AvatarToolKit_OT_ExportFBX.bl_idname, text=t("QuickAccess.export_fbx"))
+        layout.operator(AvatarToolKit_OT_ExportResonite.bl_idname, text=t("QuickAccess.export_resonite"))
 
 class AvatarToolKit_OT_ExportMenu(Operator):
     """Open the export menu"""
@@ -170,7 +173,7 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                     col = pose_box.column(align=True)
                     col.label(text=t("Validation.tpose.label"), icon='ARMATURE_DATA')
                     col.separator(factor=0.5)
-                    col.operator("avatar_toolkit.validate_tpose", icon='CHECKMARK')
+                    col.operator(AvatarToolkit_OT_ValidateTPose.bl_idname, icon='CHECKMARK')
 
                     if props.show_tpose_validation:
                         validation_box = col.box()
@@ -207,7 +210,7 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                 
                 # Add standardize button
                 standardize_box = info_box.box()
-                standardize_box.operator("avatar_toolkit.standardize_armature", 
+                standardize_box.operator(AvatarToolkit_OT_StandardizeArmature.bl_idname, 
                                     text=t("QuickAccess.standardize_armature"),
                                     icon='MODIFIER')
 
@@ -247,5 +250,5 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         # Import/Export Buttons
         button_row: UILayout = col.row(align=True)
         button_row.scale_y = 1.5
-        button_row.operator("avatar_toolkit.import", text=t("QuickAccess.import"), icon='IMPORT')
-        button_row.operator("avatar_toolkit.export", text=t("QuickAccess.export"), icon='EXPORT')
+        button_row.operator(AvatarToolKit_OT_Import.bl_idname, text=t("QuickAccess.import"), icon='IMPORT')
+        button_row.operator(AvatarToolKit_OT_ExportMenu.bl_idname, text=t("QuickAccess.export"), icon='EXPORT')

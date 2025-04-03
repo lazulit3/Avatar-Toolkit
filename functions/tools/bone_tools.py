@@ -7,7 +7,8 @@ from ...core.common import (
     get_active_armature, 
     get_all_meshes,
     ProgressTracker,
-    restore_bone_transforms
+    restore_bone_transforms,
+    remove_unused_vertex_groups,
 )
 from ...core.armature_validation import validate_armature, validate_bone_hierarchy
 
@@ -261,6 +262,22 @@ class AvatarToolKit_OT_RemoveZeroWeightBones(Operator):
             
         self.report({'INFO'}, t("Tools.clean_weights_success", count=removed_count))
         return {'FINISHED'}
+
+class AvatarToolKit_OT_RemoveZeroWeightVertexGroups(Operator):
+    """Operator to remove vertex groups with no weights"""
+    bl_idname = "avatar_toolkit.clean_vertex_groups"
+    bl_label = t("Tools.clean_vertex_groups")
+    bl_description = t("Tools.clean_vertex_groups_desc")
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context: Context) -> set[str]:
+        meshes: list[bpy.types.Object] = get_all_meshes(context)
+        
+        for mesh_obj in meshes:
+            remove_unused_vertex_groups(mesh_obj)
+
+        return {'FINISHED'}
+
 
 class AvatarToolKit_OT_RemoveSelectedBones(Operator):
     """Operator to remove selected bones from the zero weight bones list"""
