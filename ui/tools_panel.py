@@ -93,6 +93,8 @@ class AvatarToolKit_PT_ToolsPanel(Panel):
         row = col.row(align=True)
         row.operator(AvatarToolKit_OT_RemoveZeroWeightBones.bl_idname, text=t("Tools.clean_weights"), icon='GROUP_BONE')
         row.operator(AvatarToolKit_OT_DeleteBoneConstraints.bl_idname, text=t("Tools.clean_constraints"), icon='CONSTRAINT_BONE')
+        row = col.row(align=True)
+        row.operator(AvatarToolKit_OT_RemoveZeroWeightVertexGroups.bl_idname, text=t("Tools.clean_vertex_groups"), icon='CONSTRAINT_BONE')
         
         # Merge Tools
         merge_box: UILayout = layout.box()

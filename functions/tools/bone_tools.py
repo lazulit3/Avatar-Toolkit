@@ -272,10 +272,11 @@ class AvatarToolKit_OT_RemoveZeroWeightVertexGroups(Operator):
 
     def execute(self, context: Context) -> set[str]:
         meshes: list[bpy.types.Object] = get_all_meshes(context)
-        
+        removed: int = 0
         for mesh_obj in meshes:
-            remove_unused_vertex_groups(mesh_obj)
+            removed = removed+remove_unused_vertex_groups(mesh_obj)
 
+        self.report({'INFO'}, t("Tools.vertex_groups_removed", count=removed))
         return {'FINISHED'}
 
 

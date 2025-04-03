@@ -495,8 +495,9 @@ def fix_zero_length_bones(armature: Object) -> None:
             bone.length = 0.001
     bpy.ops.object.mode_set(mode='OBJECT')
 
-def remove_unused_vertex_groups(mesh: Object) -> None:
+def remove_unused_vertex_groups(mesh: Object) -> int:
     """Remove vertex groups with no weights"""
+    removed: int = 0
     for vg in mesh.vertex_groups:
         has_weights: bool = False
         for vert in mesh.data.vertices:
@@ -508,6 +509,9 @@ def remove_unused_vertex_groups(mesh: Object) -> None:
                 break
         if not has_weights:
             mesh.vertex_groups.remove(vg)
+            removed = removed+1
+
+    return removed
 
 def calculate_bone_orientation(mesh: Object, vertices: List[Any]) -> Tuple[Vector, float]:
     """Calculate optimal bone orientation based on mesh geometry"""
