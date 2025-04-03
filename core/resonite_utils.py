@@ -5,10 +5,10 @@ from numpy import double
 from typing import Set, Dict
 import re
 
-from .common import get_active_armature, simplify_bonename, validate_armature, ProgressTracker, identify_bones
+from .common import get_active_armature, ProgressTracker, identify_bones
 from bpy.types import Context, Operator
 from ..core.translations import t
-from ..core.dictionaries import bone_names, resonite_translations
+from ..core.dictionaries import bone_names, resonite_translations, simplify_bonename
 from ..core.logging_setup import logger
 from ..core.armature_validation import validate_armature
 
@@ -77,7 +77,7 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
 
             total_bones = len(arm_data.bones)
             with ProgressTracker(context, total_bones, t("Tools.convert_resonite.operation")) as progress:
-                for key_simple,bone_name in identify_bones(arm_data,context).items():
+                for key_simple,bone_name in identify_bones(arm_data).items():
 
                     if key_simple in resonite_translations:
                         new_name = resonite_translations[key_simple]

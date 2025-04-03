@@ -2,15 +2,16 @@ import bpy
 import numpy as np
 from typing import List, Optional, Dict, Set, Tuple, Any
 from bpy.types import Context, Object, Operator, ArmatureModifier, EditBone, VertexGroup, Mesh, ShapeKey
-from ...core.dictionaries import bone_names
 from ...core.logging_setup import logger
 from ...core.translations import t
 from ...core.common import (
     get_all_meshes,
     fix_zero_length_bones,
+    remove_unused_vertex_groups,
     clear_unused_data_blocks,
     join_mesh_objects,
     remove_unused_shapekeys,
+    identify_bones,
 )
 from ...core.dictionaries import simplify_bonename
 
@@ -175,44 +176,22 @@ def merge_armatures(
     for bone in merge_armature_data.bones:
         original_parents[bone.name] = bone.parent.name if bone.parent else None
 
-    #create reverse lookup
-    reverse_bone_lookup = {}
-    for preferred_name, name_list in bone_names.items():
-        for name in name_list:
-            reverse_bone_lookup[name] = preferred_name
-    
-    # Get base bone names
-    base_bone_names: Set[str] = {bone.name for bone in base_armature.data.bones}
-
-    base_armature_standards: Dict[str,Optional[str]] = {}
-    for bone in base_bone_names:
-        if simplify_bonename(bone) in reverse_bone_lookup:
-            base_armature_standards[reverse_bone_lookup[simplify_bonename(bone)]] = bone
-
     # Switch to edit mode on merge armature and rename bones
     bpy.context.view_layer.objects.active = merge_armature
     bpy.ops.object.mode_set(mode='EDIT')
     
-    # Handle bone renaming/removing to target armature.
-    bone_names_source: list[str] = [bone.name for bone in merge_armature_data.edit_bones]
-    for bone in bone_names_source:
-        bone_name = bone
-        if bone_name not in base_bone_names: #not auto mergable to original
-            
-            if simplify_bonename(bone_name) in reverse_bone_lookup: #if is a standard bone through standard translation.
-                if reverse_bone_lookup[simplify_bonename(bone_name)] in base_armature_standards: #if this bone equals for example, "hips", does a bone that should be "hips" exist on our target armature?
-                    #if so, rename this bone to that one
-                    merge_armature_data.edit_bones[bone_name].name = base_armature_standards[reverse_bone_lookup[simplify_bonename(bone_name)]]
-                    bone_name = merge_armature_data.edit_bones[bone_name].name
-                    #adjust original parents list to point to the new name.
-                    for child_bone in merge_armature_data.edit_bones[bone_name]:
-                        original_parents[child_bone.name] = bone_name
-                    #then remove so it doesn't clash when merged.
-                    merge_armature_data.edit_bones.remove(merge_armature_data.edit_bones[bone_name])
-                    continue
-
-            #if it really doesn't have a counter part, just don't bother.
-        else:
+    # Identify our bones to what their standard name is like "hips" for source and target armature bones.
+    identifed_base_bone_names: Dict[str,str] = identify_bones(base_armature.data)
+    identified_bone_names_source: Dict[str,str] = identify_bones(merge_armature_data)
+    
+    for standard,bone_name in identified_bone_names_source.items():
+        if standard in identifed_base_bone_names: #if the bone we are at on our merge armature has a standard name translation for the target armature
+            merge_armature_data.edit_bones[bone_name].name = identifed_base_bone_names[standard] #change it's name to the one on the target merge to armature's coorisponding standard bone
+            bone_name = merge_armature_data.edit_bones[bone_name].name
+            #adjust original parents list to point to the new name.
+            for child_bone in merge_armature_data.edit_bones[bone_name]:
+                original_parents[child_bone.name] = bone_name
+            #then remove so it doesn't clash when merged.
             merge_armature_data.edit_bones.remove(merge_armature_data.edit_bones[bone_name])
 
     # Return to object mode
@@ -398,20 +377,6 @@ def mix_vertex_groups(mesh: Object, vg_from_name: str, vg_to_name: str) -> None:
     weights_combined: np.ndarray = np.clip(weights_from + weights_to, 0.0, 1.0)
     vg_to.add(range(num_vertices), weights_combined.tolist(), 'REPLACE')
     mesh.vertex_groups.remove(vg_from)
-
-def remove_unused_vertex_groups(mesh: Object) -> None:
-    """Remove vertex groups with no weights"""
-    for vg in mesh.vertex_groups:
-        has_weights: bool = False
-        for vert in mesh.data.vertices:
-            for group in vert.groups:
-                if group.group == vg.index and group.weight > 0.001:
-                    has_weights = True
-                    break
-            if has_weights:
-                break
-        if not has_weights:
-            mesh.vertex_groups.remove(vg)
 
 def apply_armature_to_mesh(armature: Object, mesh: Object) -> None:
     """Apply armature deformation to mesh"""

@@ -10,6 +10,7 @@ from bpy.types import (
 )
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
 from ..core.translations import t, get_languages_list
+from ..core.armature_validation import AvatarToolkit_OT_HighlightProblemBones, AvatarToolkit_OT_ClearBoneHighlighting
 
 class AvatarToolkit_OT_TranslationRestartPopup(Operator):
     """Popup dialog shown after language change to inform about restart requirement"""
@@ -71,9 +72,9 @@ class AvatarToolKit_PT_SettingsPanel(Panel):
         col.separator()
         col.prop(props, "highlight_problem_bones")
         if props.highlight_problem_bones:
-            col.operator("avatar_toolkit.highlight_problem_bones", icon='COLOR')
+            col.operator(AvatarToolkit_OT_HighlightProblemBones.bl_idname, icon='COLOR')
         else:
-            col.operator("avatar_toolkit.clear_bone_highlighting", icon='X')
+            col.operator(AvatarToolkit_OT_ClearBoneHighlighting.bl_idname, icon='X')
 
         # Debug Settings
         debug_box = layout.box()
