@@ -26,23 +26,21 @@ class MeshEntry(TypedDict):
 
 def create_duplicate_for_merge(context: Context, mesh: Object, shapekey_name: str = "") -> Object:
     """Creates a duplicate mesh object for merge testing"""
-    
-    if(shapekey_name != ""):
-        mesh.active_shape_key_index = mesh.data.shape_keys.key_blocks.find(shapekey_name)
-    
+
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     mesh.select_set(True)
     context.view_layer.objects.active = mesh
     bpy.ops.object.duplicate()
-    if(shapekey_name != ""):
-        bpy.ops.object.shape_key_move(type='TOP')
-        bpy.ops.object.shape_key_remove(all=True,apply_mix=False)
-    
     duplicate = context.view_layer.objects.active
-    if(shapekey_name != ""):
-        duplicate.name = f"{shapekey_name}_object_is_{mesh.name}"
     
+    if(shapekey_name != ""):
+        for shape in duplicate.data.shape_keys.key_blocks:
+            shape.value = 0
+        duplicate.active_shape_key_index = mesh.data.shape_keys.key_blocks.find(shapekey_name)
+        duplicate.active_shape_key.value = 1
+        bpy.ops.object.shape_key_remove(all=True,apply_mix=True)
+        duplicate.name = f"{shapekey_name}_object_is_{mesh.name}"
     else:
         duplicate.name = f"object_is_{mesh.name}"
     return duplicate
@@ -187,5 +185,6 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
             return {'RUNNING_MODAL'}
             
         except Exception as e:
+            print(traceback.format_exception(e))
             logger.error(f"Error in modal: {traceback.format_exception(e)}")
             return {'CANCELLED'}
