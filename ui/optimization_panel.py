@@ -4,7 +4,7 @@ from bpy.types import Panel, Context, UILayout, Operator
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
 from ..core.translations import t
 from ..functions.optimization.materials_tools import AvatarToolkit_OT_CombineMaterials
-from ..functions.optimization.remove_doubles import AvatarToolkit_OT_RemoveDoubles,AvatarToolkit_OT_RemoveDoublesAdvanced
+from ..functions.optimization.remove_doubles import AvatarToolkit_OT_RemoveDoubles
 from ..functions.optimization.mesh_tools import AvatarToolkit_OT_JoinAllMeshes, AvatarToolkit_OT_JoinSelectedMeshes
 
 class AvatarToolKit_PT_OptimizationPanel(Panel):
@@ -40,7 +40,6 @@ class AvatarToolKit_PT_OptimizationPanel(Panel):
         # Remove Doubles Row
         row: UILayout = col.row(align=True)
         row.operator(AvatarToolkit_OT_RemoveDoubles.bl_idname, icon='MESH_DATA')
-        row.operator(AvatarToolkit_OT_RemoveDoublesAdvanced.bl_idname, icon='PREFERENCES')
         
         # Join Meshes Box
         join_box: UILayout = layout.box()
