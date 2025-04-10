@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
-# This file was originally part of the MMD Tools project, However Neoneko has added it to Avatar Toolkit.
-# All credit goes to the original authors.
-# Please note that some code was modified to fit the needs of Avatar Toolkit and some code may of been removed.
-# MMD Tools is licensed under the terms of the GPL-3.0 license which Avatar Toolkit is also licensed under.
-# You can find MMD Tools at: https://github.com/MMD-Blender/blender_mmd_tools/
+# This file was originally part of the MMD Tools add-on for Blender
+# You can find MMD Tools here: https://github.com/MMD-Blender/blender_mmd_tools
+# Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
+# MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
 """Properties for MMD model root object"""
 
@@ -500,26 +499,22 @@ class MMDRoot(bpy.types.PropertyGroup):
 
     @staticmethod
     def __get_select(prop: bpy.types.Object) -> bool:
-        # TODO: Object.select is deprecated since v4.0.0, use Object.select_get() method instead
-        # utils.warn_deprecation("Object.select", "v4.0.0", "Use Object.select_get() method instead")
+        utils.warn_deprecation("Object.select", "v4.0.0", "Use Object.select_get() method instead")
         return prop.select_get()
 
     @staticmethod
     def __set_select(prop: bpy.types.Object, value: bool) -> None:
-        # TODO: Object.select is deprecated since v4.0.0, use Object.select_set() method instead
-        # utils.warn_deprecation("Object.select", "v4.0.0", "Use Object.select_set() method instead")
+        utils.warn_deprecation("Object.select", "v4.0.0", "Use Object.select_set() method instead")
         prop.select_set(value)
 
     @staticmethod
     def __get_hide(prop: bpy.types.Object) -> bool:
-        # TODO: Object.hide is deprecated since v4.0.0, use Object.hide_get() method instead
-        # utils.warn_deprecation("Object.hide", "v4.0.0", "Use Object.hide_get() method instead")
+        utils.warn_deprecation("Object.hide", "v4.0.0", "Use Object.hide_get() method instead")
         return prop.hide_get()
 
     @staticmethod
     def __set_hide(prop: bpy.types.Object, value: bool) -> None:
-        # TODO: Object.hide is deprecated since v4.0.0, use Object.hide_set() method instead
-        # utils.warn_deprecation("Object.hide", "v4.0.0", "Use Object.hide_set() method instead")
+        utils.warn_deprecation("Object.hide", "v4.0.0", "Use Object.hide_set() method instead")
         prop.hide_set(value)
         if prop.hide_viewport != value:
             prop.hide_viewport = value

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-# Copyright 2013 MMD Tools authors
-# This file was originally part of the MMD Tools project, However Neoneko has added it to Avatar Toolkit.
-# All credit goes to the original authors.
-# Please note that some code was modified to fit the needs of Avatar Toolkit and some code may of been removed.
-# MMD Tools is licensed under the terms of the GPL-3.0 license which Avatar Toolkit is also licensed under.
-# You can find MMD Tools at: https://github.com/MMD-Blender/blender_mmd_tools/
+# Copyright 2014 MMD Tools authors
+# This file was originally part of the MMD Tools add-on for Blender
+# You can find MMD Tools here: https://github.com/MMD-Blender/blender_mmd_tools
+# Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
+# MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
 import logging
 import os
@@ -13,18 +12,32 @@ from typing import TYPE_CHECKING, Callable, Iterable, Optional, Tuple, cast
 import bpy
 from mathutils import Vector
 
-from ..logging_setup import logger
+from ..bpyutils import FnContext
 from .exceptions import MaterialNotFoundError
 from .shader import _NodeGroupUtils
 
 if TYPE_CHECKING:
     from ..properties.material import MMDMaterial
 
-# Constants for sphere modes
+# TODO: use enum instead of constants
 SPHERE_MODE_OFF = 0
 SPHERE_MODE_MULT = 1
 SPHERE_MODE_ADD = 2
 SPHERE_MODE_SUBTEX = 3
+
+
+class _DummyTexture:
+    def __init__(self, image):
+        self.type = "IMAGE"
+        self.image = image
+        self.use_mipmap = True
+
+
+class _DummyTextureSlot:
+    def __init__(self, image):
+        self.diffuse_color_factor = 1
+        self.uv_layer = ""
+        self.texture = _DummyTexture(image)
 
 
 class FnMaterial:
@@ -33,7 +46,6 @@ class FnMaterial:
     def __init__(self, material: bpy.types.Material):
         self.__material = material
         self._nodes_are_readonly = FnMaterial.__NODES_ARE_READONLY
-        logger.debug(f"Initializing FnMaterial for {material.name}")
 
     @staticmethod
     def set_nodes_are_readonly(nodes_are_readonly: bool):
@@ -115,7 +127,7 @@ class FnMaterial:
 
     @property
     def material_id(self):
-        mmd_mat = self.__material.mmd_material
+        mmd_mat: MMDMaterial = self.__material.mmd_material
         if mmd_mat.material_id < 0:
             max_id = -1
             for mat in bpy.data.materials:
@@ -129,9 +141,11 @@ class FnMaterial:
 
     def __same_image_file(self, image, filepath):
         if image and image.source == "FILE":
-            img_filepath = bpy.path.abspath(image.filepath)
+            # pylint: disable=assignment-from-no-return
+            img_filepath = bpy.path.abspath(image.filepath)  # image.filepath_from_user()
             if img_filepath == filepath:
                 return True
+            # pylint: disable=bare-except
             try:
                 return os.path.samefile(img_filepath, filepath)
             except:
@@ -141,34 +155,28 @@ class FnMaterial:
     def _load_image(self, filepath):
         img = next((i for i in bpy.data.images if self.__same_image_file(i, filepath)), None)
         if img is None:
+            # pylint: disable=bare-except
             try:
                 img = bpy.data.images.load(filepath)
-                logger.debug(f"Loaded image from {filepath}")
             except:
-                logger.warning(f"Cannot create a texture for {filepath}. No such file.")
+                logging.warning("Cannot create a texture for %s. No such file.", filepath)
                 img = bpy.data.images.new(os.path.basename(filepath), 1, 1)
                 img.source = "FILE"
                 img.filepath = filepath
-            # For Blender 4.4+
-            if img.depth == 32 and img.file_format != "BMP":
-                img.alpha_mode = "CHANNEL_PACKED"
-            else:
+            use_alpha = img.depth == 32 and img.file_format != "BMP"
+            if hasattr(img, "use_alpha"):
+                img.use_alpha = use_alpha
+            elif not use_alpha:
                 img.alpha_mode = "NONE"
         return img
 
     def update_toon_texture(self):
         if self._nodes_are_readonly:
             return
-        mmd_mat = self.__material.mmd_material
+        mmd_mat: MMDMaterial = self.__material.mmd_material
         if mmd_mat.is_shared_toon_texture:
-            # Get shared toon folder from preferences
-            context = bpy.context
-            addon_prefs = context.preferences.addons.get("avatar_toolkit", None)
-            if addon_prefs:
-                shared_toon_folder = addon_prefs.preferences.shared_toon_folder
-            else:
-                shared_toon_folder = ""
-            toon_path = os.path.join(shared_toon_folder, f"toon{mmd_mat.shared_toon_texture + 1:02d}.bmp")
+            shared_toon_folder = FnContext.get_addon_preferences_attribute(FnContext.ensure_context(), "shared_toon_folder", "")
+            toon_path = os.path.join(shared_toon_folder, "toon%02d.bmp" % (mmd_mat.shared_toon_texture + 1))
             self.create_toon_texture(bpy.path.resolve_ncase(path=toon_path))
         elif mmd_mat.toon_texture != "":
             self.create_toon_texture(mmd_mat.toon_texture)
@@ -192,15 +200,13 @@ class FnMaterial:
         if self._nodes_are_readonly:
             return
         mat = self.__material
-        mmd_mat = mat.mmd_material
+        mmd_mat: MMDMaterial = mat.mmd_material
         color, alpha = mmd_mat.edge_color[:3], mmd_mat.edge_color[3]
         line_color = color + (min(alpha, int(mmd_mat.enabled_toon_edge)),)
-        
-        # For Blender 4.4+
         if hasattr(mat, "line_color"):  # freestyle line color
             mat.line_color = line_color
 
-        mat_edge = bpy.data.materials.get("mmd_edge." + mat.name, None)
+        mat_edge: bpy.types.Material = bpy.data.materials.get("mmd_edge." + mat.name, None)
         if mat_edge:
             mat_edge.mmd_material.edge_color = line_color
 
@@ -216,11 +222,11 @@ class FnMaterial:
         pass
 
     def get_texture(self):
-        return self.__get_texture_node("mmd_base_tex")
+        return self.__get_texture_node("mmd_base_tex", use_dummy=True)
 
     def create_texture(self, filepath):
         texture = self.__create_texture_node("mmd_base_tex", filepath, (-4, -1))
-        return texture
+        return _DummyTextureSlot(texture.image)
 
     def remove_texture(self):
         if self._nodes_are_readonly:
@@ -228,7 +234,7 @@ class FnMaterial:
         self.__remove_texture_node("mmd_base_tex")
 
     def get_sphere_texture(self):
-        return self.__get_texture_node("mmd_sphere_tex")
+        return self.__get_texture_node("mmd_sphere_tex", use_dummy=True)
 
     def use_sphere_texture(self, use_sphere, obj=None):
         if self._nodes_are_readonly:
@@ -241,7 +247,7 @@ class FnMaterial:
     def create_sphere_texture(self, filepath, obj=None):
         texture = self.__create_texture_node("mmd_sphere_tex", filepath, (-2, -2))
         self.update_sphere_texture_type(obj)
-        return texture
+        return _DummyTextureSlot(texture.image)
 
     def update_sphere_texture_type(self, obj=None):
         if self._nodes_are_readonly:
@@ -258,8 +264,10 @@ class FnMaterial:
 
             texture = self.__get_texture_node("mmd_sphere_tex")
             if texture and (not texture.inputs["Vector"].is_linked or texture.inputs["Vector"].links[0].from_node.name == "mmd_tex_uv"):
-                # For Blender 4.4+
-                texture.image.colorspace_settings.name = "Linear Rec.709" if is_sph_add else "sRGB"
+                if hasattr(texture, "color_space"):
+                    texture.color_space = "NONE" if is_sph_add else "COLOR"
+                elif hasattr(texture.image, "colorspace_settings"):
+                    texture.image.colorspace_settings.name = "Linear Rec.709" if is_sph_add else "sRGB"
 
                 mat = self.material
                 nodes, links = mat.node_tree.nodes, mat.node_tree.links
@@ -269,7 +277,7 @@ class FnMaterial:
                         next(uv_layers, None)  # skip base UV
                         subtex_uv = getattr(next(uv_layers, None), "name", "")
                         if subtex_uv != "UV1":
-                            logger.info(f'Material({mat.name}): object "{obj.name}" use UV "{subtex_uv}" for SubTex')
+                            logging.info(' * material(%s): object "%s" use UV "%s" for SubTex', mat.name, obj.name, subtex_uv)
                     links.new(nodes["mmd_tex_uv"].outputs["SubTex UV"], texture.inputs["Vector"])
                 else:
                     links.new(nodes["mmd_tex_uv"].outputs["Sphere UV"], texture.inputs["Vector"])
@@ -280,7 +288,7 @@ class FnMaterial:
         self.__remove_texture_node("mmd_sphere_tex")
 
     def get_toon_texture(self):
-        return self.__get_texture_node("mmd_toon_tex")
+        return self.__get_texture_node("mmd_toon_tex", use_dummy=True)
 
     def use_toon_texture(self, use_toon):
         if self._nodes_are_readonly:
@@ -289,18 +297,18 @@ class FnMaterial:
 
     def create_toon_texture(self, filepath):
         texture = self.__create_texture_node("mmd_toon_tex", filepath, (-3, -1.5))
-        return texture
+        return _DummyTextureSlot(texture.image)
 
     def remove_toon_texture(self):
         if self._nodes_are_readonly:
             return
         self.__remove_texture_node("mmd_toon_tex")
 
-    def __get_texture_node(self, node_name):
+    def __get_texture_node(self, node_name, use_dummy=False):
         mat = self.material
         texture = getattr(mat.node_tree, "nodes", {}).get(node_name, None)
         if isinstance(texture, bpy.types.ShaderNodeTexImage):
-            return texture
+            return _DummyTexture(texture.image) if use_dummy else texture
         return None
 
     def __remove_texture_node(self, node_name):
@@ -318,6 +326,7 @@ class FnMaterial:
             self.__update_shader_nodes()
             nodes = self.material.node_tree.nodes
             texture = nodes.new("ShaderNodeTexImage")
+            # pylint: disable=assignment-from-no-return
             texture.label = bpy.path.display_name(node_name)
             texture.name = node_name
             texture.location = nodes["mmd_shader"].location + Vector((pos[0] * 210, pos[1] * 220))
@@ -330,7 +339,6 @@ class FnMaterial:
             return
         mat = self.material
         mmd_mat = mat.mmd_material
-        # For Blender 4.4+
         mat.diffuse_color[:3] = self._mix_diffuse_and_ambient(mmd_mat)
         self.__update_shader_input("Ambient Color", mmd_mat.ambient_color[:] + (1,))
 
@@ -339,7 +347,6 @@ class FnMaterial:
             return
         mat = self.material
         mmd_mat = mat.mmd_material
-        # For Blender 4.4+
         mat.diffuse_color[:3] = self._mix_diffuse_and_ambient(mmd_mat)
         self.__update_shader_input("Diffuse Color", mmd_mat.diffuse_color[:] + (1,))
 
@@ -348,14 +355,17 @@ class FnMaterial:
             return
         mat = self.material
         mmd_mat = mat.mmd_material
-        
-        # For Blender 4.4+
-        mat.blend_method = "HASHED"
-        
-        # Update alpha in diffuse_color
-        if len(mat.diffuse_color) > 3:
+        if hasattr(mat, "blend_method"):
+            mat.blend_method = "HASHED"  # 'BLEND'
+            # mat.show_transparent_back = False
+        elif hasattr(mat, "transparency_method"):
+            mat.use_transparency = True
+            mat.transparency_method = "Z_TRANSPARENCY"
+            mat.game_settings.alpha_blend = "ALPHA"
+        if hasattr(mat, "alpha"):
+            mat.alpha = mmd_mat.alpha
+        elif len(mat.diffuse_color) > 3:
             mat.diffuse_color[3] = mmd_mat.alpha
-            
         self.__update_shader_input("Alpha", mmd_mat.alpha)
         self.update_self_shadow_map()
 
@@ -372,11 +382,11 @@ class FnMaterial:
             return
         mat = self.material
         mmd_mat = mat.mmd_material
-        
-        # For Blender 4.4+
         mat.roughness = 1 / pow(max(mmd_mat.shininess, 1), 0.37)
-        mat.metallic = pow(1 - mat.roughness, 2.7)
-        
+        if hasattr(mat, "metallic"):
+            mat.metallic = pow(1 - mat.roughness, 2.7)
+        if hasattr(mat, "specular_hardness"):
+            mat.specular_hardness = mmd_mat.shininess
         self.__update_shader_input("Reflect", mmd_mat.shininess)
 
     def update_is_double_sided(self):
@@ -384,10 +394,10 @@ class FnMaterial:
             return
         mat = self.material
         mmd_mat = mat.mmd_material
-        
-        # For Blender 4.4+
-        mat.use_backface_culling = not mmd_mat.is_double_sided
-        
+        if hasattr(mat, "game_settings"):
+            mat.game_settings.use_backface_culling = not mmd_mat.is_double_sided
+        elif hasattr(mat, "use_backface_culling"):
+            mat.use_backface_culling = not mmd_mat.is_double_sided
         self.__update_shader_input("Double Sided", mmd_mat.is_double_sided)
 
     def update_self_shadow_map(self):
@@ -396,9 +406,8 @@ class FnMaterial:
         mat = self.material
         mmd_mat = mat.mmd_material
         cast_shadows = mmd_mat.enabled_self_shadow_map if mmd_mat.alpha > 1e-3 else False
-        
-        # For Blender 4.4+
-        mat.shadow_method = "HASHED" if cast_shadows else "NONE"
+        if hasattr(mat, "shadow_method"):
+            mat.shadow_method = "HASHED" if cast_shadows else "NONE"
 
     def update_self_shadow(self):
         if self._nodes_are_readonly:
@@ -424,8 +433,16 @@ class FnMaterial:
                         return child
                 return None
 
-            # For Blender 4.4+
-            preferred_output_node_target = "EEVEE"
+            if hasattr(context, "engine"):
+                active_render_engine = context.engine
+            else:
+                # use ALL anyway
+                active_render_engine = "ALL"
+
+            preferred_output_node_target = {
+                "CYCLES": "CYCLES",
+                "BLENDER_EEVEE_NEXT": "EEVEE",
+            }.get(active_render_engine, "ALL")
 
             tex_node = None
             for target in [preferred_output_node_target, "ALL"]:
@@ -453,21 +470,25 @@ class FnMaterial:
                         # ambient should be half the diffuse
                         mmd_material.ambient_color = [x * 0.5 for x in mmd_material.diffuse_color]
 
-        # For Blender 4.4+
         shadow_method = getattr(m, "shadow_method", None)
 
         if mmd_material.diffuse_color is None:
             mmd_material.diffuse_color = m.diffuse_color[:3]
-            
-        # For Blender 4.4+
-        if len(m.diffuse_color) > 3:
+        if hasattr(m, "alpha"):
+            mmd_material.alpha = m.alpha
+        elif len(m.diffuse_color) > 3:
             mmd_material.alpha = m.diffuse_color[3]
 
         mmd_material.specular_color = m.specular_color
-        
-        # For Blender 4.4+
-        mmd_material.shininess = pow(1 / max(m.roughness, 0.099), 1 / 0.37)
-        mmd_material.is_double_sided = not m.use_backface_culling
+        if hasattr(m, "specular_hardness"):
+            mmd_material.shininess = m.specular_hardness
+        else:
+            mmd_material.shininess = pow(1 / max(m.roughness, 0.099), 1 / 0.37)
+
+        if hasattr(m, "game_settings"):
+            mmd_material.is_double_sided = not m.game_settings.use_backface_culling
+        elif hasattr(m, "use_backface_culling"):
+            mmd_material.is_double_sided = not m.use_backface_culling
 
         if shadow_method:
             mmd_material.enabled_self_shadow_map = (shadow_method != "NONE") and mmd_material.alpha > 1e-3
@@ -504,13 +525,13 @@ class FnMaterial:
 
         node_shader = nodes.get("mmd_shader", None)
         if node_shader is None:
-            node_shader = nodes.new("ShaderNodeGroup")
+            node_shader: bpy.types.ShaderNodeGroup = nodes.new("ShaderNodeGroup")
             node_shader.name = "mmd_shader"
             node_shader.location = (0, 1500)
             node_shader.width = 200
             node_shader.node_tree = self.__get_shader()
 
-            mmd_mat = mat.mmd_material
+            mmd_mat: MMDMaterial = mat.mmd_material
             node_shader.inputs.get("Ambient Color", _Dummy).default_value = mmd_mat.ambient_color[:] + (1,)
             node_shader.inputs.get("Diffuse Color", _Dummy).default_value = mmd_mat.diffuse_color[:] + (1,)
             node_shader.inputs.get("Specular Color", _Dummy).default_value = mmd_mat.specular_color[:] + (1,)
@@ -522,7 +543,7 @@ class FnMaterial:
 
         node_uv = nodes.get("mmd_tex_uv", None)
         if node_uv is None:
-            node_uv = nodes.new("ShaderNodeGroup")
+            node_uv: bpy.types.ShaderNodeGroup = nodes.new("ShaderNodeGroup")
             node_uv.name = "mmd_tex_uv"
             node_uv.location = node_shader.location + Vector((-5 * 210, -2.5 * 220))
             node_uv.node_tree = self.__get_shader_uv()
@@ -530,7 +551,7 @@ class FnMaterial:
         if not (node_shader.outputs["Shader"].is_linked or node_shader.outputs["Color"].is_linked or node_shader.outputs["Alpha"].is_linked):
             node_output = next((n for n in nodes if isinstance(n, bpy.types.ShaderNodeOutputMaterial) and n.is_active_output), None)
             if node_output is None:
-                node_output = nodes.new("ShaderNodeOutputMaterial")
+                node_output: bpy.types.ShaderNodeOutputMaterial = nodes.new("ShaderNodeOutputMaterial")
                 node_output.is_active_output = True
             node_output.location = node_shader.location + Vector((400, 0))
             links.new(node_shader.outputs["Shader"], node_output.inputs["Surface"])
@@ -548,26 +569,26 @@ class FnMaterial:
 
     def __get_shader_uv(self):
         group_name = "MMDTexUV"
-        shader = bpy.data.node_groups.get(group_name, None) or bpy.data.node_groups.new(name=group_name, type="ShaderNodeTree")
+        shader: bpy.types.ShaderNodeTree = bpy.data.node_groups.get(group_name, None) or bpy.data.node_groups.new(name=group_name, type="ShaderNodeTree")
         if len(shader.nodes):
             return shader
 
         ng = _NodeGroupUtils(shader)
 
         ############################################################################
-        _node_output = ng.new_node("NodeGroupOutput", (6, 0))
+        _node_output: bpy.types.NodeGroupOutput = ng.new_node("NodeGroupOutput", (6, 0))
 
-        tex_coord = ng.new_node("ShaderNodeTexCoord", (0, 0))
+        tex_coord: bpy.types.ShaderNodeTexCoord = ng.new_node("ShaderNodeTexCoord", (0, 0))
 
-        tex_coord1 = ng.new_node("ShaderNodeUVMap", (4, -2))
+        tex_coord1: bpy.types.ShaderNodeUVMap = ng.new_node("ShaderNodeUVMap", (4, -2))
         tex_coord1.uv_map = "UV1"
 
-        vec_trans = ng.new_node("ShaderNodeVectorTransform", (1, -1))
+        vec_trans: bpy.types.ShaderNodeVectorTransform = ng.new_node("ShaderNodeVectorTransform", (1, -1))
         vec_trans.vector_type = "NORMAL"
         vec_trans.convert_from = "OBJECT"
         vec_trans.convert_to = "CAMERA"
 
-        node_vector = ng.new_node("ShaderNodeMapping", (2, -1))
+        node_vector: bpy.types.ShaderNodeMapping = ng.new_node("ShaderNodeMapping", (2, -1))
         node_vector.vector_type = "POINT"
         node_vector.inputs["Location"].default_value = (0.5, 0.5, 0.0)
         node_vector.inputs["Scale"].default_value = (0.5, 0.5, 1.0)
@@ -585,43 +606,43 @@ class FnMaterial:
 
     def __get_shader(self):
         group_name = "MMDShaderDev"
-        shader = bpy.data.node_groups.get(group_name, None) or bpy.data.node_groups.new(name=group_name, type="ShaderNodeTree")
+        shader: bpy.types.ShaderNodeTree = bpy.data.node_groups.get(group_name, None) or bpy.data.node_groups.new(name=group_name, type="ShaderNodeTree")
         if len(shader.nodes):
             return shader
 
         ng = _NodeGroupUtils(shader)
 
         ############################################################################
-        node_input = ng.new_node("NodeGroupInput", (-5, -1))
-        _node_output = ng.new_node("NodeGroupOutput", (11, 1))
+        node_input: bpy.types.NodeGroupInput = ng.new_node("NodeGroupInput", (-5, -1))
+        _node_output: bpy.types.NodeGroupOutput = ng.new_node("NodeGroupOutput", (11, 1))
 
-        node_diffuse = ng.new_mix_node("ADD", (-3, 4), fac=0.6)
+        node_diffuse: bpy.types.ShaderNodeMath = ng.new_mix_node("ADD", (-3, 4), fac=0.6)
         node_diffuse.use_clamp = True
 
-        node_tex = ng.new_mix_node("MULTIPLY", (-2, 3.5))
-        node_toon = ng.new_mix_node("MULTIPLY", (-1, 3))
-        node_sph = ng.new_mix_node("MULTIPLY", (0, 2.5))
-        node_spa = ng.new_mix_node("ADD", (0, 1.5))
-        node_sphere = ng.new_mix_node("MIX", (1, 1))
+        node_tex: bpy.types.ShaderNodeMath = ng.new_mix_node("MULTIPLY", (-2, 3.5))
+        node_toon: bpy.types.ShaderNodeMath = ng.new_mix_node("MULTIPLY", (-1, 3))
+        node_sph: bpy.types.ShaderNodeMath = ng.new_mix_node("MULTIPLY", (0, 2.5))
+        node_spa: bpy.types.ShaderNodeMath = ng.new_mix_node("ADD", (0, 1.5))
+        node_sphere: bpy.types.ShaderNodeMath = ng.new_mix_node("MIX", (1, 1))
 
-        node_geo = ng.new_node("ShaderNodeNewGeometry", (6, 3.5))
-        node_invert = ng.new_math_node("LESS_THAN", (7, 3))
-        node_cull = ng.new_math_node("MAXIMUM", (8, 2.5))
-        node_alpha = ng.new_math_node("MINIMUM", (9, 2))
+        node_geo: bpy.types.ShaderNodeNewGeometry = ng.new_node("ShaderNodeNewGeometry", (6, 3.5))
+        node_invert: bpy.types.ShaderNodeMath = ng.new_math_node("LESS_THAN", (7, 3))
+        node_cull: bpy.types.ShaderNodeMath = ng.new_math_node("MAXIMUM", (8, 2.5))
+        node_alpha: bpy.types.ShaderNodeMath = ng.new_math_node("MINIMUM", (9, 2))
         node_alpha.use_clamp = True
-        node_alpha_tex = ng.new_math_node("MULTIPLY", (-1, -2))
-        node_alpha_toon = ng.new_math_node("MULTIPLY", (0, -2.5))
-        node_alpha_sph = ng.new_math_node("MULTIPLY", (1, -3))
+        node_alpha_tex: bpy.types.ShaderNodeMath = ng.new_math_node("MULTIPLY", (-1, -2))
+        node_alpha_toon: bpy.types.ShaderNodeMath = ng.new_math_node("MULTIPLY", (0, -2.5))
+        node_alpha_sph: bpy.types.ShaderNodeMath = ng.new_math_node("MULTIPLY", (1, -3))
 
-        node_reflect = ng.new_math_node("DIVIDE", (7, -1.5), value1=1)
+        node_reflect: bpy.types.ShaderNodeMath = ng.new_math_node("DIVIDE", (7, -1.5), value1=1)
         node_reflect.use_clamp = True
 
-        shader_diffuse = ng.new_node("ShaderNodeBsdfDiffuse", (8, 0))
-        shader_glossy = ng.new_node("ShaderNodeBsdfAnisotropic", (8, -1))
-        shader_base_mix = ng.new_node("ShaderNodeMixShader", (9, 0))
+        shader_diffuse: bpy.types.ShaderNodeBsdfDiffuse = ng.new_node("ShaderNodeBsdfDiffuse", (8, 0))
+        shader_glossy: bpy.types.ShaderNodeBsdfAnisotropic = ng.new_node("ShaderNodeBsdfAnisotropic", (8, -1))
+        shader_base_mix: bpy.types.ShaderNodeMixShader = ng.new_node("ShaderNodeMixShader", (9, 0))
         shader_base_mix.inputs["Fac"].default_value = 0.02
-        shader_trans = ng.new_node("ShaderNodeBsdfTransparent", (9, 1))
-        shader_alpha_mix = ng.new_node("ShaderNodeMixShader", (10, 1))
+        shader_trans: bpy.types.ShaderNodeBsdfTransparent = ng.new_node("ShaderNodeBsdfTransparent", (9, 1))
+        shader_alpha_mix: bpy.types.ShaderNodeMixShader = ng.new_node("ShaderNodeMixShader", (10, 1))
 
         links = ng.links
         links.new(node_reflect.outputs["Value"], shader_glossy.inputs["Roughness"])
@@ -679,7 +700,7 @@ class FnMaterial:
 class MigrationFnMaterial:
     @staticmethod
     def update_mmd_shader():
-        mmd_shader_node_tree = bpy.data.node_groups.get("MMDShaderDev")
+        mmd_shader_node_tree: Optional[bpy.types.NodeTree] = bpy.data.node_groups.get("MMDShaderDev")
         if mmd_shader_node_tree is None:
             return
 
@@ -687,11 +708,11 @@ class MigrationFnMaterial:
         if "Color" in ng.node_output.inputs:
             return
 
-        shader_diffuse = [n for n in mmd_shader_node_tree.nodes if n.type == "BSDF_DIFFUSE"][0]
-        node_sphere = shader_diffuse.inputs["Color"].links[0].from_node
-        node_output = ng.node_output
-        shader_alpha_mix = node_output.inputs["Shader"].links[0].from_node
-        node_alpha = shader_alpha_mix.inputs["Fac"].links[0].from_node
+        shader_diffuse: bpy.types.ShaderNodeBsdfDiffuse = [n for n in mmd_shader_node_tree.nodes if n.type == "BSDF_DIFFUSE"][0]
+        node_sphere: bpy.types.ShaderNodeMixRGB = shader_diffuse.inputs["Color"].links[0].from_node
+        node_output: bpy.types.NodeGroupOutput = ng.node_output
+        shader_alpha_mix: bpy.types.ShaderNodeMixShader = node_output.inputs["Shader"].links[0].from_node
+        node_alpha: bpy.types.ShaderNodeMath = shader_alpha_mix.inputs["Fac"].links[0].from_node
 
         ng.new_output_socket("Color", node_sphere.outputs["Color"])
         ng.new_output_socket("Alpha", node_alpha.outputs["Value"])

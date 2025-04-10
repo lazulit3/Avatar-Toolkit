@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-# Copyright 2013 MMD Tools authors
-# This file was originally part of the MMD Tools project, However Neoneko has added it to Avatar Toolkit.
-# All credit goes to the original authors.
-# Please note that some code was modified to fit the needs of Avatar Toolkit and some code may of been removed.
-# MMD Tools is licensed under the terms of the GPL-3.0 license which Avatar Toolkit is also licensed under.
-# You can find MMD Tools at: https://github.com/MMD-Blender/blender_mmd_tools/
+# Copyright 2014 MMD Tools authors
+# This file was originally part of the MMD Tools add-on for Blender
+# You can find MMD Tools here: https://github.com/MMD-Blender/blender_mmd_tools
+# Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
+# MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
 import math
 from typing import TYPE_CHECKING, Iterable, Optional, Set
@@ -12,19 +11,13 @@ from typing import TYPE_CHECKING, Iterable, Optional, Set
 import bpy
 from mathutils import Vector
 
-from ..logging_setup import logger
-from .. import common
-from ..common import ProgressTracker
+from .. import bpyutils
 from ..bpyutils import TransformConstraintOp
+from ..utils import ItemOp
 
-# Constants for bone collections
-BONE_COLLECTION_CUSTOM_PROPERTY_NAME = "mmd_tools"
-BONE_COLLECTION_CUSTOM_PROPERTY_VALUE_SPECIAL = "special collection"
-BONE_COLLECTION_CUSTOM_PROPERTY_VALUE_NORMAL = "normal collection"
-BONE_COLLECTION_NAME_SHADOW = "mmd_shadow"
-BONE_COLLECTION_NAME_DUMMY = "mmd_dummy"
-
-SPECIAL_BONE_COLLECTION_NAMES = [BONE_COLLECTION_NAME_SHADOW, BONE_COLLECTION_NAME_DUMMY]
+if TYPE_CHECKING:
+    from ..properties.root import MMDRoot, MMDDisplayItemFrame
+    from ..properties.pose_bone import MMDBone
 
 
 def remove_constraint(constraints, name):
@@ -40,6 +33,15 @@ def remove_edit_bones(edit_bones, bone_names):
         b = edit_bones.get(name, None)
         if b:
             edit_bones.remove(b)
+
+
+BONE_COLLECTION_CUSTOM_PROPERTY_NAME = "mmd_tools"
+BONE_COLLECTION_CUSTOM_PROPERTY_VALUE_SPECIAL = "special collection"
+BONE_COLLECTION_CUSTOM_PROPERTY_VALUE_NORMAL = "normal collection"
+BONE_COLLECTION_NAME_SHADOW = "mmd_shadow"
+BONE_COLLECTION_NAME_DUMMY = "mmd_dummy"
+
+SPECIAL_BONE_COLLECTION_NAMES = [BONE_COLLECTION_NAME_SHADOW, BONE_COLLECTION_NAME_DUMMY]
 
 
 class FnBone:
@@ -76,6 +78,23 @@ class FnBone:
         context_selected_bones = bpy.context.selected_pose_bones or bpy.context.selected_bones or []
         bones = armature_object.pose.bones
         return (bones[b.name] for b in context_selected_bones if not bones[b.name].is_mmd_shadow_bone)
+
+    @staticmethod
+    def load_bone_fixed_axis(armature_object: bpy.types.Object, enable=True):
+        for b in FnBone.__get_selected_pose_bones(armature_object):
+            mmd_bone: MMDBone = b.mmd_bone
+            mmd_bone.enabled_fixed_axis = enable
+            lock_rotation = b.lock_rotation[:]
+            if enable:
+                axes = b.bone.matrix_local.to_3x3().transposed()
+                if lock_rotation.count(False) == 1:
+                    mmd_bone.fixed_axis = axes[lock_rotation.index(False)].xzy
+                else:
+                    mmd_bone.fixed_axis = axes[1].xzy  # Y-axis
+            elif all(b.lock_location) and lock_rotation.count(True) > 1 and lock_rotation == (b.lock_ik_x, b.lock_ik_y, b.lock_ik_z):
+                # unlock transform locks if fixed axis was applied
+                b.lock_ik_x, b.lock_ik_y, b.lock_ik_z = b.lock_rotation = (False, False, False)
+                b.lock_location = b.lock_scale = (False, False, False)
 
     @staticmethod
     def setup_special_bone_collections(armature_object: bpy.types.Object) -> bpy.types.Object:
@@ -218,80 +237,58 @@ class FnBone:
         mmd_root.active_display_item_frame = 0
 
     @staticmethod
-    def load_bone_fixed_axis(armature_object: bpy.types.Object, enable=True):
-        for b in FnBone.__get_selected_pose_bones(armature_object):
-            mmd_bone = b.mmd_bone
-            mmd_bone.enabled_fixed_axis = enable
-            lock_rotation = b.lock_rotation[:]
-            if enable:
-                axes = b.bone.matrix_local.to_3x3().transposed()
-                if lock_rotation.count(False) == 1:
-                    mmd_bone.fixed_axis = axes[lock_rotation.index(False)].xzy
-                else:
-                    mmd_bone.fixed_axis = axes[1].xzy  # Y-axis
-            elif all(b.lock_location) and lock_rotation.count(True) > 1 and lock_rotation == (b.lock_ik_x, b.lock_ik_y, b.lock_ik_z):
-                # unlock transform locks if fixed axis was applied
-                b.lock_ik_x, b.lock_ik_y, b.lock_ik_z = b.lock_rotation = (False, False, False)
-                b.lock_location = b.lock_scale = (False, False, False)
-
-    @staticmethod
     def apply_bone_fixed_axis(armature_object: bpy.types.Object):
-        with ProgressTracker(bpy.context, 100, "Applying Bone Fixed Axis") as progress:
-            bone_map = {}
-            for b in armature_object.pose.bones:
-                if b.is_mmd_shadow_bone or not b.mmd_bone.enabled_fixed_axis:
-                    continue
-                mmd_bone = b.mmd_bone
-                parent_tip = b.parent and not b.parent.is_mmd_shadow_bone and b.parent.mmd_bone.is_tip
-                bone_map[b.name] = (mmd_bone.fixed_axis.normalized(), mmd_bone.is_tip, parent_tip)
-            
-            progress.step("Processing bones")
+        bone_map = {}
+        for b in armature_object.pose.bones:
+            if b.is_mmd_shadow_bone or not b.mmd_bone.enabled_fixed_axis:
+                continue
+            mmd_bone: MMDBone = b.mmd_bone
+            parent_tip = b.parent and not b.parent.is_mmd_shadow_bone and b.parent.mmd_bone.is_tip
+            bone_map[b.name] = (mmd_bone.fixed_axis.normalized(), mmd_bone.is_tip, parent_tip)
 
-            force_align = True
-            with common.edit_object(armature_object) as data:
-                bone: bpy.types.EditBone
-                for bone in data.edit_bones:
-                    if bone.name not in bone_map:
-                        bone.select = False
-                        continue
-                    fixed_axis, is_tip, parent_tip = bone_map[bone.name]
-                    if fixed_axis.length:
-                        axes = [bone.x_axis, bone.y_axis, bone.z_axis]
-                        direction = fixed_axis.normalized().xzy
-                        idx, val = max([(i, direction.dot(v)) for i, v in enumerate(axes)], key=lambda x: abs(x[1]))
-                        idx_1, idx_2 = (idx + 1) % 3, (idx + 2) % 3
-                        axes[idx] = -direction if val < 0 else direction
-                        axes[idx_2] = axes[idx].cross(axes[idx_1])
-                        axes[idx_1] = axes[idx_2].cross(axes[idx])
-                        if parent_tip and bone.use_connect:
-                            bone.use_connect = False
-                            bone.head = bone.parent.head
-                        if force_align:
-                            tail = bone.head + axes[1].normalized() * bone.length
-                            if is_tip or (tail - bone.tail).length > 1e-4:
-                                for c in bone.children:
-                                    if c.use_connect:
-                                        c.use_connect = False
-                                        if is_tip:
-                                            c.head = bone.head
-                            bone.tail = tail
-                        bone.align_roll(axes[2])
-                        bone_map[bone.name] = tuple(i != idx for i in range(3))
-                    else:
-                        bone_map[bone.name] = (True, True, True)
-                    bone.select = True
-            
-            progress.step("Applying locks")
-            
-            for bone_name, locks in bone_map.items():
-                b = armature_object.pose.bones[bone_name]
-                b.lock_location = (True, True, True)
-                b.lock_ik_x, b.lock_ik_y, b.lock_ik_z = b.lock_rotation = locks
+        force_align = True
+        with bpyutils.edit_object(armature_object) as data:
+            bone: bpy.types.EditBone
+            for bone in data.edit_bones:
+                if bone.name not in bone_map:
+                    bone.select = False
+                    continue
+                fixed_axis, is_tip, parent_tip = bone_map[bone.name]
+                if fixed_axis.length:
+                    axes = [bone.x_axis, bone.y_axis, bone.z_axis]
+                    direction = fixed_axis.normalized().xzy
+                    idx, val = max([(i, direction.dot(v)) for i, v in enumerate(axes)], key=lambda x: abs(x[1]))
+                    idx_1, idx_2 = (idx + 1) % 3, (idx + 2) % 3
+                    axes[idx] = -direction if val < 0 else direction
+                    axes[idx_2] = axes[idx].cross(axes[idx_1])
+                    axes[idx_1] = axes[idx_2].cross(axes[idx])
+                    if parent_tip and bone.use_connect:
+                        bone.use_connect = False
+                        bone.head = bone.parent.head
+                    if force_align:
+                        tail = bone.head + axes[1].normalized() * bone.length
+                        if is_tip or (tail - bone.tail).length > 1e-4:
+                            for c in bone.children:
+                                if c.use_connect:
+                                    c.use_connect = False
+                                    if is_tip:
+                                        c.head = bone.head
+                        bone.tail = tail
+                    bone.align_roll(axes[2])
+                    bone_map[bone.name] = tuple(i != idx for i in range(3))
+                else:
+                    bone_map[bone.name] = (True, True, True)
+                bone.select = True
+
+        for bone_name, locks in bone_map.items():
+            b = armature_object.pose.bones[bone_name]
+            b.lock_location = (True, True, True)
+            b.lock_ik_x, b.lock_ik_y, b.lock_ik_z = b.lock_rotation = locks
 
     @staticmethod
     def load_bone_local_axes(armature_object: bpy.types.Object, enable=True):
         for b in FnBone.__get_selected_pose_bones(armature_object):
-            mmd_bone = b.mmd_bone
+            mmd_bone: MMDBone = b.mmd_bone
             mmd_bone.enabled_local_axes = enable
             if enable:
                 axes = b.bone.matrix_local.to_3x3().transposed()
@@ -300,25 +297,22 @@ class FnBone:
 
     @staticmethod
     def apply_bone_local_axes(armature_object: bpy.types.Object):
-        with ProgressTracker(bpy.context, 100, "Applying Bone Local Axes") as progress:
-            bone_map = {}
-            for b in armature_object.pose.bones:
-                if b.is_mmd_shadow_bone or not b.mmd_bone.enabled_local_axes:
+        bone_map = {}
+        for b in armature_object.pose.bones:
+            if b.is_mmd_shadow_bone or not b.mmd_bone.enabled_local_axes:
+                continue
+            mmd_bone: MMDBone = b.mmd_bone
+            bone_map[b.name] = (mmd_bone.local_axis_x, mmd_bone.local_axis_z)
+
+        with bpyutils.edit_object(armature_object) as data:
+            bone: bpy.types.EditBone
+            for bone in data.edit_bones:
+                if bone.name not in bone_map:
+                    bone.select = False
                     continue
-                mmd_bone = b.mmd_bone
-                bone_map[b.name] = (mmd_bone.local_axis_x, mmd_bone.local_axis_z)
-            
-            progress.step("Processing bones")
-            
-            with common.edit_object(armature_object) as data:
-                bone: bpy.types.EditBone
-                for bone in data.edit_bones:
-                    if bone.name not in bone_map:
-                        bone.select = False
-                        continue
-                    local_axis_x, local_axis_z = bone_map[bone.name]
-                    FnBone.update_bone_roll(bone, local_axis_x, local_axis_z)
-                    bone.select = True
+                local_axis_x, local_axis_z = bone_map[bone.name]
+                FnBone.update_bone_roll(bone, local_axis_x, local_axis_z)
+                bone.select = True
 
     @staticmethod
     def update_bone_roll(edit_bone: bpy.types.EditBone, mmd_local_axis_x, mmd_local_axis_z):
@@ -336,21 +330,17 @@ class FnBone:
 
     @staticmethod
     def apply_auto_bone_roll(armature):
-        with ProgressTracker(bpy.context, 100, "Applying Auto Bone Roll") as progress:
-            bone_names = []
-            for b in armature.pose.bones:
-                if not b.is_mmd_shadow_bone and not b.mmd_bone.enabled_local_axes and FnBone.has_auto_local_axis(b.mmd_bone.name_j):
-                    bone_names.append(b.name)
-            
-            progress.step("Processing bones")
-            
-            with common.edit_object(armature) as data:
-                bone: bpy.types.EditBone
-                for bone in data.edit_bones:
-                    if bone.name not in bone_names:
-                        continue
-                    FnBone.update_auto_bone_roll(bone)
-                    bone.select = True
+        bone_names = []
+        for b in armature.pose.bones:
+            if not b.is_mmd_shadow_bone and not b.mmd_bone.enabled_local_axes and FnBone.has_auto_local_axis(b.mmd_bone.name_j):
+                bone_names.append(b.name)
+        with bpyutils.edit_object(armature) as data:
+            bone: bpy.types.EditBone
+            for bone in data.edit_bones:
+                if bone.name not in bone_names:
+                    continue
+                FnBone.update_auto_bone_roll(bone)
+                bone.select = True
 
     @staticmethod
     def update_auto_bone_roll(edit_bone):
@@ -385,8 +375,6 @@ class FnBone:
 
     @staticmethod
     def clean_additional_transformation(armature_object: bpy.types.Object):
-        logger.info(f"Cleaning additional transformations for {armature_object.name}")
-        
         # clean constraints
         p_bone: bpy.types.PoseBone
         for p_bone in armature_object.pose.bones:
@@ -396,7 +384,6 @@ class FnBone:
             remove_constraint(constraints, "mmd_additional_location")
             if remove_constraint(constraints, "mmd_additional_parent"):
                 p_bone.bone.use_inherit_rotation = True
-                
         # clean shadow bones
         shadow_bone_types = {
             "DUMMY",
@@ -410,48 +397,41 @@ class FnBone:
 
         shadow_bone_names = [b.name for b in armature_object.pose.bones if __is_at_shadow_bone(b)]
         if len(shadow_bone_names) > 0:
-            with common.edit_object(armature_object) as data:
+            with bpyutils.edit_object(armature_object) as data:
                 remove_edit_bones(data.edit_bones, shadow_bone_names)
 
     @staticmethod
     def apply_additional_transformation(armature_object: bpy.types.Object):
-        with ProgressTracker(bpy.context, 100, "Applying Additional Transformations") as progress:
-            def __is_dirty_bone(b):
-                if b.is_mmd_shadow_bone:
-                    return False
-                mmd_bone = b.mmd_bone
-                if mmd_bone.has_additional_rotation or mmd_bone.has_additional_location:
-                    return True
-                return mmd_bone.is_additional_transform_dirty
+        def __is_dirty_bone(b):
+            if b.is_mmd_shadow_bone:
+                return False
+            mmd_bone = b.mmd_bone
+            if mmd_bone.has_additional_rotation or mmd_bone.has_additional_location:
+                return True
+            return mmd_bone.is_additional_transform_dirty
 
-            dirty_bones = [b for b in armature_object.pose.bones if __is_dirty_bone(b)]
-            
-            progress.step("Setting up constraints")
-            
-            # setup constraints
-            shadow_bone_pool = []
-            for p_bone in dirty_bones:
-                sb = FnBone.__setup_constraints(p_bone)
-                if sb:
-                    shadow_bone_pool.append(sb)
+        dirty_bones = [b for b in armature_object.pose.bones if __is_dirty_bone(b)]
 
-            progress.step("Setting up shadow bones")
-            
-            # setup shadow bones
-            with common.edit_object(armature_object) as data:
-                edit_bones = data.edit_bones
-                for sb in shadow_bone_pool:
-                    sb.update_edit_bones(edit_bones)
+        # setup constraints
+        shadow_bone_pool = []
+        for p_bone in dirty_bones:
+            sb = FnBone.__setup_constraints(p_bone)
+            if sb:
+                shadow_bone_pool.append(sb)
 
-            pose_bones = armature_object.pose.bones
+        # setup shadow bones
+        with bpyutils.edit_object(armature_object) as data:
+            edit_bones = data.edit_bones
             for sb in shadow_bone_pool:
-                sb.update_pose_bones(pose_bones)
+                sb.update_edit_bones(edit_bones)
 
-            progress.step("Finalizing")
-            
-            # finish
-            for p_bone in dirty_bones:
-                p_bone.mmd_bone.is_additional_transform_dirty = False
+        pose_bones = armature_object.pose.bones
+        for sb in shadow_bone_pool:
+            sb.update_pose_bones(pose_bones)
+
+        # finish
+        for p_bone in dirty_bones:
+            p_bone.mmd_bone.is_additional_transform_dirty = False
 
     @staticmethod
     def __setup_constraints(p_bone):
@@ -459,7 +439,7 @@ class FnBone:
         mmd_bone = p_bone.mmd_bone
         influence = mmd_bone.additional_transform_influence
         target_bone = mmd_bone.additional_transform_bone
-        mute_rotation = not mmd_bone.has_additional_rotation
+        mute_rotation = not mmd_bone.has_additional_rotation  # or p_bone.is_in_ik_chain
         mute_location = not mmd_bone.has_additional_location
 
         constraints = p_bone.constraints
@@ -501,15 +481,12 @@ class MigrationFnBone:
 
     @staticmethod
     def fix_mmd_ik_limit_override(armature_object: bpy.types.Object):
-        with ProgressTracker(bpy.context, 100, "Fixing MMD IK Limit Override") as progress:
-            pose_bone: bpy.types.PoseBone
-            for pose_bone in armature_object.pose.bones:
-                constraint: bpy.types.Constraint
-                for constraint in pose_bone.constraints:
-                    if constraint.type == "LIMIT_ROTATION" and "mmd_ik_limit_override" in constraint.name:
-                        constraint.owner_space = "LOCAL"
-                        
-            progress.step("Fixed IK limit overrides")
+        pose_bone: bpy.types.PoseBone
+        for pose_bone in armature_object.pose.bones:
+            constraint: bpy.types.Constraint
+            for constraint in pose_bone.constraints:
+                if constraint.type == "LIMIT_ROTATION" and "mmd_ik_limit_override" in constraint.name:
+                    constraint.owner_space = "LOCAL"
 
 
 class _AT_ShadowBoneRemove:
