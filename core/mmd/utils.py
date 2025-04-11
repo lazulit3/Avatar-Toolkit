@@ -5,18 +5,19 @@
 # Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
-import logging
 import os
 import re
-from typing import Callable, Optional, Set
+from typing import Callable, Dict, List, Optional, Set, Tuple, Union, Any
 
 import bpy
+from bpy.types import Object, Bone, PoseBone, Mesh, VertexGroup
 
+from ..logging_setup import logger
 from .bpyutils import FnContext
 
 
 ## 指定したオブジェクトのみを選択状態かつアクティブにする
-def selectAObject(obj):
+def selectAObject(obj: Object) -> None:
     try:
         bpy.ops.object.mode_set(mode="OBJECT")
     except Exception:
@@ -27,13 +28,13 @@ def selectAObject(obj):
 
 
 ## 現在のモードを指定したオブジェクトのEdit Modeに変更する
-def enterEditMode(obj):
+def enterEditMode(obj: Object) -> None:
     selectAObject(obj)
     if obj.mode != "EDIT":
         bpy.ops.object.mode_set(mode="EDIT")
 
 
-def setParentToBone(obj, parent, bone_name):
+def setParentToBone(obj: Object, parent: Object, bone_name: str) -> None:
     selectAObject(obj)
     FnContext.set_active_object(FnContext.ensure_context(), parent)
     bpy.ops.object.mode_set(mode="POSE")
@@ -42,7 +43,7 @@ def setParentToBone(obj, parent, bone_name):
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
-def selectSingleBone(context, armature, bone_name, reset_pose=False):
+def selectSingleBone(context: bpy.types.Context, armature: Object, bone_name: str, reset_pose: bool = False) -> None:
     try:
         bpy.ops.object.mode_set(mode="OBJECT")
     except:
@@ -55,7 +56,7 @@ def selectSingleBone(context, armature, bone_name, reset_pose=False):
         for p_bone in armature.pose.bones:
             p_bone.matrix_basis.identity()
     armature_bones: bpy.types.ArmatureBones = armature.data.bones
-    i: bpy.types.Bone
+    i: Bone
     for i in armature_bones:
         i.select = i.name == bone_name
         i.select_head = i.select_tail = i.select
@@ -69,7 +70,7 @@ __CONVERT_NAME_TO_R_REGEXP = re.compile("^(.*)右(.*)$")
 
 
 ## 日本語で左右を命名されている名前をblender方式のL(R)に変更する
-def convertNameToLR(name, use_underscore=False):
+def convertNameToLR(name: str, use_underscore: bool = False) -> str:
     m = __CONVERT_NAME_TO_L_REGEXP.match(name)
     delimiter = "_" if use_underscore else "."
     if m:
@@ -84,7 +85,7 @@ __CONVERT_L_TO_NAME_REGEXP = re.compile(r"(?P<lr>(?P<separator>[._])[lL])(?P<aft
 __CONVERT_R_TO_NAME_REGEXP = re.compile(r"(?P<lr>(?P<separator>[._])[rR])(?P<after>($|(?P=separator)))")
 
 
-def convertLRToName(name):
+def convertLRToName(name: str) -> str:
     match = __CONVERT_L_TO_NAME_REGEXP.search(name)
     if match:
         return f"左{name[0:match.start()]}{match['after']}{name[match.end():]}"
@@ -97,7 +98,7 @@ def convertLRToName(name):
 
 
 ## src_vertex_groupのWeightをdest_vertex_groupにaddする
-def mergeVertexGroup(meshObj, src_vertex_group_name, dest_vertex_group_name):
+def mergeVertexGroup(meshObj: Object, src_vertex_group_name: str, dest_vertex_group_name: str) -> None:
     mesh = meshObj.data
     src_vertex_group = meshObj.vertex_groups[src_vertex_group_name]
     dest_vertex_group = meshObj.vertex_groups[dest_vertex_group_name]
@@ -111,7 +112,7 @@ def mergeVertexGroup(meshObj, src_vertex_group_name, dest_vertex_group_name):
             pass
 
 
-def separateByMaterials(meshObj: bpy.types.Object):
+def separateByMaterials(meshObj: Object) -> None:
     if len(meshObj.data.materials) < 2:
         selectAObject(meshObj)
         return
@@ -134,7 +135,7 @@ def separateByMaterials(meshObj: bpy.types.Object):
     bpy.data.objects.remove(dummy_parent)
 
 
-def clearUnusedMeshes():
+def clearUnusedMeshes() -> None:
     meshes_to_delete = []
     for mesh in bpy.data.meshes:
         if mesh.users == 0:
@@ -146,7 +147,7 @@ def clearUnusedMeshes():
 
 ## Boneのカスタムプロパティにname_jが存在する場合、name_jの値を
 # それ以外の場合は通常のbone名をキーとしたpose_boneへの辞書を作成
-def makePmxBoneMap(armObj):
+def makePmxBoneMap(armObj: Object) -> Dict[str, PoseBone]:
     # Maintain backward compatibility with mmd_tools v0.4.x or older.
     return {(i.mmd_bone.name_j or i.get("mmd_bone_name_j", i.get("name_j", i.name))): i for i in armObj.pose.bones}
 
@@ -175,7 +176,7 @@ def unique_name(name: str, used_names: Set[str]) -> str:
     return new_name
 
 
-def int2base(x, base, width=0):
+def int2base(x: int, base: int, width: int = 0) -> str:
     """
     Method to convert an int to a base
     Source: http://stackoverflow.com/questions/2267362
@@ -198,7 +199,7 @@ def int2base(x, base, width=0):
     return digits
 
 
-def saferelpath(path, start, strategy="inside"):
+def saferelpath(path: str, start: str, strategy: str = "inside") -> str:
     """
     On Windows relpath will raise a ValueError
     when trying to calculate the relative path to a
@@ -227,13 +228,13 @@ def saferelpath(path, start, strategy="inside"):
 
 class ItemOp:
     @staticmethod
-    def get_by_index(items, index):
+    def get_by_index(items: bpy.types.bpy_prop_collection, index: int) -> Optional[Any]:
         if 0 <= index < len(items):
             return items[index]
         return None
 
     @staticmethod
-    def resize(items: bpy.types.bpy_prop_collection, length: int):
+    def resize(items: bpy.types.bpy_prop_collection, length: int) -> None:
         count = length - len(items)
         if count > 0:
             for i in range(count):
@@ -243,7 +244,7 @@ class ItemOp:
                 items.remove(length)
 
     @staticmethod
-    def add_after(items, index):
+    def add_after(items: bpy.types.bpy_prop_collection, index: int) -> Tuple[Any, int]:
         index_end = len(items)
         index = max(0, min(index_end, index + 1))
         items.add()
@@ -265,7 +266,8 @@ class ItemMoveOp:
     )
 
     @staticmethod
-    def move(items, index, move_type, index_min=0, index_max=None):
+    def move(items: bpy.types.bpy_prop_collection, index: int, move_type: str, 
+             index_min: int = 0, index_max: Optional[int] = None) -> int:
         if index_max is None:
             index_max = len(items) - 1
         else:
@@ -294,7 +296,7 @@ class ItemMoveOp:
         return index_new
 
 
-def deprecated(deprecated_in: Optional[str] = None, details: Optional[str] = None):
+def deprecated(deprecated_in: Optional[str] = None, details: Optional[str] = None) -> Callable:
     """Decorator to mark a function as deprecated.
     Args:
         deprecated_in (Optional[str]): Version in which the function was deprecated.
@@ -303,8 +305,8 @@ def deprecated(deprecated_in: Optional[str] = None, details: Optional[str] = Non
         Callable: The decorated function.
     """
 
-    def _function_wrapper(function: Callable):
-        def _inner_wrapper(*args, **kwargs):
+    def _function_wrapper(function: Callable) -> Callable:
+        def _inner_wrapper(*args: Any, **kwargs: Any) -> Any:
             warn_deprecation(function.__name__, deprecated_in, details)
             return function(*args, **kwargs)
 
@@ -320,7 +322,7 @@ def warn_deprecation(function_name: str, deprecated_in: Optional[str] = None, de
         deprecated_in (Optional[str]): Version in which the function was deprecated.
         details (Optional[str]): Additional details about the deprecation.
     """
-    logging.warning(
+    logger.warning(
         "%s is deprecated%s%s",
         function_name,
         f" since {deprecated_in}" if deprecated_in else "",
@@ -328,7 +330,3 @@ def warn_deprecation(function_name: str, deprecated_in: Optional[str] = None, de
         stack_info=True,
         stacklevel=4,
     )
-
-    # import warnings  # pylint: disable=import-outside-toplevel
-
-    # warnings.warn(f"""{function_name}is deprecated{f" since {deprecated_in}" if deprecated_in else ""}{f": {details}" if details else ""}""", category=DeprecationWarning, stacklevel=2)
