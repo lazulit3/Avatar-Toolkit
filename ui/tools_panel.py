@@ -18,7 +18,7 @@ from ..functions.tools.bone_tools import (
 from ..functions.tools.standardize_armature import AvatarToolkit_OT_StandardizeArmature
 from ..functions.tools.merge_tools import AvatarToolkit_OT_MergeToActive, AvatarToolkit_OT_MergeToParent, AvatarToolkit_OT_ConnectBones
 from ..functions.tools.rigify_converter import AvatarToolkit_OT_ConvertRigifyToUnity
-from ..functions.tools.general_mesh_tools import AvatarToolkit_OT_SelectShortestSeamPath
+from ..functions.tools.general_mesh_tools import AvatarToolkit_OT_SelectShortestSeamPath, AvatarToolkit_OT_ExplodeMesh
 from ..functions.custom_tools.force_apply_modifier import AvatarToolkit_OT_ApplyModifierForShapkeyObj
 
 class AvatarToolKit_PT_ToolsPanel(Panel):
@@ -68,6 +68,7 @@ class AvatarToolKit_PT_ToolsPanel(Panel):
         col.separator(factor=0.5)
         col.operator(AvatarToolkit_OT_SelectShortestSeamPath.bl_idname,text=t("Tools.find_shortest_seam_path"),icon="MESH_DATA")
         col.operator(AvatarToolkit_OT_ApplyModifierForShapkeyObj.bl_idname,text=t("Tools.apply_modifier_on_shapekey_obj"),icon="SHAPEKEY_DATA")
+        col.operator(AvatarToolkit_OT_ExplodeMesh.bl_idname,text=t("Tools.explode_mesh"),icon="MOD_EXPLODE")
         
         
         # Standardization Tools
