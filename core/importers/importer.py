@@ -8,6 +8,7 @@ from bpy_extras.io_utils import ImportHelper
 from typing import Optional, Callable, Dict, List, Union, Set
 from ..common import clear_default_objects
 from ..translations import t
+from ..mmd.core.pmx.importer import PMXImporter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -93,6 +94,12 @@ import_types: Dict[str, ImportMethod] = {
     "fbx": lambda directory, files, filepath: bpy.ops.import_scene.fbx(
         files=files, directory=directory, filepath=filepath, 
         automatic_bone_orientation=False, use_prepost_rot=False, use_anim=False
+    ),
+    "pmx": lambda directory, files, filepath: import_multi_files(
+        directory=directory, 
+        files=files, 
+        filepath=filepath, 
+        method=lambda directory, filepath: import_pmx_file(filepath)
     ),
     "smd": lambda directory, files, filepath: eval("bpy."+SmdImporter.bl_idname+".(files=files, directory=directory, filepath=filepath)"),
     "dmx": lambda directory, files, filepath: eval("bpy."+SmdImporter.bl_idname+".(files=files, directory=directory, filepath=filepath)"),
@@ -193,3 +200,36 @@ class AvatarToolKit_OT_Import(Operator, ImportHelper):
         self.report({'INFO'}, t('Quick_Access.import_success'))
         return {'FINISHED'}
 
+def import_pmx_file(filepath: str) -> None:
+    """
+    Import a PMX file using the MMD Tools PMXImporter
+    
+    Args:
+        filepath: Path to the PMX file
+    """
+    
+    # Default import settings
+    import_settings = {
+        "filepath": filepath,
+        "scale": 0.08, 
+        "types": {"MESH", "ARMATURE", "MORPHS", "DISPLAY"},
+        "clean_model": True,
+        "remove_doubles": False,
+        "fix_IK_links": True,
+        "ik_loop_factor": 3,  
+        "use_mipmap": True,
+        "sph_blend_factor": 1.0,
+        "spa_blend_factor": 1.0,
+        "rename_LR_bones": False,
+        "use_underscore": False,
+        "apply_bone_fixed_axis": False,
+    }
+    
+    # Create and execute the importer
+    importer = PMXImporter()
+    try:
+        importer.execute(**import_settings)
+        logger.info(f"Successfully imported PMX file: {filepath}")
+    except Exception as e:
+        logger.error(f"Failed to import PMX file: {str(e)}", exc_info=True)
+        raise

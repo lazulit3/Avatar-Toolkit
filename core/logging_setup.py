@@ -6,17 +6,28 @@ from bpy.types import Context
 logger = logging.getLogger('avatar_toolkit')
 _original_error = logger.error
 
-def configure_logging(enabled: bool = False) -> None:
-    """Configure logging for Avatar Toolkit"""
-    logger.setLevel(logging.DEBUG if enabled else logging.WARNING)
+def configure_logging(enabled: bool = False, level: str = "WARNING") -> None:
+    """Configure logging for Avatar Toolkit """
+    level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR
+    }
     
-    # Remove existing handlers
+    log_level = level_map.get(level, logging.WARNING)
+    
+    if enabled:
+        logger.setLevel(log_level)
+    else:
+        logger.setLevel(logging.ERROR)  # We should still log errors when logging is disabled so we don't have silent failures
+    
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
         
     if enabled:
         handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
+        handler.setLevel(log_level)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -34,12 +45,6 @@ def update_logging_state(self: Any, context: Context) -> None:
     """Update logging state based on user preference"""
     from .addon_preferences import save_preference
     enabled = self.enable_logging
+    level = self.log_level if hasattr(self, "log_level") else "WARNING"
     save_preference("enable_logging", enabled)
-    configure_logging(enabled)
-
-def highlight_problem_bones(self: Any, context: Context) -> None:
-    """Log when problem bones are highlighted"""
-    from .addon_preferences import save_preference
-    enabled = self.highlight_problem_bones
-    save_preference("highlight_problem_bones", enabled)
-    logger.debug(f"Problem bone highlighting {'enabled' if enabled else 'disabled'}")
+    configure_logging(enabled, level)

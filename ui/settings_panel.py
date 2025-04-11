@@ -89,3 +89,6 @@ class AvatarToolKit_PT_SettingsPanel(Panel):
         if props.debug_expand:
             col = debug_box.column(align=True)
             col.prop(props, "enable_logging")
+            
+            if props.enable_logging:
+                col.prop(props, "log_level")
