@@ -27,7 +27,8 @@ def init() -> None:
     configure_logging(False)
     
     from .addon_preferences import get_preference
-    configure_logging(get_preference("enable_logging", False))
+    log_level = get_preference("log_level", "WARNING")
+    configure_logging(get_preference("enable_logging", False), log_level)
 
     print("Auto-load init starting")
     

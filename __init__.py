@@ -25,6 +25,7 @@ def register():
     from . import core
     from .core import auto_load
     from .core.logging_setup import configure_logging
+    from .core.addon_preferences import get_preference
     
     # Initialize logging
     configure_logging(False)
@@ -36,6 +37,10 @@ def register():
     if not hasattr(bpy.types.Scene, "avatar_toolkit"):
         from .core.properties import register as register_properties
         register_properties()
+
+    if hasattr(bpy.types.Scene, "avatar_toolkit"):
+        log_level = get_preference("log_level", "WARNING")
+        configure_logging(get_preference("enable_logging", False), log_level)
     
     print("Registration complete")
 
