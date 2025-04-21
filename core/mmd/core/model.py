@@ -6,9 +6,8 @@
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
 import itertools
-import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator, Optional, Set, TypeGuard, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator, Optional, Set, TypeGuard, Union, cast, List, Tuple
 
 import bpy
 import idprop
@@ -20,15 +19,17 @@ from ..bpyutils import FnContext, Props
 from . import rigid_body
 from .morph import FnMorph
 from .rigid_body import MODE_DYNAMIC, MODE_DYNAMIC_BONE, MODE_STATIC
+from ....core.logging_setup import logger
 
 if TYPE_CHECKING:
     from ..properties.morph import MaterialMorphData
     from ..properties.rigid_body import MMDRigidBody
+    from bpy.types import Context, Object, PropertyGroup, Material, Mesh, Armature, EditBone, PoseBone, KinematicConstraint
 
 
 class FnModel:
     @staticmethod
-    def copy_mmd_root(destination_root_object: bpy.types.Object, source_root_object: bpy.types.Object, overwrite: bool = True, replace_name2values: Dict[str, Dict[Any, Any]] = None):
+    def copy_mmd_root(destination_root_object: bpy.types.Object, source_root_object: bpy.types.Object, overwrite: bool = True, replace_name2values: Optional[Dict[str, Dict[Any, Any]]] = None) -> None:
         FnModel.__copy_property(destination_root_object.mmd_root, source_root_object.mmd_root, overwrite=overwrite, replace_name2values=replace_name2values or {})
 
     @staticmethod
@@ -213,7 +214,8 @@ class FnModel:
         return obj is not None and obj.type == "MESH" and obj.mmd_type == "NONE"
 
     @staticmethod
-    def join_models(parent_root_object: bpy.types.Object, child_root_objects: Iterable[bpy.types.Object]):
+    def join_models(parent_root_object: bpy.types.Object, child_root_objects: Iterable[bpy.types.Object]) -> None:
+        logger.info(f"Joining models to parent root: {parent_root_object.name}")
         parent_armature_object = FnModel.find_armature_object(parent_root_object)
         with bpy.context.temp_override(
             active_object=parent_armature_object,
@@ -221,7 +223,7 @@ class FnModel:
         ):
             bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
-        def _change_bone_id(bone: bpy.types.PoseBone, new_bone_id: int, bone_morphs, pose_bones):
+        def _change_bone_id(bone: bpy.types.PoseBone, new_bone_id: int, bone_morphs: List[Any], pose_bones: List[bpy.types.PoseBone]) -> None:
             """This function will also update the references of bone morphs and rotate+/move+."""
             bone_id = bone.mmd_bone.bone_id
 
@@ -259,6 +261,7 @@ class FnModel:
 
         child_root_object: bpy.types.Object
         for child_root_object in child_root_objects:
+            logger.info(f"Processing child root: {child_root_object.name}")
             child_armature_object = FnModel.find_armature_object(child_root_object)
             child_pose_bones = child_armature_object.pose.bones
             child_bone_morphs = child_root_object.mmd_root.bone_morphs
@@ -279,7 +282,7 @@ class FnModel:
                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
             # Disconnect mesh dependencies because transform_apply fails when mesh data are multiple used.
-            related_meshes: Dict[MaterialMorphData, bpy.types.Mesh] = {}
+            related_meshes: Dict['MaterialMorphData', bpy.types.Mesh] = {}
             for material_morph in child_root_object.mmd_root.material_morphs:
                 for material_morph_data in material_morph.data:
                     if material_morph_data.related_mesh_data is not None:
@@ -352,6 +355,8 @@ class FnModel:
             # Remove unused objects from child models
             if len(child_root_object.children) == 0:
                 bpy.data.objects.remove(child_root_object)
+        
+        logger.info("Model joining completed successfully")
 
     @staticmethod
     def _add_armature_modifier(mesh_object: bpy.types.Object, armature_object: bpy.types.Object) -> bpy.types.ArmatureModifier:
@@ -369,10 +374,13 @@ class FnModel:
         return modifier
 
     @staticmethod
-    def attach_mesh_objects(parent_root_object: bpy.types.Object, mesh_objects: Iterable[bpy.types.Object], add_armature_modifier: bool):
+    def attach_mesh_objects(parent_root_object: bpy.types.Object, mesh_objects: Iterable[bpy.types.Object], add_armature_modifier: bool) -> None:
+        logger.info(f"Attaching mesh objects to {parent_root_object.name}")
         armature_object = FnModel.find_armature_object(parent_root_object)
         if armature_object is None:
-            raise ValueError(f"Armature object not found in {parent_root_object}")
+            error_msg = f"Armature object not found in {parent_root_object.name}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         def __get_root_object(obj: bpy.types.Object) -> bpy.types.Object:
             if obj.parent is None:
@@ -381,9 +389,11 @@ class FnModel:
 
         for mesh_object in mesh_objects:
             if not FnModel.is_mesh_object(mesh_object):
+                logger.debug(f"Skipping non-mesh object: {mesh_object.name}")
                 continue
 
             if FnModel.find_root_object(mesh_object) is not None:
+                logger.debug(f"Skipping mesh with existing root: {mesh_object.name}")
                 continue
 
             mesh_root_object = __get_root_object(mesh_object)
@@ -391,15 +401,20 @@ class FnModel:
             mesh_root_object.parent_type = "OBJECT"
             mesh_root_object.parent = armature_object
             mesh_root_object.matrix_world = original_matrix_world
+            logger.debug(f"Attached mesh: {mesh_object.name}")
 
             if add_armature_modifier:
                 FnModel._add_armature_modifier(mesh_object, armature_object)
+                logger.debug(f"Added armature modifier to: {mesh_object.name}")
 
     @staticmethod
-    def add_missing_vertex_groups_from_bones(root_object: bpy.types.Object, mesh_object: bpy.types.Object, search_in_all_meshes: bool):
+    def add_missing_vertex_groups_from_bones(root_object: bpy.types.Object, mesh_object: bpy.types.Object, search_in_all_meshes: bool) -> None:
+        logger.info(f"Adding missing vertex groups from bones to {mesh_object.name}")
         armature_object = FnModel.find_armature_object(root_object)
         if armature_object is None:
-            raise ValueError(f"Armature object not found in {root_object}")
+            error_msg = f"Armature object not found in {root_object.name}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         vertex_group_names: Set[str] = set()
 
@@ -408,6 +423,7 @@ class FnModel:
         for search_mesh in search_meshes:
             vertex_group_names.update(search_mesh.vertex_groups.keys())
 
+        added_count = 0
         pose_bone: bpy.types.PoseBone
         for pose_bone in armature_object.pose.bones:
             pose_bone_name = pose_bone.name
@@ -419,28 +435,34 @@ class FnModel:
                 continue
 
             mesh_object.vertex_groups.new(name=pose_bone_name)
+            added_count += 1
+        
+        logger.debug(f"Added {added_count} missing vertex groups to {mesh_object.name}")
 
     @staticmethod
-    def change_mmd_ik_loop_factor(root_object: bpy.types.Object, new_ik_loop_factor: int):
+    def change_mmd_ik_loop_factor(root_object: bpy.types.Object, new_ik_loop_factor: int) -> None:
+        logger.info(f"Changing IK loop factor to {new_ik_loop_factor}")
         mmd_root = root_object.mmd_root
         old_ik_loop_factor = mmd_root.ik_loop_factor
 
         if new_ik_loop_factor == old_ik_loop_factor:
+            logger.debug("IK loop factor already set to the requested value")
             return
 
         armature_object = FnModel.find_armature_object(root_object)
+        updated_count = 0
         for pose_bone in armature_object.pose.bones:
             for constraint in (cast(bpy.types.KinematicConstraint, c) for c in pose_bone.constraints if c.type == "IK"):
                 iterations = int(constraint.iterations * new_ik_loop_factor / old_ik_loop_factor)
-                logging.info("Update %s of %s: %d -> %d", constraint.name, pose_bone.name, constraint.iterations, iterations)
+                logger.debug(f"Update {constraint.name} of {pose_bone.name}: {constraint.iterations} -> {iterations}")
                 constraint.iterations = iterations
+                updated_count += 1
 
         mmd_root.ik_loop_factor = new_ik_loop_factor
-
-        return
+        logger.info(f"Updated {updated_count} IK constraints")
 
     @staticmethod
-    def __copy_property_group(destination: bpy.types.PropertyGroup, source: bpy.types.PropertyGroup, overwrite: bool, replace_name2values: Dict[str, Dict[Any, Any]]):
+    def __copy_property_group(destination: bpy.types.PropertyGroup, source: bpy.types.PropertyGroup, overwrite: bool, replace_name2values: Dict[str, Dict[Any, Any]]) -> None:
         destination_rna_properties = destination.bl_rna.properties
         for name in source.keys():
             is_attr = hasattr(source, name)
@@ -466,7 +488,7 @@ class FnModel:
                         destination[name] = value
 
     @staticmethod
-    def __copy_collection_property(destination: bpy.types.bpy_prop_collection, source: bpy.types.bpy_prop_collection, overwrite: bool, replace_name2values: Dict[str, Dict[Any, Any]]):
+    def __copy_collection_property(destination: bpy.types.bpy_prop_collection, source: bpy.types.bpy_prop_collection, overwrite: bool, replace_name2values: Dict[str, Dict[Any, Any]]) -> None:
         if overwrite:
             destination.clear()
 
@@ -499,16 +521,19 @@ class FnModel:
                 FnModel.__copy_property(destination[index], source[index], overwrite=True, replace_name2values=replace_name2values)
 
     @staticmethod
-    def __copy_property(destination: Union[bpy.types.PropertyGroup, bpy.types.bpy_prop_collection], source: Union[bpy.types.PropertyGroup, bpy.types.bpy_prop_collection], overwrite: bool, replace_name2values: Dict[str, Dict[Any, Any]]):
+    def __copy_property(destination: Union[bpy.types.PropertyGroup, bpy.types.bpy_prop_collection], source: Union[bpy.types.PropertyGroup, bpy.types.bpy_prop_collection], overwrite: bool, replace_name2values: Dict[str, Dict[Any, Any]]) -> None:
         if isinstance(destination, bpy.types.PropertyGroup):
             FnModel.__copy_property_group(destination, source, overwrite=overwrite, replace_name2values=replace_name2values)
         elif isinstance(destination, bpy.types.bpy_prop_collection):
             FnModel.__copy_collection_property(destination, source, overwrite=overwrite, replace_name2values=replace_name2values)
         else:
-            raise ValueError(f"Unsupported destination: {destination}")
+            error_msg = f"Unsupported destination: {destination}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
     @staticmethod
-    def initalize_display_item_frames(root_object: bpy.types.Object, reset: bool = True):
+    def initalize_display_item_frames(root_object: bpy.types.Object, reset: bool = True) -> None:
+        logger.info(f"Initializing display item frames for {root_object.name}")
         frames = root_object.mmd_root.display_item_frames
         if reset and len(frames) > 0:
             root_object.mmd_root.active_display_item_frame = 0
@@ -531,6 +556,8 @@ class FnModel:
         if not reset:
             frames.move(frames.find("Root"), 0)
             frames.move(frames.find("表情"), 1)
+        
+        logger.debug(f"Display item frames initialized with {len(frames)} frames")
 
     @staticmethod
     def get_empty_display_size(root_object: bpy.types.Object) -> float:
@@ -541,19 +568,28 @@ class MigrationFnModel:
     """Migration Functions for old MMD models broken by bugs or issues"""
 
     @classmethod
-    def update_mmd_ik_loop_factor(cls):
+    def update_mmd_ik_loop_factor(cls) -> None:
+        logger.info("Updating MMD IK loop factor for all armatures")
+        updated_count = 0
         for armature_object in bpy.data.objects:
             if armature_object.type != "ARMATURE":
                 continue
 
             if "mmd_ik_loop_factor" not in armature_object:
-                return
+                continue
 
-            FnModel.find_root_object(armature_object).mmd_root.ik_loop_factor = max(armature_object["mmd_ik_loop_factor"], 1)
-            del armature_object["mmd_ik_loop_factor"]
+            root_object = FnModel.find_root_object(armature_object)
+            if root_object:
+                root_object.mmd_root.ik_loop_factor = max(armature_object["mmd_ik_loop_factor"], 1)
+                del armature_object["mmd_ik_loop_factor"]
+                updated_count += 1
+        
+        logger.info(f"Updated IK loop factor for {updated_count} armatures")
 
     @staticmethod
-    def update_avatar_toolkit_version():
+    def update_avatar_toolkit_version() -> None:
+        logger.info("Updating Avatar Toolkit version for all MMD root objects")
+        updated_count = 0
         for root_object in bpy.data.objects:
             if root_object.type != "EMPTY":
                 continue
@@ -565,10 +601,13 @@ class MigrationFnModel:
                 continue
 
             root_object["avatar_toolkit_version"] = "0.2.1"
+            updated_count += 1
+        
+        logger.info(f"Updated Avatar Toolkit version for {updated_count} root objects")
 
 
 class Model:
-    def __init__(self, root_obj):
+    def __init__(self, root_obj: bpy.types.Object) -> None:
         if root_obj is None:
             raise ValueError("must be MMD ROOT type object")
         if root_obj.mmd_type != "ROOT":
@@ -578,13 +617,15 @@ class Model:
         self.__rigid_grp: Optional[bpy.types.Object] = None
         self.__joint_grp: Optional[bpy.types.Object] = None
         self.__temporary_grp: Optional[bpy.types.Object] = None
+        logger.debug(f"Model initialized with root object: {self.__root.name}")
 
     @staticmethod
-    def create(name: str, name_e: str = "", scale: float = 1, obj_name: Optional[str] = None, armature_object: Optional[bpy.types.Object] = None, add_root_bone: bool = False):
+    def create(name: str, name_e: str = "", scale: float = 1, obj_name: Optional[str] = None, armature_object: Optional[bpy.types.Object] = None, add_root_bone: bool = False) -> 'Model':
         if obj_name is None:
             obj_name = name
 
         context = FnContext.ensure_context()
+        logger.info(f"Creating new MMD model: {name}")
 
         root: bpy.types.Object = bpy.data.objects.new(name=obj_name, object_data=None)
         root.mmd_type = "ROOT"
@@ -595,6 +636,7 @@ class Model:
         FnContext.link_object(context, root)
 
         if armature_object:
+            logger.debug(f"Using existing armature: {armature_object.name}")
             m = armature_object.matrix_world
             armature_object.parent_type = "OBJECT"
             armature_object.parent = root
@@ -602,6 +644,7 @@ class Model:
             root.matrix_world = m
             armature_object.matrix_local.identity()
         else:
+            logger.debug("Creating new armature")
             armature_object = bpy.data.objects.new(name=obj_name + "_arm", object_data=bpy.data.armatures.new(name=obj_name))
             armature_object.parent = root
             FnContext.link_object(context, armature_object)
@@ -614,6 +657,7 @@ class Model:
         FnBone.setup_special_bone_collections(armature_object)
 
         if add_root_bone:
+            logger.debug("Adding root bone")
             bone_name = "全ての親"
             bone_name_english = "Root"
 
@@ -637,34 +681,37 @@ class Model:
             bone_collection.assign(data_bone)
 
         FnContext.set_active_and_select_single_object(context, root)
+        logger.info(f"Model created successfully: {name}")
         return Model(root)
 
     @staticmethod
     def findRoot(obj: bpy.types.Object) -> Optional[bpy.types.Object]:
         return FnModel.find_root_object(obj)
 
-    def initialDisplayFrames(self, reset=True):
+    def initialDisplayFrames(self, reset: bool = True) -> None:
         FnModel.initalize_display_item_frames(self.__root, reset=reset)
 
     @property
-    def morph_slider(self):
+    def morph_slider(self) -> Any:
         return FnMorph.get_morph_slider(self)
 
-    def loadMorphs(self):
+    def loadMorphs(self) -> None:
+        logger.info(f"Loading morphs for model: {self.__root.name}")
         FnMorph.load_morphs(self)
 
-    def create_ik_constraint(self, bone, ik_target):
+    def create_ik_constraint(self, bone: bpy.types.PoseBone, ik_target: bpy.types.PoseBone) -> bpy.types.KinematicConstraint:
         """create IK constraint
 
         Args:
             bone: A pose bone to add a IK constraint
-            id_target: A pose bone for IK target
+            ik_target: A pose bone for IK target
 
         Returns:
             The bpy.types.KinematicConstraint object created. It is set target
             and subtarget options.
 
         """
+        logger.debug(f"Creating IK constraint on {bone.name} targeting {ik_target.name}")
         ik_target_name = ik_target.name
         ik_const = bone.constraints.new("IK")
         ik_const.target = self.__arm
@@ -693,6 +740,7 @@ class Model:
         if self.__rigid_grp is None:
             self.__rigid_grp = FnModel.find_rigid_group_object(self.__root)
             if self.__rigid_grp is None:
+                logger.debug(f"Creating rigid group object for {self.__root.name}")
                 rigids = bpy.data.objects.new(name="rigidbodies", object_data=None)
                 FnContext.link_object(FnContext.ensure_context(), rigids)
                 rigids.mmd_type = "RIGID_GRP_OBJ"
@@ -710,6 +758,7 @@ class Model:
         if self.__joint_grp is None:
             self.__joint_grp = FnModel.find_joint_group_object(self.__root)
             if self.__joint_grp is None:
+                logger.debug(f"Creating joint group object for {self.__root.name}")
                 joints = bpy.data.objects.new(name="joints", object_data=None)
                 FnContext.link_object(FnContext.ensure_context(), joints)
                 joints.mmd_type = "JOINT_GRP_OBJ"
@@ -727,6 +776,7 @@ class Model:
         if self.__temporary_grp is None:
             self.__temporary_grp = FnModel.find_temporary_group_object(self.__root)
             if self.__temporary_grp is None:
+                logger.debug(f"Creating temporary group object for {self.__root.name}")
                 temporarys = bpy.data.objects.new(name="temporary", object_data=None)
                 FnContext.link_object(FnContext.ensure_context(), temporarys)
                 temporarys.mmd_type = "TEMPORARY_GRP_OBJ"
@@ -740,7 +790,7 @@ class Model:
     def meshes(self) -> Iterator[bpy.types.Object]:
         return FnModel.iterate_mesh_objects(self.__root)
 
-    def attachMeshes(self, meshes: Iterator[bpy.types.Object], add_armature_modifier: bool = True):
+    def attachMeshes(self, meshes: Iterator[bpy.types.Object], add_armature_modifier: bool = True) -> None:
         FnModel.attach_mesh_objects(self.rootObject(), meshes, add_armature_modifier)
 
     def firstMesh(self) -> Optional[bpy.types.Object]:
@@ -748,7 +798,7 @@ class Model:
             return i
         return None
 
-    def findMesh(self, mesh_name) -> Optional[bpy.types.Object]:
+    def findMesh(self, mesh_name: str) -> Optional[bpy.types.Object]:
         """
         Helper method to find a mesh by name
         """
@@ -787,25 +837,26 @@ class Model:
     def joints(self) -> Iterator[bpy.types.Object]:
         return FnModel.iterate_joint_objects(self.__root)
 
-    def temporaryObjects(self, rigid_track_only=False) -> Iterator[bpy.types.Object]:
+    def temporaryObjects(self, rigid_track_only: bool = False) -> Iterator[bpy.types.Object]:
         return FnModel.iterate_temporary_objects(self.__root, rigid_track_only)
 
     def materials(self) -> Iterator[bpy.types.Material]:
         """
         Helper method to list all materials in all meshes
         """
-        materials = {}  # Use dict instead of set to guarantee preserve order
+        materials: Dict[bpy.types.Material, int] = {}  # Use dict instead of set to guarantee preserve order
         for mesh in self.meshes():
             materials.update((slot.material, 0) for slot in mesh.material_slots if slot.material is not None)
         return iter(materials.keys())
 
-    def renameBone(self, old_bone_name, new_bone_name):
+    def renameBone(self, old_bone_name: str, new_bone_name: str) -> None:
         if old_bone_name == new_bone_name:
             return
+        logger.info(f"Renaming bone: {old_bone_name} -> {new_bone_name}")
         armature = self.armature()
         bone = armature.pose.bones[old_bone_name]
         bone.name = new_bone_name
-        new_bone_name = bone.name
+        new_bone_name = bone.name  # Get the actual name (might be adjusted by Blender)
 
         mmd_root = self.rootObject().mmd_root
         for frame in mmd_root.display_item_frames:
@@ -816,28 +867,31 @@ class Model:
             if old_bone_name in mesh.vertex_groups:
                 mesh.vertex_groups[old_bone_name].name = new_bone_name
 
-    def build(self, non_collision_distance_scale=1.5, collision_margin=1e-06):
+    def build(self, non_collision_distance_scale: float = 1.5, collision_margin: float = 1e-06) -> None:
+        logger.info(f"Building physics rig for {self.__root.name}")
         rigidbody_world_enabled = rigid_body.setRigidBodyWorldEnabled(False)
         if self.__root.mmd_root.is_built:
+            logger.info("Model is already built, cleaning first")
             self.clean()
         self.__root.mmd_root.is_built = True
-        logging.info("****************************************")
-        logging.info(" Build rig")
-        logging.info("****************************************")
+        logger.info("****************************************")
+        logger.info(" Build rig")
+        logger.info("****************************************")
         start_time = time.time()
         self.__preBuild()
         self.disconnectPhysicsBones()
         self.buildRigids(non_collision_distance_scale, collision_margin)
         self.buildJoints()
         self.__postBuild()
-        logging.info(" Finished building in %f seconds.", time.time() - start_time)
+        logger.info(" Finished building in %f seconds.", time.time() - start_time)
         rigid_body.setRigidBodyWorldEnabled(rigidbody_world_enabled)
 
-    def clean(self):
+    def clean(self) -> None:
+        logger.info(f"Cleaning physics rig for {self.__root.name}")
         rigidbody_world_enabled = rigid_body.setRigidBodyWorldEnabled(False)
-        logging.info("****************************************")
-        logging.info(" Clean rig")
-        logging.info("****************************************")
+        logger.info("****************************************")
+        logger.info(" Clean rig")
+        logger.info("****************************************")
         start_time = time.time()
 
         pose_bones = []
@@ -848,13 +902,14 @@ class Model:
             if "mmd_tools_rigid_track" in i.constraints:
                 const = i.constraints["mmd_tools_rigid_track"]
                 i.constraints.remove(const)
+                logger.debug(f"Removed rigid track constraint from {i.name}")
 
         rigid_track_counts = 0
         for i in self.rigidBodies():
             rigid_type = int(i.mmd_rigid.type)
             if "mmd_tools_rigid_parent" not in i.constraints:
                 rigid_track_counts += 1
-                logging.info('%3d# Create a "CHILD_OF" constraint for %s', rigid_track_counts, i.name)
+                logger.info('%3d# Create a "CHILD_OF" constraint for %s', rigid_track_counts, i.name)
                 i.mmd_rigid.bone = i.mmd_rigid.bone
             relation = i.constraints["mmd_tools_rigid_parent"]
             relation.mute = True
@@ -884,35 +939,39 @@ class Model:
         mmd_root = self.rootObject().mmd_root
         if mmd_root.show_temporary_objects:
             mmd_root.show_temporary_objects = False
-        logging.info(" Finished cleaning in %f seconds.", time.time() - start_time)
+        logger.info(" Finished cleaning in %f seconds.", time.time() - start_time)
         mmd_root.is_built = False
         rigid_body.setRigidBodyWorldEnabled(rigidbody_world_enabled)
 
-    def __removeTemporaryObjects(self):
+    def __removeTemporaryObjects(self) -> None:
+        logger.debug("Removing temporary objects")
         with bpy.context.temp_override(selected_objects=tuple(self.temporaryObjects()), active_object=self.rootObject()):
             bpy.ops.object.delete()
 
-    def __restoreTransforms(self, obj):
+    def __restoreTransforms(self, obj: bpy.types.Object) -> None:
         for attr in ("location", "rotation_euler"):
             attr_name = "__backup_%s__" % attr
             val = obj.get(attr_name, None)
             if val is not None:
                 setattr(obj, attr, val)
                 del obj[attr_name]
+                logger.debug(f"Restored {attr} for {obj.name}")
 
-    def __backupTransforms(self, obj):
+    def __backupTransforms(self, obj: bpy.types.Object) -> None:
         for attr in ("location", "rotation_euler"):
             attr_name = "__backup_%s__" % attr
             if attr_name in obj:  # should not happen in normal build/clean cycle
                 continue
             obj[attr_name] = getattr(obj, attr, None)
+            logger.debug(f"Backed up {attr} for {obj.name}")
 
-    def __preBuild(self):
-        self.__fake_parent_map = {}
-        self.__rigid_body_matrix_map = {}
-        self.__empty_parent_map = {}
+    def __preBuild(self) -> None:
+        logger.debug("Pre-build preparation")
+        self.__fake_parent_map: Dict[bpy.types.Object, List[bpy.types.Object]] = {}
+        self.__rigid_body_matrix_map: Dict[bpy.types.Object, Any] = {}
+        self.__empty_parent_map: Dict[bpy.types.Object, bpy.types.Object] = {}
 
-        no_parents = []
+        no_parents: List[bpy.types.Object] = []
         for i in self.rigidBodies():
             self.__backupTransforms(i)
             # mute relation
@@ -932,7 +991,7 @@ class Model:
         # update changes of armature constraints
         bpy.context.scene.frame_set(bpy.context.scene.frame_current)
 
-        parented = []
+        parented: List[bpy.types.Object] = []
         for i in self.joints():
             self.__backupTransforms(i)
             rbc = i.rigid_body_constraint
@@ -950,7 +1009,8 @@ class Model:
 
         # assert(len(no_parents) == len(parented))
 
-    def __postBuild(self):
+    def __postBuild(self) -> None:
+        logger.debug("Post-build finalization")
         self.__fake_parent_map = None
         self.__rigid_body_matrix_map = None
 
@@ -962,6 +1022,7 @@ class Model:
             matrix_world = empty.matrix_world
             empty.parent = rigid_obj
             empty.matrix_world = matrix_world
+            logger.debug(f"Parented empty {empty.name} to rigid object {rigid_obj.name}")
         self.__empty_parent_map = None
 
         arm = self.armature()
@@ -970,11 +1031,13 @@ class Model:
                 c = p_bone.constraints.get("mmd_tools_rigid_track", None)
                 if c:
                     c.mute = False
+                    logger.debug(f"Enabled rigid track constraint for {p_bone.name}")
 
-    def updateRigid(self, rigid_obj: bpy.types.Object, collision_margin: float):
+    def updateRigid(self, rigid_obj: bpy.types.Object, collision_margin: float) -> None:
         assert rigid_obj.mmd_type == "RIGID_BODY"
         rb = rigid_obj.rigid_body
         if rb is None:
+            logger.warning(f"No rigid body for {rigid_obj.name}")
             return
 
         rigid = rigid_obj.mmd_rigid
@@ -1018,7 +1081,7 @@ class Model:
                 fake_children = self.__fake_parent_map.get(rigid_obj, None)
                 if fake_children:
                     for fake_child in fake_children:
-                        logging.debug("          - fake_child: %s", fake_child.name)
+                        logger.debug("          - fake_child: %s", fake_child.name)
                         t, r, s = (m @ fake_child.matrix_local).decompose()
                         fake_child.location = t
                         fake_child.rotation_euler = r.to_euler(fake_child.rotation_mode)
@@ -1032,7 +1095,7 @@ class Model:
                 fake_children = self.__fake_parent_map.get(rigid_obj, None)
                 if fake_children:
                     for fake_child in fake_children:
-                        logging.debug("          - fake_child: %s", fake_child.name)
+                        logger.debug("          - fake_child: %s", fake_child.name)
                         t, r, s = (m @ fake_child.matrix_local).decompose()
                         fake_child.location = t
                         fake_child.rotation_euler = r.to_euler(fake_child.rotation_mode)
@@ -1062,7 +1125,7 @@ class Model:
                     ori_rigid_obj = self.__empty_parent_map[empty]
                     ori_rb = ori_rigid_obj.rigid_body
                     if ori_rb and rb.mass > ori_rb.mass:
-                        logging.debug("        * Bone (%s): change target from [%s] to [%s]", target_bone.name, ori_rigid_obj.name, rigid_obj.name)
+                        logger.debug("        * Bone (%s): change target from [%s] to [%s]", target_bone.name, ori_rigid_obj.name, rigid_obj.name)
                         # re-parenting
                         rigid_obj.mmd_rigid.bone = bone_name
                         rigid_obj.constraints.remove(relation)
@@ -1070,21 +1133,22 @@ class Model:
                         # revert change
                         ori_rigid_obj.mmd_rigid.bone = bone_name
                     else:
-                        logging.debug("        * Bone (%s): track target [%s]", target_bone.name, ori_rigid_obj.name)
+                        logger.debug("        * Bone (%s): track target [%s]", target_bone.name, ori_rigid_obj.name)
 
         rb.collision_shape = rigid.shape
+        logger.debug(f"Updated rigid body {rigid_obj.name} with type {rigid_type}")
 
-    def __getRigidRange(self, obj):
+    def __getRigidRange(self, obj: bpy.types.Object) -> float:
         return (Vector(obj.bound_box[0]) - Vector(obj.bound_box[6])).length
 
-    def __createNonCollisionConstraint(self, nonCollisionJointTable):
+    def __createNonCollisionConstraint(self, nonCollisionJointTable: List[Tuple[bpy.types.Object, bpy.types.Object]]) -> None:
         total_len = len(nonCollisionJointTable)
         if total_len < 1:
             return
 
         start_time = time.time()
-        logging.debug("-" * 60)
-        logging.debug(" creating ncc, counts: %d", total_len)
+        logger.debug("-" * 60)
+        logger.debug(" creating ncc, counts: %d", total_len)
 
         ncc_obj = bpyutils.createObject(name="ncc", object_data=None)
         ncc_obj.location = [0, 0, 0]
@@ -1099,26 +1163,26 @@ class Model:
         rb.disable_collisions = True
 
         ncc_objs = bpyutils.duplicateObject(ncc_obj, total_len)
-        logging.debug(" created %d ncc.", len(ncc_objs))
+        logger.debug(" created %d ncc.", len(ncc_objs))
 
         for ncc_obj, pair in zip(ncc_objs, nonCollisionJointTable):
             rbc = ncc_obj.rigid_body_constraint
             rbc.object1, rbc.object2 = pair
             ncc_obj.hide_set(True)
             ncc_obj.hide_select = True
-        logging.debug(" finish in %f seconds.", time.time() - start_time)
-        logging.debug("-" * 60)
+        logger.debug(" finish in %f seconds.", time.time() - start_time)
+        logger.debug("-" * 60)
 
-    def buildRigids(self, non_collision_distance_scale, collision_margin):
-        logging.debug("--------------------------------")
-        logging.debug(" Build riggings of rigid bodies")
-        logging.debug("--------------------------------")
+    def buildRigids(self, non_collision_distance_scale: float, collision_margin: float) -> List[bpy.types.Object]:
+        logger.debug("--------------------------------")
+        logger.debug(" Build riggings of rigid bodies")
+        logger.debug("--------------------------------")
         rigid_objects = list(self.rigidBodies())
-        rigid_object_groups = [[] for i in range(16)]
+        rigid_object_groups: List[List[bpy.types.Object]] = [[] for i in range(16)]
         for i in rigid_objects:
             rigid_object_groups[i.mmd_rigid.collision_group_number].append(i)
 
-        jointMap = {}
+        jointMap: Dict[frozenset, bpy.types.Object] = {}
         for joint in self.joints():
             rbc = joint.rigid_body_constraint
             if rbc is None:
@@ -1126,10 +1190,10 @@ class Model:
             rbc.disable_collisions = False
             jointMap[frozenset((rbc.object1, rbc.object2))] = joint
 
-        logging.info("Creating non collision constraints")
+        logger.info("Creating non collision constraints")
         # create non collision constraints
-        nonCollisionJointTable = []
-        non_collision_pairs = set()
+        nonCollisionJointTable: List[Tuple[bpy.types.Object, bpy.types.Object]] = []
+        non_collision_pairs: Set[frozenset] = set()
         rigid_object_cnt = len(rigid_objects)
         for obj_a in rigid_objects:
             for n, ignore in enumerate(obj_a.mmd_rigid.collision_group_mask):
@@ -1150,12 +1214,13 @@ class Model:
                             nonCollisionJointTable.append((obj_a, obj_b))
                     non_collision_pairs.add(pair)
         for cnt, i in enumerate(rigid_objects):
-            logging.info("%3d/%3d: Updating rigid body %s", cnt + 1, rigid_object_cnt, i.name)
+            logger.info("%3d/%3d: Updating rigid body %s", cnt + 1, rigid_object_cnt, i.name)
             self.updateRigid(i, collision_margin)
         self.__createNonCollisionConstraint(nonCollisionJointTable)
         return rigid_objects
 
-    def buildJoints(self):
+    def buildJoints(self) -> None:
+        logger.info("Building joints")
         for i in self.joints():
             rbc = i.rigid_body_constraint
             if rbc is None:
@@ -1168,8 +1233,9 @@ class Model:
             t, r, s = (m @ i.matrix_local).decompose()
             i.location = t
             i.rotation_euler = r.to_euler(i.rotation_mode)
+            logger.debug(f"Built joint: {i.name}")
 
-    def __editPhysicsBones(self, editor: Callable[[bpy.types.EditBone], None], target_modes: Set[str]):
+    def __editPhysicsBones(self, editor: Callable[[bpy.types.EditBone], None], target_modes: Set[str]) -> None:
         armature_object = self.armature()
 
         armature: bpy.types.Armature
@@ -1177,7 +1243,7 @@ class Model:
             edit_bones = armature.edit_bones
             rigid_body_object: bpy.types.Object
             for rigid_body_object in self.rigidBodies():
-                mmd_rigid: MMDRigidBody = rigid_body_object.mmd_rigid
+                mmd_rigid: 'MMDRigidBody' = rigid_body_object.mmd_rigid
                 if mmd_rigid.type not in target_modes:
                     continue
 
@@ -1188,21 +1254,25 @@ class Model:
 
                 editor(edit_bone)
 
-    def disconnectPhysicsBones(self):
-        def editor(edit_bone: bpy.types.EditBone):
+    def disconnectPhysicsBones(self) -> None:
+        logger.info("Disconnecting physics bones")
+        def editor(edit_bone: bpy.types.EditBone) -> None:
             rna_prop_ui.rna_idprop_ui_create(edit_bone, "mmd_bone_use_connect", default=edit_bone.use_connect)
             edit_bone.use_connect = False
+            logger.debug(f"Disconnected bone: {edit_bone.name}")
 
         self.__editPhysicsBones(editor, {str(MODE_DYNAMIC)})
 
-    def connectPhysicsBones(self):
-        def editor(edit_bone: bpy.types.EditBone):
+    def connectPhysicsBones(self) -> None:
+        logger.info("Connecting physics bones")
+        def editor(edit_bone: bpy.types.EditBone) -> None:
             mmd_bone_use_connect_str: Optional[str] = edit_bone.get("mmd_bone_use_connect")
             if mmd_bone_use_connect_str is None:
                 return
 
             if not edit_bone.use_connect:  # wasn't it overwritten?
                 edit_bone.use_connect = bool(mmd_bone_use_connect_str)
+                logger.debug(f"Connected bone: {edit_bone.name}")
             del edit_bone["mmd_bone_use_connect"]
 
         self.__editPhysicsBones(editor, {str(MODE_STATIC), str(MODE_DYNAMIC), str(MODE_DYNAMIC_BONE)})

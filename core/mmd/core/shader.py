@@ -5,25 +5,33 @@
 # Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
-from typing import Optional, Tuple, cast
+from typing import Optional, Tuple, cast, List, Dict, Any, Union
 import bpy
+from bpy.types import (
+    ShaderNodeTree, 
+    ShaderNode, 
+    NodeGroupInput, 
+    NodeGroupOutput, 
+    Material
+)
+from ....core.logging_setup import logger
 
 
 class _NodeTreeUtils:
-    def __init__(self, shader: bpy.types.ShaderNodeTree):
+    def __init__(self, shader: ShaderNodeTree):
         self.shader = shader
-        self.nodes: bpy.types.bpy_prop_collection[bpy.types.ShaderNode] = shader.nodes  # type: ignore
+        self.nodes: bpy.types.bpy_prop_collection[ShaderNode] = shader.nodes  # type: ignore
         self.links = shader.links
 
-    def _find_node(self, node_type: str) -> Optional[bpy.types.ShaderNode]:
+    def _find_node(self, node_type: str) -> Optional[ShaderNode]:
         return next((n for n in self.nodes if n.bl_idname == node_type), None)
 
-    def new_node(self, idname: str, pos: Tuple[int, int]) -> bpy.types.ShaderNode:
-        node: bpy.types.ShaderNode = self.nodes.new(idname)
+    def new_node(self, idname: str, pos: Tuple[int, int]) -> ShaderNode:
+        node: ShaderNode = self.nodes.new(idname)
         node.location = (pos[0] * 210, pos[1] * 220)
         return node
 
-    def new_math_node(self, operation, pos, value1=None, value2=None):
+    def new_math_node(self, operation: str, pos: Tuple[int, int], value1: Optional[float] = None, value2: Optional[float] = None) -> ShaderNode:
         node = self.new_node("ShaderNodeMath", pos)
         node.operation = operation
         if value1 is not None:
@@ -32,7 +40,7 @@ class _NodeTreeUtils:
             node.inputs[1].default_value = value2
         return node
 
-    def new_vector_math_node(self, operation, pos, vector1=None, vector2=None):
+    def new_vector_math_node(self, operation: str, pos: Tuple[int, int], vector1: Optional[Tuple[float, float, float, float]] = None, vector2: Optional[Tuple[float, float, float, float]] = None) -> ShaderNode:
         node = self.new_node("ShaderNodeVectorMath", pos)
         node.operation = operation
         if vector1 is not None:
@@ -41,7 +49,7 @@ class _NodeTreeUtils:
             node.inputs[1].default_value = vector2
         return node
 
-    def new_mix_node(self, blend_type, pos, fac=None, color1=None, color2=None):
+    def new_mix_node(self, blend_type: str, pos: Tuple[int, int], fac: Optional[float] = None, color1: Optional[Tuple[float, float, float, float]] = None, color2: Optional[Tuple[float, float, float, float]] = None) -> ShaderNode:
         node = self.new_node("ShaderNodeMixRGB", pos)
         node.blend_type = blend_type
         if fac is not None:
@@ -53,30 +61,30 @@ class _NodeTreeUtils:
         return node
 
 
-SOCKET_TYPE_MAPPING = {"NodeSocketFloatFactor": "NodeSocketFloat"}
+SOCKET_TYPE_MAPPING: Dict[str, str] = {"NodeSocketFloatFactor": "NodeSocketFloat"}
 
-SOCKET_SUBTYPE_MAPPING = {"NodeSocketFloatFactor": "FACTOR"}
+SOCKET_SUBTYPE_MAPPING: Dict[str, str] = {"NodeSocketFloatFactor": "FACTOR"}
 
 
 class _NodeGroupUtils(_NodeTreeUtils):
-    def __init__(self, shader: bpy.types.ShaderNodeTree):
+    def __init__(self, shader: ShaderNodeTree):
         super().__init__(shader)
-        self.__node_input: Optional[bpy.types.NodeGroupInput] = None
-        self.__node_output: Optional[bpy.types.NodeGroupOutput] = None
+        self.__node_input: Optional[NodeGroupInput] = None
+        self.__node_output: Optional[NodeGroupOutput] = None
 
     @property
-    def node_input(self) -> bpy.types.NodeGroupInput:
+    def node_input(self) -> NodeGroupInput:
         if not self.__node_input:
-            self.__node_input = cast(bpy.types.NodeGroupInput, self._find_node("NodeGroupInput") or self.new_node("NodeGroupInput", (-2, 0)))
+            self.__node_input = cast(NodeGroupInput, self._find_node("NodeGroupInput") or self.new_node("NodeGroupInput", (-2, 0)))
         return self.__node_input
 
     @property
-    def node_output(self) -> bpy.types.NodeGroupOutput:
+    def node_output(self) -> NodeGroupOutput:
         if not self.__node_output:
-            self.__node_output = cast(bpy.types.NodeGroupOutput, self._find_node("NodeGroupOutput") or self.new_node("NodeGroupOutput", (2, 0)))
+            self.__node_output = cast(NodeGroupOutput, self._find_node("NodeGroupOutput") or self.new_node("NodeGroupOutput", (2, 0)))
         return self.__node_output
 
-    def hide_nodes(self, hide_sockets=True):
+    def hide_nodes(self, hide_sockets: bool = True) -> None:
         skip_nodes = {self.__node_input, self.__node_output}
         for n in (x for x in self.nodes if x not in skip_nodes):
             n.hide = True
@@ -87,15 +95,15 @@ class _NodeGroupUtils(_NodeTreeUtils):
             for s in n.outputs:
                 s.hide = not s.is_linked
 
-    def new_input_socket(self, io_name, socket, default_val=None, min_max=None, socket_type=None):
+    def new_input_socket(self, io_name: str, socket: Optional[bpy.types.NodeSocket], default_val: Optional[Union[float, Tuple[float, float, float, float]]] = None, min_max: Optional[Tuple[float, float]] = None, socket_type: Optional[str] = None) -> None:
         self.__new_io("INPUT", self.node_input.outputs, io_name, socket, default_val, min_max, socket_type)
 
-    def new_output_socket(self, io_name, socket, default_val=None, min_max=None, socket_type=None):
+    def new_output_socket(self, io_name: str, socket: Optional[bpy.types.NodeSocket], default_val: Optional[Union[float, Tuple[float, float, float, float]]] = None, min_max: Optional[Tuple[float, float]] = None, socket_type: Optional[str] = None) -> None:
         self.__new_io("OUTPUT", self.node_output.inputs, io_name, socket, default_val, min_max, socket_type)
 
-    def __new_io(self, in_out, io_sockets, io_name, socket, default_val=None, min_max=None, socket_type=None):
+    def __new_io(self, in_out: str, io_sockets: bpy.types.bpy_prop_collection, io_name: str, socket: Optional[bpy.types.NodeSocket], default_val: Optional[Union[float, Tuple[float, float, float, float]]] = None, min_max: Optional[Tuple[float, float]] = None, socket_type: Optional[str] = None) -> None:
         if io_name not in io_sockets:
-            idname = socket_type or socket.bl_idname
+            idname = socket_type or (socket.bl_idname if socket else "NodeSocketFloat")
             interface_socket = self.shader.interface.new_socket(name=io_name, in_out=in_out, socket_type=SOCKET_TYPE_MAPPING.get(idname, idname))
             if idname in SOCKET_SUBTYPE_MAPPING:
                 interface_socket.subtype = SOCKET_SUBTYPE_MAPPING.get(idname, "")
@@ -114,14 +122,18 @@ class _NodeGroupUtils(_NodeTreeUtils):
 
 class _MaterialMorph:
     @classmethod
-    def update_morph_inputs(cls, material, morph):
+    def update_morph_inputs(cls, material: Optional[Material], morph: Any) -> None:
+        """Update material morph inputs based on morph data"""
         if material and material.node_tree and morph.name in material.node_tree.nodes:
+            logger.debug(f"Updating morph inputs for {morph.name} in {material.name}")
             cls.__update_node_inputs(material.node_tree.nodes[morph.name], morph)
             cls.update_morph_inputs(bpy.data.materials.get("mmd_edge." + material.name, None), morph)
 
     @classmethod
-    def setup_morph_nodes(cls, material, morphs):
+    def setup_morph_nodes(cls, material: Material, morphs: List[Any]) -> List[ShaderNode]:
+        """Set up morph nodes for a material"""
         node, nodes = None, []
+        logger.debug(f"Setting up {len(morphs)} morph nodes for {material.name}")
         for m in morphs:
             node = cls.__morph_node_add(material, m, node)
             nodes.append(node)
@@ -137,23 +149,25 @@ class _MaterialMorph:
         return nodes
 
     @classmethod
-    def reset_morph_links(cls, node):
+    def reset_morph_links(cls, node: ShaderNode) -> None:
+        """Reset morph links for a node"""
+        logger.debug(f"Resetting morph links for {node.name}")
         cls.__update_morph_links(node, reset=True)
 
     @classmethod
-    def __update_morph_links(cls, node, reset=False):
+    def __update_morph_links(cls, node: ShaderNode, reset: bool = False) -> None:
         nodes, links = node.id_data.nodes, node.id_data.links
         if reset:
             if any(l.from_node.name.startswith("mmd_bind") for i in node.inputs for l in i.links):
                 return
 
-            def __init_link(socket_morph, socket_shader):
+            def __init_link(socket_morph: bpy.types.NodeSocket, socket_shader: Optional[bpy.types.NodeSocket]) -> None:
                 if socket_shader and socket_morph.is_linked:
                     links.new(socket_morph.links[0].from_socket, socket_shader)
 
         else:
 
-            def __init_link(socket_morph, socket_shader):
+            def __init_link(socket_morph: bpy.types.NodeSocket, socket_shader: Optional[bpy.types.NodeSocket]) -> None:
                 if socket_shader:
                     if socket_shader.is_linked:
                         links.new(socket_shader.links[0].from_socket, socket_morph)
@@ -178,7 +192,8 @@ class _MaterialMorph:
             __init_link(node.inputs["Edge1 A"], shader.inputs["Alpha"])
 
     @classmethod
-    def __update_node_inputs(cls, node, morph):
+    def __update_node_inputs(cls, node: ShaderNode, morph: Any) -> None:
+        """Update node inputs based on morph data"""
         node.inputs["Ambient2"].default_value[:3] = morph.ambient_color[:3]
         node.inputs["Diffuse2"].default_value[:3] = morph.diffuse_color[:3]
         node.inputs["Specular2"].default_value[:3] = morph.specular_color[:3]
@@ -196,7 +211,8 @@ class _MaterialMorph:
         node.inputs["Sphere2 A"].default_value = morph.sphere_texture_factor[3]
 
     @classmethod
-    def __morph_node_add(cls, material, morph, prev_node):
+    def __morph_node_add(cls, material: Material, morph: Optional[Any], prev_node: Optional[ShaderNode]) -> Optional[ShaderNode]:
+        """Add a morph node to a material"""
         nodes, links = material.node_tree.nodes, material.node_tree.links
 
         shader = nodes.get("mmd_shader", None)
@@ -221,8 +237,9 @@ class _MaterialMorph:
             return node
         # connect last node to shader
         if shader:
+            logger.debug(f"Connecting last node to shader for {material.name}")
 
-            def __soft_link(socket_out, socket_in):
+            def __soft_link(socket_out: Optional[bpy.types.NodeSocket], socket_in: Optional[bpy.types.NodeSocket]) -> None:
                 if socket_out and socket_in:
                     links.new(socket_out, socket_in)
 
@@ -244,12 +261,14 @@ class _MaterialMorph:
         return shader
 
     @classmethod
-    def __get_shader(cls, morph_type):
+    def __get_shader(cls, morph_type: str) -> ShaderNodeTree:
+        """Get or create a shader node group for the specified morph type"""
         group_name = "MMDMorph" + morph_type
         shader = bpy.data.node_groups.get(group_name, None) or bpy.data.node_groups.new(name=group_name, type="ShaderNodeTree")
         if len(shader.nodes):
             return shader
 
+        logger.info(f"Creating new shader node group: {group_name}")
         ng = _NodeGroupUtils(shader)
         links = ng.links
 
@@ -260,7 +279,7 @@ class _MaterialMorph:
         ng.new_input_socket("Fac", None, 0, socket_type="NodeSocketFloat")
         ng.new_node("NodeGroupOutput", (3, 0))
 
-        def __blend_color_add(id_name, pos, tag=""):
+        def __blend_color_add(id_name: str, pos: Tuple[int, int], tag: str = "") -> ShaderNode:
             # MA_RAMP_MULT: ColorMul = Color1 * (Fac * Color2 + (1 - Fac))
             # MA_RAMP_ADD:  ColorAdd = Color1 + Fac * Color2
             # https://github.com/blender/blender/blob/594f47ecd2d5367ca936cf6fc6ec8168c2b360d0/source/blender/blenkernel/intern/material.c#L1400
@@ -271,7 +290,7 @@ class _MaterialMorph:
             ng.new_output_socket(id_name + tag, node_mix.outputs["Color"])
             return node_mix
 
-        def __blend_tex_color(id_name, pos, node_tex_rgb, node_tex_a_output):
+        def __blend_tex_color(id_name: str, pos: Tuple[int, int], node_tex_rgb: ShaderNode, node_tex_a_output: bpy.types.NodeSocket) -> None:
             # Tex Color = tex_rgb * tex_a + (1 - tex_a)
             # : tex_rgb = TexRGB * ColorMul + ColorAdd
             # : tex_a = TexA * ValueMul + ValueAdd
@@ -294,7 +313,7 @@ class _MaterialMorph:
                 ng.new_output_socket(id_name + " Tex", node_add.outputs[0], socket_type="NodeSocketColor")
                 ng.new_output_socket(id_name + " Tex Add", node_scale.outputs[0], socket_type="NodeSocketColor")
 
-        def __add_sockets(id_name, input1, input2, output, tag=""):
+        def __add_sockets(id_name: str, input1: bpy.types.NodeSocket, input2: bpy.types.NodeSocket, output: bpy.types.NodeSocket, tag: str = "") -> None:
             ng.new_input_socket(f"{id_name}1{tag}", input1, use_mul)
             ng.new_input_socket(f"{id_name}2{tag}", input2, use_mul)
             ng.new_output_socket(f"{id_name}{tag}", output)
@@ -343,4 +362,5 @@ class _MaterialMorph:
         __blend_tex_color("Sphere", (pos_x + 3, -3.5), sphere_rgb, separate_basea_toona_spherea.outputs[2])
 
         ng.hide_nodes()
+        logger.debug(f"Shader node group {group_name} created successfully")
         return ng.shader

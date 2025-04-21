@@ -15,21 +15,20 @@ from bpy.types import Object, EditBone, PoseBone, Constraint, Armature, BoneColl
 from .. import bpyutils
 from ..bpyutils import TransformConstraintOp
 from ..utils import ItemOp
-from ....logging_setup import logger
+from ....core.logging_setup import logger
 
 if TYPE_CHECKING:
     from ..properties.root import MMDRoot, MMDDisplayItemFrame
     from ..properties.pose_bone import MMDBone
 
 
-def remove_constraint(constraints: bpy.types.ConstraintSequence, name: str) -> bool:
+def remove_constraint(constraints: Any, name: str) -> bool:
     """Remove a constraint by name if it exists"""
     c = constraints.get(name, None)
     if c:
         constraints.remove(c)
         return True
     return False
-
 
 def remove_edit_bones(edit_bones: bpy.types.ArmatureEditBones, bone_names: List[str]) -> None:
     """Remove edit bones by name"""
@@ -573,7 +572,7 @@ class _AT_ShadowBoneRemove:
         remove_edit_bones(edit_bones, self.__shadow_bone_names)
         logger.debug(f"Removed shadow bones: {self.__shadow_bone_names}")
 
-    def update_pose_bones(self, pose_bones: bpy.types.ArmaturePoseBones) -> None:
+    def update_pose_bones(self, pose_bones: Any) -> None:
         """Update pose bones (no-op for removal)"""
         pass
 
@@ -628,13 +627,13 @@ class _AT_ShadowBoneCreate:
         shadow.roll = bone.roll
         logger.debug(f"Created/updated shadow bone: {shadow_bone_name}")
 
-    def update_pose_bones(self, pose_bones: bpy.types.ArmaturePoseBones) -> None:
+    def update_pose_bones(self, pose_bones: Any) -> None:
         """Update pose bones by setting up shadow bone properties"""
         if self.__shadow_bone_name not in pose_bones:
             logger.debug(f"Shadow bone {self.__shadow_bone_name} not found, using target bone directly")
             self.__update_constraints(use_shadow=False)
             return
-
+            
         dummy_p_bone = pose_bones[self.__dummy_bone_name]
         dummy_p_bone.is_mmd_shadow_bone = True
         dummy_p_bone.mmd_shadow_bone_type = "DUMMY"

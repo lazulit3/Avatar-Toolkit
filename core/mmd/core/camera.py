@@ -13,7 +13,7 @@ from bpy.types import Object, ID, Camera, Context
 from mathutils import Vector, Matrix, Euler
 
 from ..bpyutils import FnContext, Props
-from core.logging_setup import logger
+from ....core.logging_setup import logger
 
 class FnCamera:
     @staticmethod
