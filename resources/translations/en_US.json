@@ -1,7 +1,7 @@
 {
   "authors": ["Avatar Toolkit Team"],
   "messages": {
-    "AvatarToolkit.label": "Avatar Toolkit (Alpha 0.2.1)",
+    "AvatarToolkit.label": "Avatar Toolkit (Alpha 0.3.0)",
     "AvatarToolkit.desc1": "Avatar Toolkit is in Early Access there",
     "AvatarToolkit.desc2": "will be issues, if you find any issues,",
     "AvatarToolkit.desc3": "please report it on our Github.",
@@ -63,6 +63,13 @@
     "PoseMode.basis": "Basis",
 
     "Armature.validation.no_armature": "No armature selected",
+    "Armature.validation.pmx_model_detected": "PMX model detected. Japanese bone names may not match standard naming conventions.",
+    "Armature.validation.pmx_model_strict": "Consider using the 'Standardize Armature' option to convert Japanese bone names to standard names.",
+    "Armature.validation.pmx_model_standardize": "This will make the model compatible with standard avatar systems.",
+    "Armature.validation.pmx_model_basic": "PMX models use Japanese bone names which may not match standard naming conventions.",
+    "Armature.validation.unknown_format": "Unknown armature format detected.",
+    "Validation.mode.none": "Validation is disabled in settings.",
+    "Validation.no_messages": "No validation messages available.",
     "Armature.validation.not_armature": "Selected object is not an armature",
     "Armature.validation.no_bones": "Armature has no bones",
     "Armature.validation.basic_check_failed": "Basic armature validation failed",

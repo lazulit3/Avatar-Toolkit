@@ -25,12 +25,18 @@ def validate_armature(armature: Object, detailed_messages: bool = False) -> Unio
     non_standard_messages: List[str] = []
     scale_messages: List[str] = []
     
+    # Check if this is a PMX model
+    is_pmx_model = False
+    if armature and hasattr(armature, 'mmd_type') or (hasattr(armature, 'parent') and armature.parent and hasattr(armature.parent, 'mmd_type')):
+        is_pmx_model = True
+        logger.debug("Detected PMX model, using specialized validation")
+    
     if validation_mode == 'NONE':
         logger.debug("Validation mode is NONE, skipping validation")
         if detailed_messages:
-            return True, [], False, [], [], []
+            return True, [t("Validation.mode.none")], False, [], [], []
         else:
-            return True, [], False
+            return True, [t("Validation.mode.none")], False
         
     if not armature or armature.type != 'ARMATURE' or not armature.data.bones:
         logger.warning("Basic armature check failed")
@@ -125,6 +131,21 @@ def validate_armature(armature: Object, detailed_messages: bool = False) -> Unio
             non_standard_messages.append(t("Armature.validation.standardize_note.line2"))
             non_standard_messages.append(t("Armature.validation.standardize_note.line3"))
     
+    # Special handling for PMX models
+    if is_pmx_model:
+        logger.info("PMX model detected, applying specialized validation")
+        # For PMX models, we'll be more lenient with validation
+        # and provide specific guidance for these models
+        if not messages:
+            messages = [t("Armature.validation.pmx_model_detected")]
+        
+        # Add PMX-specific messages
+        if validation_mode == 'STRICT':
+            messages.append(t("Armature.validation.pmx_model_strict"))
+            messages.append(t("Armature.validation.pmx_model_standardize"))
+        else:
+            messages.append(t("Armature.validation.pmx_model_basic"))
+    
     # Combine messages in correct order
     messages.extend(non_standard_messages)
     
@@ -148,6 +169,10 @@ def validate_armature(armature: Object, detailed_messages: bool = False) -> Unio
             return True, messages, True, [], [], []
         else:
             return True, messages, True
+    
+    # Ensure messages has at least one element
+    if not messages:
+        messages = [t("Armature.validation.unknown_format")]
     
     logger.info(f"Armature validation complete. Valid: {is_valid}")
     if detailed_messages:

@@ -41,9 +41,11 @@ class FnModel:
             Optional[bpy.types.Object]: The root object of the model. If the object is not a part of a model, None is returned.
             Generally, the root object is a object with type == "EMPTY" and mmd_type == "ROOT".
         """
-        while obj is not None and obj.mmd_type != "ROOT":
+        while obj is not None:
+            if hasattr(obj, 'mmd_type') and obj.mmd_type == "ROOT":
+                return obj
             obj = obj.parent
-        return obj
+        return None
 
     @staticmethod
     def find_armature_object(root_object: bpy.types.Object) -> Optional[bpy.types.Object]:

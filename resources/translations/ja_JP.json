@@ -1,7 +1,7 @@
 {
   "authors": ["Avatar Toolkit Team"],
   "messages": {
-    "AvatarToolkit.label": "アバターツールキット (アルファ 0.2.1)",
+    "AvatarToolkit.label": "アバターツールキット (アルファ 0.3.0)",
     "AvatarToolkit.desc1": "アバターツールキットは早期アクセス中であり、",
     "AvatarToolkit.desc2": "問題が発生する可能性があります。問題を見つけた場合は、",
     "AvatarToolkit.desc3": "GitHubで報告してください。",
@@ -63,6 +63,13 @@
     "PoseMode.basis": "基本形",
 
     "Armature.validation.no_armature": "アーマチュアが選択されていません",
+    "Armature.validation.pmx_model_detected": "PMXモデルが検出されました。日本語の骨名が標準の命名規則と一致しない場合があります。",
+    "Armature.validation.pmx_model_strict": "「アーマチュアの標準化」オプションを使用して、日本語の骨名を標準名に変換することを検討してください。",
+    "Armature.validation.pmx_model_standardize": "これにより、モデルが標準的なアバターシステムと互換性を持つようになります。",
+    "Armature.validation.pmx_model_basic": "PMXモデルは日本語の骨名を使用しており、標準の命名規則と一致しない場合があります。",
+    "Armature.validation.unknown_format": "不明なアーマチュア形式が検出されました。",
+    "Validation.mode.none": "検証は設定で無効になっています。",
+    "Validation.no_messages": "検証メッセージはありません。",
     "Armature.validation.not_armature": "選択されたオブジェクトはアーマチュアではありません",
     "Armature.validation.no_bones": "アーマチュアにボーンがありません",
     "Armature.validation.basic_check_failed": "基本的なアーマチュア検証に失敗しました",

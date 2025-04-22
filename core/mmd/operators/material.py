@@ -6,13 +6,16 @@
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
 import bpy
-from bpy.props import BoolProperty, StringProperty
-from bpy.types import Operator
+from bpy.props import BoolProperty, StringProperty, FloatProperty
+from bpy.types import Operator, Context, Object, Material
+
+from typing import Set, Dict, Any, List, Tuple, Optional, Union, cast
 
 from .. import cycles_converter
 from ..core.exceptions import MaterialNotFoundError
 from ..core.material import FnMaterial
 from ..core.shader import _NodeGroupUtils
+from ....core.logging_setup import logger
 
 
 class ConvertMaterialsForCycles(Operator):
@@ -21,14 +24,14 @@ class ConvertMaterialsForCycles(Operator):
     bl_description = "Convert materials of selected objects for Cycles."
     bl_options = {"REGISTER", "UNDO"}
 
-    use_principled: bpy.props.BoolProperty(
+    use_principled: BoolProperty(
         name="Convert to Principled BSDF",
         description="Convert MMD shader nodes to Principled BSDF as well if enabled",
         default=False,
         options={"SKIP_SAVE"},
     )
 
-    clean_nodes: bpy.props.BoolProperty(
+    clean_nodes: BoolProperty(
         name="Clean Nodes",
         description="Remove redundant nodes as well if enabled. Disable it to keep node data.",
         default=False,
@@ -36,22 +39,27 @@ class ConvertMaterialsForCycles(Operator):
     )
 
     @classmethod
-    def poll(cls, context):
-        return next((x for x in context.selected_objects if x.type == "MESH"), None)
+    def poll(cls, context: Context) -> bool:
+        return next((x for x in context.selected_objects if x.type == "MESH"), None) is not None
 
-    def draw(self, context):
+    def draw(self, context: Context) -> None:
         layout = self.layout
         layout.prop(self, "use_principled")
         layout.prop(self, "clean_nodes")
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
         try:
             context.scene.render.engine = "CYCLES"
-        except:
+        except Exception as e:
+            logger.error(f"Failed to change to Cycles render engine: {str(e)}")
             self.report({"ERROR"}, " * Failed to change to Cycles render engine.")
             return {"CANCELLED"}
+            
+        logger.info(f"Converting materials for Cycles with principled={self.use_principled}, clean_nodes={self.clean_nodes}")
         for obj in (x for x in context.selected_objects if x.type == "MESH"):
+            logger.debug(f"Converting materials for object: {obj.name}")
             cycles_converter.convertToCyclesShader(obj, use_principled=self.use_principled, clean_nodes=self.clean_nodes)
+            
         return {"FINISHED"}
 
 
@@ -61,21 +69,21 @@ class ConvertMaterials(Operator):
     bl_description = "Convert materials of selected objects."
     bl_options = {"REGISTER", "UNDO"}
 
-    use_principled: bpy.props.BoolProperty(
+    use_principled: BoolProperty(
         name="Convert to Principled BSDF",
         description="Convert MMD shader nodes to Principled BSDF as well if enabled",
         default=True,
         options={"SKIP_SAVE"},
     )
 
-    clean_nodes: bpy.props.BoolProperty(
+    clean_nodes: BoolProperty(
         name="Clean Nodes",
         description="Remove redundant nodes as well if enabled. Disable it to keep node data.",
         default=True,
         options={"SKIP_SAVE"},
     )
 
-    subsurface: bpy.props.FloatProperty(
+    subsurface: FloatProperty(
         name="Subsurface",
         default=0.001,
         soft_min=0.000,
@@ -85,13 +93,15 @@ class ConvertMaterials(Operator):
     )
 
     @classmethod
-    def poll(cls, context):
-        return next((x for x in context.selected_objects if x.type == "MESH"), None)
+    def poll(cls, context: Context) -> bool:
+        return next((x for x in context.selected_objects if x.type == "MESH"), None) is not None
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
+        logger.info(f"Converting materials with principled={self.use_principled}, clean_nodes={self.clean_nodes}, subsurface={self.subsurface}")
         for obj in context.selected_objects:
             if obj.type != "MESH":
                 continue
+            logger.debug(f"Converting materials for object: {obj.name}")
             cycles_converter.convertToBlenderShader(obj, use_principled=self.use_principled, clean_nodes=self.clean_nodes, subsurface=self.subsurface)
         return {"FINISHED"}
 
@@ -102,20 +112,22 @@ class ConvertBSDFMaterials(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
-    def poll(cls, context):
-        return next((x for x in context.selected_objects if x.type == 'MESH'), None)
+    def poll(cls, context: Context) -> bool:
+        return next((x for x in context.selected_objects if x.type == 'MESH'), None) is not None
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
+        logger.info("Converting BSDF materials to MMD shader")
         for obj in context.selected_objects:
             if obj.type != 'MESH':
                 continue
+            logger.debug(f"Converting BSDF materials for object: {obj.name}")
             cycles_converter.convertToMMDShader(obj)
         return {'FINISHED'}
 
 class _OpenTextureBase:
     """Create a texture for mmd model material."""
 
-    bl_options = {"REGISTER", "UNDO", "INTERNAL"}
+    bl_options: Set[str] = {"REGISTER", "UNDO", "INTERNAL"}
 
     filepath: StringProperty(
         name="File Path",
@@ -129,7 +141,7 @@ class _OpenTextureBase:
         options={"HIDDEN"},
     )
 
-    def invoke(self, context, event):
+    def invoke(self, context: Context, event: Any) -> Set[str]:
         context.window_manager.fileselect_add(self)
         return {"RUNNING_MODAL"}
 
@@ -139,8 +151,13 @@ class OpenTexture(Operator, _OpenTextureBase):
     bl_label = "Open Texture"
     bl_description = "Create main texture of active material"
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
         mat = context.active_object.active_material
+        if not mat:
+            logger.error("No active material found")
+            return {"CANCELLED"}
+            
+        logger.info(f"Creating texture for material: {mat.name} from {self.filepath}")
         fnMat = FnMaterial(mat)
         fnMat.create_texture(self.filepath)
         return {"FINISHED"}
@@ -154,8 +171,13 @@ class RemoveTexture(Operator):
     bl_description = "Remove main texture of active material"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
         mat = context.active_object.active_material
+        if not mat:
+            logger.error("No active material found")
+            return {"CANCELLED"}
+            
+        logger.info(f"Removing texture from material: {mat.name}")
         fnMat = FnMaterial(mat)
         fnMat.remove_texture()
         return {"FINISHED"}
@@ -168,8 +190,13 @@ class OpenSphereTextureSlot(Operator, _OpenTextureBase):
     bl_label = "Open Sphere Texture"
     bl_description = "Create sphere texture of active material"
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
         mat = context.active_object.active_material
+        if not mat:
+            logger.error("No active material found")
+            return {"CANCELLED"}
+            
+        logger.info(f"Creating sphere texture for material: {mat.name} from {self.filepath}")
         fnMat = FnMaterial(mat)
         fnMat.create_sphere_texture(self.filepath, context.active_object)
         return {"FINISHED"}
@@ -183,8 +210,13 @@ class RemoveSphereTexture(Operator):
     bl_description = "Remove sphere texture of active material"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
         mat = context.active_object.active_material
+        if not mat:
+            logger.error("No active material found")
+            return {"CANCELLED"}
+            
+        logger.info(f"Removing sphere texture from material: {mat.name}")
         fnMat = FnMaterial(mat)
         fnMat.remove_sphere_texture()
         return {"FINISHED"}
@@ -197,18 +229,21 @@ class MoveMaterialUp(Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
-    def poll(cls, context):
+    def poll(cls, context: Context) -> bool:
         obj = context.active_object
         valid_mesh = obj and obj.type == "MESH" and obj.mmd_type == "NONE"
-        return valid_mesh and obj.active_material_index > 0
+        return bool(valid_mesh and obj.active_material_index > 0)
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
         obj = context.active_object
         current_idx = obj.active_material_index
         prev_index = current_idx - 1
+        
+        logger.debug(f"Moving material {current_idx} up to position {prev_index} for object {obj.name}")
         try:
             FnMaterial.swap_materials(obj, current_idx, prev_index, reverse=True, swap_slots=True)
         except MaterialNotFoundError:
+            logger.error(f"Materials not found for indices {current_idx} and {prev_index}")
             self.report({"ERROR"}, "Materials not found")
             return {"CANCELLED"}
         obj.active_material_index = prev_index
@@ -223,18 +258,21 @@ class MoveMaterialDown(Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
-    def poll(cls, context):
+    def poll(cls, context: Context) -> bool:
         obj = context.active_object
         valid_mesh = obj and obj.type == "MESH" and obj.mmd_type == "NONE"
-        return valid_mesh and obj.active_material_index < len(obj.material_slots) - 1
+        return bool(valid_mesh and obj.active_material_index < len(obj.material_slots) - 1)
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
         obj = context.active_object
         current_idx = obj.active_material_index
         next_index = current_idx + 1
+        
+        logger.debug(f"Moving material {current_idx} down to position {next_index} for object {obj.name}")
         try:
             FnMaterial.swap_materials(obj, current_idx, next_index, reverse=True, swap_slots=True)
         except MaterialNotFoundError:
+            logger.error(f"Materials not found for indices {current_idx} and {next_index}")
             self.report({"ERROR"}, "Materials not found")
             return {"CANCELLED"}
         obj.active_material_index = next_index
@@ -257,26 +295,31 @@ class EdgePreviewSetup(Operator):
         default="CREATE",
     )
 
-    def execute(self, context):
+    def execute(self, context: Context) -> Set[str]:
         from ..core.model import FnModel
 
         root = FnModel.find_root_object(context.active_object)
         if root is None:
+            logger.error("No MMD model root found")
             self.report({"ERROR"}, "Select a MMD model")
             return {"CANCELLED"}
 
         if self.action == "CLEAN":
+            logger.info(f"Cleaning toon edge for model: {root.name}")
             for obj in FnModel.iterate_mesh_objects(root):
                 self.__clean_toon_edge(obj)
         else:
             from ..bpyutils import Props
 
+            logger.info(f"Creating toon edge for model: {root.name}")
             scale = 0.2 * getattr(root, Props.empty_display_size)
             counts = sum(self.__create_toon_edge(obj, scale) for obj in FnModel.iterate_mesh_objects(root))
+            logger.info(f"Created {counts} toon edge(s)")
             self.report({"INFO"}, "Created %d toon edge(s)" % counts)
         return {"FINISHED"}
 
-    def __clean_toon_edge(self, obj):
+    def __clean_toon_edge(self, obj: Object) -> None:
+        logger.debug(f"Cleaning toon edge for object: {obj.name}")
         if "mmd_edge_preview" in obj.modifiers:
             obj.modifiers.remove(obj.modifiers["mmd_edge_preview"])
 
@@ -285,7 +328,8 @@ class EdgePreviewSetup(Operator):
 
         FnMaterial.clean_materials(obj, can_remove=lambda m: m and m.name.startswith("mmd_edge."))
 
-    def __create_toon_edge(self, obj, scale=1.0):
+    def __create_toon_edge(self, obj: Object, scale: float = 1.0) -> int:
+        logger.debug(f"Creating toon edge for object: {obj.name} with scale {scale}")
         self.__clean_toon_edge(obj)
         materials = obj.data.materials
         material_offset = len(materials)
@@ -310,10 +354,10 @@ class EdgePreviewSetup(Operator):
             mod.vertex_group = "mmd_edge_preview"
         return len(materials) - material_offset
 
-    def __create_edge_preview_group(self, obj):
+    def __create_edge_preview_group(self, obj: Object) -> None:
         vertices, materials = obj.data.vertices, obj.data.materials
         weight_map = {i: m.mmd_material.edge_weight for i, m in enumerate(materials) if m}
-        scale_map = {}
+        scale_map: Dict[int, float] = {}
         vg_scale_index = obj.vertex_groups.find("mmd_edge_scale")
         if vg_scale_index >= 0:
             scale_map = {v.index: g.weight for v in vertices for g in v.groups if g.group == vg_scale_index}
@@ -322,7 +366,7 @@ class EdgePreviewSetup(Operator):
             weight = scale_map.get(i, 1.0) * weight_map.get(mi, 1.0) * 0.02
             vg_edge_preview.add(index=[i], weight=weight, type="REPLACE")
 
-    def __get_edge_material(self, mat_name, edge_color, materials):
+    def __get_edge_material(self, mat_name: str, edge_color: Tuple[float, float, float, float], materials: List[Material]) -> Material:
         if mat_name in materials:
             return materials[mat_name]
         mat = bpy.data.materials.get(mat_name, None)
@@ -340,7 +384,7 @@ class EdgePreviewSetup(Operator):
         self.__make_shader(mat)
         return mat
 
-    def __make_shader(self, m):
+    def __make_shader(self, m: Material) -> None:
         m.use_nodes = True
         nodes, links = m.node_tree.nodes, m.node_tree.links
 
@@ -361,7 +405,7 @@ class EdgePreviewSetup(Operator):
         node_shader.inputs["Color"].default_value = m.mmd_material.edge_color
         node_shader.inputs["Alpha"].default_value = m.mmd_material.edge_color[3]
 
-    def __get_edge_preview_shader(self):
+    def __get_edge_preview_shader(self) -> bpy.types.NodeTree:
         group_name = "MMDEdgePreview"
         shader = bpy.data.node_groups.get(group_name, None) or bpy.data.node_groups.new(name=group_name, type="ShaderNodeTree")
         if len(shader.nodes):

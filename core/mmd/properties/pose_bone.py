@@ -5,29 +5,33 @@
 # Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
-from typing import cast
+from typing import cast, Optional, Any, Union
 import bpy
+from bpy.types import Context, PropertyGroup, PoseBone, Object, Armature
 
 from ..core.bone import FnBone
 from . import patch_library_overridable
+from ....core.logging_setup import logger
 
 
-def _mmd_bone_update_additional_transform(prop: "MMDBone", context: bpy.types.Context):
+def _mmd_bone_update_additional_transform(prop: "MMDBone", context: Context) -> None:
     prop["is_additional_transform_dirty"] = True
     p_bone = context.active_pose_bone
     if p_bone and p_bone.mmd_bone.as_pointer() == prop.as_pointer():
+        logger.debug(f"Applying additional transformation for {p_bone.name}")
         FnBone.apply_additional_transformation(prop.id_data)
 
 
-def _mmd_bone_update_additional_transform_influence(prop: "MMDBone", context: bpy.types.Context):
+def _mmd_bone_update_additional_transform_influence(prop: "MMDBone", context: Context) -> None:
     pose_bone = context.active_pose_bone
     if pose_bone and pose_bone.mmd_bone.as_pointer() == prop.as_pointer():
+        logger.debug(f"Updating additional transform influence for {pose_bone.name}")
         FnBone.update_additional_transform_influence(pose_bone)
     else:
         prop["is_additional_transform_dirty"] = True
 
 
-def _mmd_bone_get_additional_transform_bone(prop: "MMDBone"):
+def _mmd_bone_get_additional_transform_bone(prop: "MMDBone") -> str:
     arm = prop.id_data
     bone_id = prop.get("additional_transform_bone_id", -1)
     if bone_id < 0:
@@ -38,7 +42,7 @@ def _mmd_bone_get_additional_transform_bone(prop: "MMDBone"):
     return pose_bone.name
 
 
-def _mmd_bone_set_additional_transform_bone(prop: "MMDBone", value: str):
+def _mmd_bone_set_additional_transform_bone(prop: "MMDBone", value: str) -> None:
     arm = prop.id_data
     prop["is_additional_transform_dirty"] = True
     if value not in arm.pose.bones.keys():
@@ -48,7 +52,7 @@ def _mmd_bone_set_additional_transform_bone(prop: "MMDBone", value: str):
     prop["additional_transform_bone_id"] = FnBone.get_or_assign_bone_id(pose_bone)
 
 
-class MMDBone(bpy.types.PropertyGroup):
+class MMDBone(PropertyGroup):
     name_j: bpy.props.StringProperty(
         name="Name",
         description="Japanese Name",
@@ -184,11 +188,12 @@ class MMDBone(bpy.types.PropertyGroup):
 
     is_additional_transform_dirty: bpy.props.BoolProperty(name="", default=True)
 
-    def is_id_unique(self):
+    def is_id_unique(self) -> bool:
         return self.bone_id < 0 or not next((b for b in self.id_data.pose.bones if b.mmd_bone != self and b.mmd_bone.bone_id == self.bone_id), None)
 
     @staticmethod
-    def register():
+    def register() -> None:
+        logger.debug("Registering MMDBone properties")
         bpy.types.PoseBone.mmd_bone = patch_library_overridable(bpy.props.PointerProperty(type=MMDBone))
         bpy.types.PoseBone.is_mmd_shadow_bone = patch_library_overridable(bpy.props.BoolProperty(name="is_mmd_shadow_bone", default=False))
         bpy.types.PoseBone.mmd_shadow_bone_type = patch_library_overridable(bpy.props.StringProperty(name="mmd_shadow_bone_type"))
@@ -202,20 +207,21 @@ class MMDBone(bpy.types.PropertyGroup):
         )
 
     @staticmethod
-    def unregister():
+    def unregister() -> None:
+        logger.debug("Unregistering MMDBone properties")
         del bpy.types.PoseBone.mmd_ik_toggle
         del bpy.types.PoseBone.mmd_shadow_bone_type
         del bpy.types.PoseBone.is_mmd_shadow_bone
         del bpy.types.PoseBone.mmd_bone
 
 
-def _pose_bone_update_mmd_ik_toggle(prop: bpy.types.PoseBone, _context):
+def _pose_bone_update_mmd_ik_toggle(prop: PoseBone, _context: Any) -> None:
     v = prop.mmd_ik_toggle
-    armature_object = cast(bpy.types.Object, prop.id_data)
+    armature_object = cast(Object, prop.id_data)
     for b in armature_object.pose.bones:
         for c in b.constraints:
             if c.type == "IK" and c.subtarget == prop.name:
-                # logging.debug('   %s %s', b.name, c.name)
+                logger.debug(f"Updating IK toggle for {b.name} {c.name}")
                 c.influence = v
                 b = b if c.use_tail else b.parent
                 for b in ([b] + b.parent_recursive)[: c.chain_count]:

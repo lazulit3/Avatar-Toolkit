@@ -6,81 +6,85 @@
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
 import bpy
+from typing import Optional, Set, Dict, Any, List, Tuple, Union, Type
 
 from .. import utils
 from ..core import material
 from ..core.material import FnMaterial
 from ..core.model import FnModel
 from . import patch_library_overridable
+from ....core.logging_setup import logger
 
 
-def _mmd_material_update_ambient_color(prop: "MMDMaterial", _context):
+def _mmd_material_update_ambient_color(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_ambient_color()
 
 
-def _mmd_material_update_diffuse_color(prop: "MMDMaterial", _context):
+def _mmd_material_update_diffuse_color(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_diffuse_color()
 
 
-def _mmd_material_update_alpha(prop: "MMDMaterial", _context):
+def _mmd_material_update_alpha(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_alpha()
 
 
-def _mmd_material_update_specular_color(prop: "MMDMaterial", _context):
+def _mmd_material_update_specular_color(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_specular_color()
 
 
-def _mmd_material_update_shininess(prop: "MMDMaterial", _context):
+def _mmd_material_update_shininess(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_shininess()
 
 
-def _mmd_material_update_is_double_sided(prop: "MMDMaterial", _context):
+def _mmd_material_update_is_double_sided(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_is_double_sided()
 
 
-def _mmd_material_update_sphere_texture_type(prop: "MMDMaterial", context):
+def _mmd_material_update_sphere_texture_type(prop: "MMDMaterial", context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_sphere_texture_type(context.active_object)
 
 
-def _mmd_material_update_toon_texture(prop: "MMDMaterial", _context):
+def _mmd_material_update_toon_texture(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_toon_texture()
 
 
-def _mmd_material_update_enabled_drop_shadow(prop: "MMDMaterial", _context):
+def _mmd_material_update_enabled_drop_shadow(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_drop_shadow()
 
 
-def _mmd_material_update_enabled_self_shadow_map(prop: "MMDMaterial", _context):
+def _mmd_material_update_enabled_self_shadow_map(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_self_shadow_map()
 
 
-def _mmd_material_update_enabled_self_shadow(prop: "MMDMaterial", _context):
+def _mmd_material_update_enabled_self_shadow(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_self_shadow()
 
 
-def _mmd_material_update_enabled_toon_edge(prop: "MMDMaterial", _context):
+def _mmd_material_update_enabled_toon_edge(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_enabled_toon_edge()
 
 
-def _mmd_material_update_edge_color(prop: "MMDMaterial", _context):
+def _mmd_material_update_edge_color(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_edge_color()
 
 
-def _mmd_material_update_edge_weight(prop: "MMDMaterial", _context):
+def _mmd_material_update_edge_weight(prop: "MMDMaterial", _context: bpy.types.Context) -> None:
     FnMaterial(prop.id_data).update_edge_weight()
 
 
-def _mmd_material_get_name_j(prop: "MMDMaterial"):
+def _mmd_material_get_name_j(prop: "MMDMaterial") -> str:
     return prop.get("name_j", "")
 
 
-def _mmd_material_set_name_j(prop: "MMDMaterial", value: str):
+def _mmd_material_set_name_j(prop: "MMDMaterial", value: str) -> None:
     prop_value = value
     if prop_value and prop_value != prop.get("name_j"):
         root = FnModel.find_root_object(bpy.context.active_object)
         if root is None:
+            logger.debug(f"No root object found, using unique name for material: {value}")
             prop_value = utils.unique_name(value, {mat.mmd_material.name_j for mat in bpy.data.materials})
         else:
+            logger.debug(f"Root object found, using unique name for material within model: {value}")
             prop_value = utils.unique_name(value, {mat.mmd_material.name_j for mat in FnModel.iterate_materials(root)})
 
     prop["name_j"] = prop_value
@@ -275,13 +279,15 @@ class MMDMaterial(bpy.types.PropertyGroup):
         description="Comment",
     )
 
-    def is_id_unique(self):
+    def is_id_unique(self) -> bool:
         return self.material_id < 0 or not next((m for m in bpy.data.materials if m.mmd_material != self and m.mmd_material.material_id == self.material_id), None)
 
     @staticmethod
-    def register():
+    def register() -> None:
+        logger.debug("Registering MMD material properties")
         bpy.types.Material.mmd_material = patch_library_overridable(bpy.props.PointerProperty(type=MMDMaterial))
 
     @staticmethod
-    def unregister():
+    def unregister() -> None:
+        logger.debug("Unregistering MMD material properties")
         del bpy.types.Material.mmd_material
