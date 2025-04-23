@@ -7,13 +7,17 @@
 
 import itertools
 from operator import itemgetter
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple, Any
 
 import bmesh
 import bpy
+import numpy as np
+import numpy.typing as npt
+from bpy.types import Context, Object, Operator, EditBone, Mesh, Armature
 
 from ..bpyutils import FnContext
 from ..core.model import FnModel, Model
+from ....core.logging_setup import logger
 
 
 class MessageException(Exception):
@@ -35,8 +39,8 @@ class ModelJoinByBonesOperator(bpy.types.Operator):
     )
 
     @classmethod
-    def poll(cls, context: bpy.types.Context):
-        active_object: Optional[bpy.types.Object] = context.active_object
+    def poll(cls, context: Context) -> bool:
+        active_object: Optional[Object] = context.active_object
 
         if context.mode != "POSE":
             return False
@@ -52,19 +56,22 @@ class ModelJoinByBonesOperator(bpy.types.Operator):
 
         return len(context.selected_pose_bones) > 0
 
-    def invoke(self, context, event):
+    def invoke(self, context: Context, event: Any) -> Set[str]:
         return context.window_manager.invoke_props_dialog(self)
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: Context) -> Set[str]:
         try:
+            logger.info("Starting model join by bones operation")
             self.join(context)
+            logger.info("Model join by bones completed successfully")
         except MessageException as ex:
+            logger.error(f"Model join by bones failed: {str(ex)}")
             self.report(type={"ERROR"}, message=str(ex))
             return {"CANCELLED"}
 
         return {"FINISHED"}
 
-    def join(self, context: bpy.types.Context):
+    def join(self, context: Context) -> None:
         bpy.ops.object.mode_set(mode="OBJECT")
 
         parent_root_object = FnModel.find_root_object(context.active_object)
@@ -74,6 +81,7 @@ class ModelJoinByBonesOperator(bpy.types.Operator):
         if parent_root_object is None or len(child_root_objects) == 0:
             raise MessageException("No MMD Models selected")
 
+        logger.debug(f"Joining {len(child_root_objects)} models into parent model: {parent_root_object.name}")
         with FnContext.temp_override_active_layer_collection(context, parent_root_object):
             FnModel.join_models(parent_root_object, child_root_objects)
 
@@ -82,11 +90,12 @@ class ModelJoinByBonesOperator(bpy.types.Operator):
 
         # Connect child bones
         if self.join_type == "CONNECTED":
-            parent_edit_bone: bpy.types.EditBone = context.active_bone
-            child_edit_bones: Set[bpy.types.EditBone] = set(context.selected_bones)
+            parent_edit_bone: EditBone = context.active_bone
+            child_edit_bones: Set[EditBone] = set(context.selected_bones)
             child_edit_bones.remove(parent_edit_bone)
 
-            child_edit_bone: bpy.types.EditBone
+            logger.debug(f"Connecting {len(child_edit_bones)} child bones to parent bone: {parent_edit_bone.name}")
+            child_edit_bone: EditBone
             for child_edit_bone in child_edit_bones:
                 child_edit_bone.use_connect = True
 
@@ -111,8 +120,8 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
     )
 
     @classmethod
-    def poll(cls, context: bpy.types.Context):
-        active_object: Optional[bpy.types.Object] = context.active_object
+    def poll(cls, context: Context) -> bool:
+        active_object: Optional[Object] = context.active_object
 
         if context.mode != "POSE":
             return False
@@ -128,56 +137,70 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
 
         return len(context.selected_pose_bones) > 0
 
-    def invoke(self, context, event):
+    def invoke(self, context: Context, event: Any) -> Set[str]:
         return context.window_manager.invoke_props_dialog(self)
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: Context) -> Set[str]:
         try:
+            logger.info("Starting model separate by bones operation")
             self.separate(context)
+            logger.info("Model separate by bones completed successfully")
         except MessageException as ex:
+            logger.error(f"Model separate by bones failed: {str(ex)}")
             self.report(type={"ERROR"}, message=str(ex))
             return {"CANCELLED"}
 
         return {"FINISHED"}
 
-    def separate(self, context: bpy.types.Context):
+    def separate(self, context: Context) -> None:
         weight_threshold: float = self.weight_threshold
         mmd_scale = 0.08
 
-        target_armature_object: bpy.types.Object = context.active_object
+        target_armature_object: Object = context.active_object
+        logger.debug(f"Target armature: {target_armature_object.name}")
 
         bpy.ops.object.mode_set(mode="EDIT")
-        root_bones: Set[bpy.types.EditBone] = set(context.selected_bones)
+        root_bones: Set[EditBone] = set(context.selected_bones)
+        logger.debug(f"Selected root bones: {len(root_bones)}")
 
         if self.include_descendant_bones:
+            logger.debug("Including descendant bones")
             for edit_bone in root_bones:
                 with context.temp_override(active_bone=edit_bone):
                     bpy.ops.armature.select_similar(type="CHILDREN", threshold=0.1)
 
-        separate_bones: Dict[str, bpy.types.EditBone] = {b.name: b for b in context.selected_bones}
-        deform_bones: Dict[str, bpy.types.EditBone] = {b.name: b for b in target_armature_object.data.edit_bones if b.use_deform}
+        separate_bones: Dict[str, EditBone] = {b.name: b for b in context.selected_bones}
+        deform_bones: Dict[str, EditBone] = {b.name: b for b in target_armature_object.data.edit_bones if b.use_deform}
+        logger.debug(f"Total bones to separate: {len(separate_bones)}")
 
-        mmd_root_object: bpy.types.Object = FnModel.find_root_object(context.active_object)
+        mmd_root_object: Object = FnModel.find_root_object(context.active_object)
         mmd_model = Model(mmd_root_object)
-        mmd_model_mesh_objects: List[bpy.types.Object] = list(mmd_model.meshes())
+        mmd_model_mesh_objects: List[Object] = list(mmd_model.meshes())
+        logger.debug(f"Found {len(mmd_model_mesh_objects)} mesh objects in model")
 
-        mmd_model_mesh_objects = list(self.select_weighted_vertices(mmd_model_mesh_objects, separate_bones, deform_bones, weight_threshold).keys())
+        mesh_selection_result = self.select_weighted_vertices(mmd_model_mesh_objects, separate_bones, deform_bones, weight_threshold)
+        mmd_model_mesh_objects = list(mesh_selection_result.keys())
+        logger.debug(f"Selected {len(mmd_model_mesh_objects)} mesh objects with weighted vertices")
 
         # separate armature bones
-        separate_armature_object: Optional[bpy.types.Object]
+        separate_armature_object: Optional[Object]
         if self.separate_armature:
+            logger.debug("Separating armature")
             target_armature_object.select_set(True)
             bpy.ops.armature.separate()
             separate_armature_object = next(iter([a for a in context.selected_objects if a != target_armature_object]), None)
+            if separate_armature_object:
+                logger.debug(f"Created separate armature: {separate_armature_object.name}")
         bpy.ops.object.mode_set(mode="OBJECT")
 
         # collect separate rigid bodies
-        separate_rigid_bodies: Set[bpy.types.Object] = {rigid_body_object for rigid_body_object in mmd_model.rigidBodies() if rigid_body_object.mmd_rigid.bone in separate_bones}
+        separate_rigid_bodies: Set[Object] = {rigid_body_object for rigid_body_object in mmd_model.rigidBodies() if rigid_body_object.mmd_rigid.bone in separate_bones}
+        logger.debug(f"Found {len(separate_rigid_bodies)} rigid bodies to separate")
 
         boundary_joint_owner_condition = any if self.boundary_joint_owner == "DESTINATION" else all
 
         # collect separate joints
-        separate_joints: Set[bpy.types.Object] = {
+        separate_joints: Set[Object] = {
             joint_object
             for joint_object in mmd_model.joints()
             if boundary_joint_owner_condition(
@@ -187,35 +210,43 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
                 ]
             )
         }
+        logger.debug(f"Found {len(separate_joints)} joints to separate")
 
-        separate_mesh_objects: Set[bpy.types.Object]
-        model2separate_mesh_objects: Dict[bpy.types.Object, bpy.types.Object]
+        separate_mesh_objects: Set[Object]
+        model2separate_mesh_objects: Dict[Object, Object]
         if len(mmd_model_mesh_objects) == 0:
+            logger.debug("No mesh objects to separate")
             separate_mesh_objects = set()
             model2separate_mesh_objects = dict()
         else:
             # select meshes
-            obj: bpy.types.Object
+            logger.debug("Selecting meshes for separation")
+            obj: Object
             for obj in context.view_layer.objects:
                 obj.select_set(obj in mmd_model_mesh_objects)
             context.view_layer.objects.active = mmd_model_mesh_objects[0]
 
             # separate mesh by selected vertices
+            logger.debug("Separating meshes by selected vertices")
             bpy.ops.object.mode_set(mode="EDIT")
             bpy.ops.mesh.separate(type="SELECTED")
-            separate_mesh_objects: List[bpy.types.Object] = [m for m in context.selected_objects if m.type == "MESH" and m not in mmd_model_mesh_objects]
+            separate_mesh_objects: List[Object] = [m for m in context.selected_objects if m.type == "MESH" and m not in mmd_model_mesh_objects]
             bpy.ops.object.mode_set(mode="OBJECT")
+            logger.debug(f"Created {len(separate_mesh_objects)} separate mesh objects")
 
             model2separate_mesh_objects = dict(zip(mmd_model_mesh_objects, separate_mesh_objects))
 
+        logger.debug(f"Creating new model with scale {mmd_scale}")
         separate_model: Model = Model.create(mmd_root_object.mmd_root.name, mmd_root_object.mmd_root.name_e, mmd_scale, add_root_bone=False)
 
         separate_model.initialDisplayFrames()
         separate_root_object = separate_model.rootObject()
         separate_root_object.matrix_world = mmd_root_object.matrix_world
         separate_model_armature_object = separate_model.armature()
+        logger.debug(f"Created separate model with root: {separate_root_object.name}")
 
         if self.separate_armature:
+            logger.debug("Joining separate armature to new model")
             with context.temp_override(
                 active_object=separate_model_armature_object,
                 selected_editable_objects=[separate_model_armature_object, separate_armature_object],
@@ -223,6 +254,7 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
                 bpy.ops.object.join()
 
         # add mesh
+        logger.debug("Parenting separate mesh objects to new model")
         with context.temp_override(
             object=separate_model_armature_object,
             selected_editable_objects=[separate_model_armature_object, *separate_mesh_objects],
@@ -230,19 +262,23 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
             bpy.ops.object.parent_set(type="OBJECT", keep_transform=True)
 
         # replace mesh armature modifier.object
+        logger.debug("Updating armature modifiers on separate meshes")
         for separate_mesh in separate_mesh_objects:
             armature_modifier: Optional[bpy.types.ArmatureModifier] = next(iter([m for m in separate_mesh.modifiers if m.type == "ARMATURE"]), None)
             if armature_modifier is None:
+                logger.debug(f"Creating new armature modifier for {separate_mesh.name}")
                 armature_modifier: bpy.types.ArmatureModifier = separate_mesh.modifiers.new("mmd_bone_order_override", "ARMATURE")
 
             armature_modifier.object = separate_model_armature_object
 
+        logger.debug("Parenting rigid bodies to new model")
         with context.temp_override(
             object=separate_model.rigidGroupObject(),
             selected_editable_objects=[separate_model.rigidGroupObject(), *separate_rigid_bodies],
         ):
             bpy.ops.object.parent_set(type="OBJECT", keep_transform=True)
 
+        logger.debug("Parenting joints to new model")
         with context.temp_override(
             object=separate_model.jointGroupObject(),
             selected_editable_objects=[separate_model.jointGroupObject(), *separate_joints],
@@ -257,10 +293,12 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
         assert separate_layer_collection is not None
 
         if mmd_layer_collection.name != separate_layer_collection.name:
+            logger.debug(f"Moving objects from collection {mmd_layer_collection.name} to {separate_layer_collection.name}")
             for separate_object in itertools.chain(separate_mesh_objects, separate_rigid_bodies, separate_joints):
                 separate_layer_collection.collection.objects.link(separate_object)
                 mmd_layer_collection.collection.objects.unlink(separate_object)
 
+        logger.debug("Copying MMD root properties")
         FnModel.copy_mmd_root(
             separate_root_object,
             mmd_root_object,
@@ -271,13 +309,15 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
             },
         )
 
-    def select_weighted_vertices(self, mmd_model_mesh_objects: List[bpy.types.Object], separate_bones: Dict[str, bpy.types.EditBone], deform_bones: Dict[str, bpy.types.EditBone], weight_threshold: float) -> Dict[bpy.types.Object, int]:
-        mesh2selected_vertex_count: Dict[bpy.types.Object, int] = dict()
+    def select_weighted_vertices(self, mmd_model_mesh_objects: List[Object], separate_bones: Dict[str, EditBone], deform_bones: Dict[str, EditBone], weight_threshold: float) -> Dict[Object, int]:
+        """Select vertices weighted to the bones to be separated"""
+        logger.debug(f"Selecting vertices weighted to {len(separate_bones)} bones with threshold {weight_threshold}")
+        mesh2selected_vertex_count: Dict[Object, int] = dict()
         target_bmesh: bmesh.types.BMesh = bmesh.new()
         for mesh_object in mmd_model_mesh_objects:
             vertex_groups: bpy.types.VertexGroups = mesh_object.vertex_groups
 
-            mesh: bpy.types.Mesh = mesh_object.data
+            mesh: Mesh = mesh_object.data
             target_bmesh.from_mesh(mesh, face_normals=False)
             target_bmesh.select_mode |= {"VERT"}
             deform_layer = target_bmesh.verts.layers.deform.verify()
@@ -304,6 +344,7 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
                 vert.select_set(True)
 
             if selected_vertex_count > 0:
+                logger.debug(f"Selected {selected_vertex_count} vertices in mesh {mesh_object.name}")
                 mesh2selected_vertex_count[mesh_object] = selected_vertex_count
                 target_bmesh.select_flush_mode()
                 target_bmesh.to_mesh(mesh)

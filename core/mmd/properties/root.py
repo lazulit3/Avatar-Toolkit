@@ -8,6 +8,7 @@
 """Properties for MMD model root object"""
 
 import bpy
+from typing import Optional, List, Dict, Any, Set, Tuple, Union, Type, TypeVar, cast
 
 from .. import utils
 from ..bpyutils import FnContext
@@ -17,9 +18,10 @@ from ..core.sdef import FnSDEF
 from . import patch_library_overridable
 from .morph import BoneMorph, GroupMorph, MaterialMorph, UVMorph, VertexMorph
 from .translations import MMDTranslation
+from ....core.logging_setup import logger
 
 
-def __driver_variables(constraint: bpy.types.Constraint, path: str, index=-1):
+def __driver_variables(constraint: bpy.types.Constraint, path: str, index: int = -1) -> Tuple[bpy.types.Driver, Any]:
     d = constraint.driver_add(path, index)
     variables = d.driver.variables
     for x in variables:
@@ -27,7 +29,7 @@ def __driver_variables(constraint: bpy.types.Constraint, path: str, index=-1):
     return d.driver, variables
 
 
-def __add_single_prop(variables, id_obj, data_path, prefix):
+def __add_single_prop(variables: Any, id_obj: bpy.types.Object, data_path: str, prefix: str) -> Any:
     var = variables.new()
     var.name = prefix + str(len(variables))
     var.type = "SINGLE_PROP"
@@ -38,17 +40,18 @@ def __add_single_prop(variables, id_obj, data_path, prefix):
     return var
 
 
-def _toggleUsePropertyDriver(self: "MMDRoot", _context):
+def _toggleUsePropertyDriver(self: "MMDRoot", _context: bpy.types.Context) -> None:
     root_object: bpy.types.Object = self.id_data
     armature_object = FnModel.find_armature_object(root_object)
 
     if armature_object is None:
-        ik_map = {}
+        ik_map: Dict[Any, Tuple[Any, Any]] = {}
     else:
         bones = armature_object.pose.bones
         ik_map = {bones[c.subtarget]: (b, c) for b in bones for c in b.constraints if c.type == "IK" and c.is_valid and c.subtarget in bones}
 
     if self.use_property_driver:
+        logger.debug("Enabling property drivers for %s", root_object.name)
         for ik, (b, c) in ik_map.items():
             driver, variables = __driver_variables(c, "influence")
             driver.expression = "%s" % __add_single_prop(variables, ik.id_data, ik.path_from_id("mmd_ik_toggle"), "use_ik").name
@@ -63,6 +66,7 @@ def _toggleUsePropertyDriver(self: "MMDRoot", _context):
                 driver, variables = __driver_variables(i, prop_hide)
                 driver.expression = "not %s" % __add_single_prop(variables, root_object, "mmd_root.show_meshes", "show").name
     else:
+        logger.debug("Disabling property drivers for %s", root_object.name)
         for ik, (b, c) in ik_map.items():
             c.driver_remove("influence")
             b = b if c.use_tail else b.parent
@@ -80,31 +84,35 @@ def _toggleUsePropertyDriver(self: "MMDRoot", _context):
 # ===========================================
 
 
-def _toggleUseToonTexture(self: "MMDRoot", _context):
+def _toggleUseToonTexture(self: "MMDRoot", _context: bpy.types.Context) -> None:
     use_toon = self.use_toon_texture
+    logger.debug("Toggling toon texture to %s for %s", use_toon, self.id_data.name)
     for i in FnModel.iterate_mesh_objects(self.id_data):
         for m in i.data.materials:
             if m:
                 FnMaterial(m).use_toon_texture(use_toon)
 
 
-def _toggleUseSphereTexture(self: "MMDRoot", _context):
+def _toggleUseSphereTexture(self: "MMDRoot", _context: bpy.types.Context) -> None:
     use_sphere = self.use_sphere_texture
+    logger.debug("Toggling sphere texture to %s for %s", use_sphere, self.id_data.name)
     for i in FnModel.iterate_mesh_objects(self.id_data):
         for m in i.data.materials:
             if m:
                 FnMaterial(m).use_sphere_texture(use_sphere, i)
 
 
-def _toggleUseSDEF(self: "MMDRoot", _context):
+def _toggleUseSDEF(self: "MMDRoot", _context: bpy.types.Context) -> None:
     mute_sdef = not self.use_sdef
+    logger.debug("Toggling SDEF to %s for %s", not mute_sdef, self.id_data.name)
     for i in FnModel.iterate_mesh_objects(self.id_data):
         FnSDEF.mute_sdef_set(i, mute_sdef)
 
 
-def _toggleVisibilityOfMeshes(self: "MMDRoot", context: bpy.types.Context):
+def _toggleVisibilityOfMeshes(self: "MMDRoot", context: bpy.types.Context) -> None:
     root = self.id_data
     hide = not self.show_meshes
+    logger.debug("Toggling mesh visibility to %s for %s", not hide, root.name)
     for i in FnModel.iterate_mesh_objects(self.id_data):
         i.hide_set(hide)
         i.hide_render = hide
@@ -112,27 +120,30 @@ def _toggleVisibilityOfMeshes(self: "MMDRoot", context: bpy.types.Context):
         FnContext.set_active_object(context, root)
 
 
-def _toggleVisibilityOfRigidBodies(self: "MMDRoot", context: bpy.types.Context):
+def _toggleVisibilityOfRigidBodies(self: "MMDRoot", context: bpy.types.Context) -> None:
     root = self.id_data
     hide = not self.show_rigid_bodies
+    logger.debug("Toggling rigid body visibility to %s for %s", not hide, root.name)
     for i in FnModel.iterate_rigid_body_objects(root):
         i.hide_set(hide)
     if hide and context.active_object is None:
         FnContext.set_active_object(context, root)
 
 
-def _toggleVisibilityOfJoints(self: "MMDRoot", context):
+def _toggleVisibilityOfJoints(self: "MMDRoot", context: bpy.types.Context) -> None:
     root_object = self.id_data
     hide = not self.show_joints
+    logger.debug("Toggling joint visibility to %s for %s", not hide, root_object.name)
     for i in FnModel.iterate_joint_objects(root_object):
         i.hide_set(hide)
     if hide and context.active_object is None:
         FnContext.set_active_object(context, root_object)
 
 
-def _toggleVisibilityOfTemporaryObjects(self: "MMDRoot", context: bpy.types.Context):
+def _toggleVisibilityOfTemporaryObjects(self: "MMDRoot", context: bpy.types.Context) -> None:
     root_object: bpy.types.Object = self.id_data
     hide = not self.show_temporary_objects
+    logger.debug("Toggling temporary object visibility to %s for %s", not hide, root_object.name)
     with FnContext.temp_override_active_layer_collection(context, root_object):
         for i in FnModel.iterate_temporary_objects(root_object):
             i.hide_set(hide)
@@ -140,45 +151,48 @@ def _toggleVisibilityOfTemporaryObjects(self: "MMDRoot", context: bpy.types.Cont
         FnContext.set_active_object(context, root_object)
 
 
-def _toggleShowNamesOfRigidBodies(self: "MMDRoot", _context):
+def _toggleShowNamesOfRigidBodies(self: "MMDRoot", _context: bpy.types.Context) -> None:
     root = self.id_data
     show_names = root.mmd_root.show_names_of_rigid_bodies
+    logger.debug("Toggling rigid body names to %s for %s", show_names, root.name)
     for i in FnModel.iterate_rigid_body_objects(root):
         i.show_name = show_names
 
 
-def _toggleShowNamesOfJoints(self: "MMDRoot", _context):
+def _toggleShowNamesOfJoints(self: "MMDRoot", _context: bpy.types.Context) -> None:
     root = self.id_data
     show_names = root.mmd_root.show_names_of_joints
+    logger.debug("Toggling joint names to %s for %s", show_names, root.name)
     for i in FnModel.iterate_joint_objects(root):
         i.show_name = show_names
 
 
-def _setVisibilityOfMMDRigArmature(prop: "MMDRoot", v: bool):
+def _setVisibilityOfMMDRigArmature(prop: "MMDRoot", v: bool) -> None:
     root = prop.id_data
     arm = FnModel.find_armature_object(root)
     if arm is None:
         return
     if not v and bpy.context.active_object == arm:
         FnContext.set_active_object(bpy.context, root)
+    logger.debug("Setting armature visibility to %s for %s", v, root.name)
     arm.hide_set(not v)
 
 
-def _getVisibilityOfMMDRigArmature(prop: "MMDRoot"):
+def _getVisibilityOfMMDRigArmature(prop: "MMDRoot") -> bool:
     if prop.id_data.mmd_type != "ROOT":
         return False
     arm = FnModel.find_armature_object(prop.id_data)
     return arm and not arm.hide_get()
 
 
-def _setActiveRigidbodyObject(prop: "MMDRoot", v: int):
+def _setActiveRigidbodyObject(prop: "MMDRoot", v: int) -> None:
     obj = FnContext.get_scene_objects(bpy.context)[v]
     if FnModel.is_rigid_body_object(obj):
         FnContext.set_active_and_select_single_object(bpy.context, obj)
     prop["active_rigidbody_object_index"] = v
 
 
-def _getActiveRigidbodyObject(prop: "MMDRoot"):
+def _getActiveRigidbodyObject(prop: "MMDRoot") -> int:
     context = bpy.context
     active_obj = FnContext.get_active_object(context)
     if FnModel.is_rigid_body_object(active_obj):
@@ -186,14 +200,14 @@ def _getActiveRigidbodyObject(prop: "MMDRoot"):
     return prop.get("active_rigidbody_object_index", 0)
 
 
-def _setActiveJointObject(prop: "MMDRoot", v: int):
+def _setActiveJointObject(prop: "MMDRoot", v: int) -> None:
     obj = FnContext.get_scene_objects(bpy.context)[v]
     if FnModel.is_joint_object(obj):
         FnContext.set_active_and_select_single_object(bpy.context, obj)
     prop["active_joint_object_index"] = v
 
 
-def _getActiveJointObject(prop: "MMDRoot"):
+def _getActiveJointObject(prop: "MMDRoot") -> int:
     context = bpy.context
     active_obj = FnContext.get_active_object(context)
     if FnModel.is_joint_object(active_obj):
@@ -201,26 +215,26 @@ def _getActiveJointObject(prop: "MMDRoot"):
     return prop.get("active_joint_object_index", 0)
 
 
-def _setActiveMorph(prop: "MMDRoot", v: bool):
+def _setActiveMorph(prop: "MMDRoot", v: bool) -> None:
     if "active_morph_indices" not in prop:
         prop["active_morph_indices"] = [0] * 5
     prop["active_morph_indices"][prop.get("active_morph_type", 3)] = v
 
 
-def _getActiveMorph(prop: "MMDRoot"):
+def _getActiveMorph(prop: "MMDRoot") -> int:
     if "active_morph_indices" in prop:
         return prop["active_morph_indices"][prop.get("active_morph_type", 3)]
     return 0
 
 
-def _setActiveMeshObject(prop: "MMDRoot", v: int):
+def _setActiveMeshObject(prop: "MMDRoot", v: int) -> None:
     obj = FnContext.get_scene_objects(bpy.context)[v]
     if FnModel.is_mesh_object(obj):
         FnContext.set_active_and_select_single_object(bpy.context, obj)
     prop["active_mesh_index"] = v
 
 
-def _getActiveMeshObject(prop: "MMDRoot"):
+def _getActiveMeshObject(prop: "MMDRoot") -> int:
     context = bpy.context
     active_obj = FnContext.get_active_object(context)
     if FnModel.is_mesh_object(active_obj):
@@ -520,7 +534,8 @@ class MMDRoot(bpy.types.PropertyGroup):
             prop.hide_viewport = value
 
     @staticmethod
-    def register():
+    def register() -> None:
+        logger.debug("Registering MMDRoot property group")
         bpy.types.Object.mmd_type = patch_library_overridable(
             bpy.props.EnumProperty(
                 name="Type",
@@ -570,7 +585,8 @@ class MMDRoot(bpy.types.PropertyGroup):
         )
 
     @staticmethod
-    def unregister():
+    def unregister() -> None:
+        logger.debug("Unregistering MMDRoot property group")
         del bpy.types.Object.hide
         del bpy.types.Object.select
         del bpy.types.Object.mmd_root

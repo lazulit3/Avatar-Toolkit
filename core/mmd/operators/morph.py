@@ -5,7 +5,7 @@
 # Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
-from typing import Optional, cast
+from typing import Optional, cast, List, Dict, Any, Set, Tuple, Union
 
 import bpy
 from mathutils import Quaternion, Vector
@@ -16,10 +16,11 @@ from ..core.exceptions import MaterialNotFoundError
 from ..core.material import FnMaterial
 from ..core.morph import FnMorph
 from ..utils import ItemMoveOp, ItemOp
+from ....logging_setup import logger
 
 
 # Util functions
-def divide_vector_components(vec1, vec2):
+def divide_vector_components(vec1: List[float], vec2: List[float]) -> List[float]:
     if len(vec1) != len(vec2):
         raise ValueError("Vectors should have the same number of components")
     result = []
@@ -33,7 +34,7 @@ def divide_vector_components(vec1, vec2):
     return result
 
 
-def multiply_vector_components(vec1, vec2):
+def multiply_vector_components(vec1: List[float], vec2: List[float]) -> List[float]:
     if len(vec1) != len(vec2):
         raise ValueError("Vectors should have the same number of components")
     result = []
@@ -42,7 +43,7 @@ def multiply_vector_components(vec1, vec2):
     return result
 
 
-def special_division(n1, n2):
+def special_division(n1: float, n2: float) -> float:
     """This function returns 0 in case of 0/0. If non-zero divided by zero case is found, an Exception is raised"""
     if n2 == 0:
         if n1 == 0:
@@ -58,7 +59,7 @@ class AddMorph(bpy.types.Operator):
     bl_description = "Add a morph item to active morph list"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
@@ -68,6 +69,7 @@ class AddMorph(bpy.types.Operator):
         morph.name = "New Morph"
         if morph_type.startswith("uv"):
             morph.data_type = "VERTEX_GROUP"
+        logger.debug(f"Added new morph of type {morph_type}")
         return {"FINISHED"}
 
 
@@ -84,7 +86,7 @@ class RemoveMorph(bpy.types.Operator):
         options={"SKIP_SAVE"},
     )
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
@@ -99,9 +101,11 @@ class RemoveMorph(bpy.types.Operator):
         if self.all:
             morphs.clear()
             mmd_root.active_morph = 0
+            logger.debug(f"Removed all morphs of type {morph_type}")
         else:
             morphs.remove(mmd_root.active_morph)
             mmd_root.active_morph = max(0, mmd_root.active_morph - 1)
+            logger.debug(f"Removed morph at index {mmd_root.active_morph} of type {morph_type}")
         return {"FINISHED"}
 
 
@@ -111,7 +115,7 @@ class MoveMorph(bpy.types.Operator, ItemMoveOp):
     bl_description = "Move active morph item up/down in the list"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
@@ -120,6 +124,7 @@ class MoveMorph(bpy.types.Operator, ItemMoveOp):
             mmd_root.active_morph,
             self.type,
         )
+        logger.debug(f"Moved morph to index {mmd_root.active_morph}")
         return {"FINISHED"}
 
 
@@ -129,7 +134,7 @@ class CopyMorph(bpy.types.Operator):
     bl_description = "Make a copy of active morph in the list"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
@@ -156,6 +161,7 @@ class CopyMorph(bpy.types.Operator):
         for k, v in morph.items():
             morph_new[k] = v if k != "name" else name_tmp
         morph_new.name = name_orig + "_copy"  # trigger name check
+        logger.debug(f"Copied morph {name_orig} to {morph_new.name}")
         return {"FINISHED"}
 
 
@@ -165,17 +171,17 @@ class OverwriteBoneMorphsFromActionPose(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
     @classmethod
-    def poll(cls, context):
+    def poll(cls, context: bpy.types.Context) -> bool:
         root = FnModel.find_root_object(context.active_object)
         if root is None:
             return False
 
         return root.mmd_root.active_morph_type == "bone_morphs"
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         root = FnModel.find_root_object(context.active_object)
         FnMorph.overwrite_bone_morphs_from_action_pose(FnModel.find_armature_object(root))
-
+        logger.info("Overwrote bone morphs from active action pose")
         return {"FINISHED"}
 
 
@@ -185,7 +191,7 @@ class AddMorphOffset(bpy.types.Operator):
     bl_description = "Add a morph offset item to the list"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
@@ -210,6 +216,7 @@ class AddMorphOffset(bpy.types.Operator):
                 item.location = pose_bone.location
                 item.rotation = pose_bone.rotation_quaternion
 
+        logger.debug(f"Added morph offset to {morph_type}")
         return {"FINISHED"}
 
 
@@ -226,7 +233,7 @@ class RemoveMorphOffset(bpy.types.Operator):
         options={"SKIP_SAVE"},
     )
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
@@ -243,17 +250,21 @@ class RemoveMorphOffset(bpy.types.Operator):
             if morph_type.startswith("vertex"):
                 for obj in FnModel.iterate_mesh_objects(root):
                     FnMorph.remove_shape_key(obj, morph.name)
+                logger.debug(f"Removed all vertex morph offsets for {morph.name}")
                 return {"FINISHED"}
             elif morph_type.startswith("uv"):
                 if morph.data_type == "VERTEX_GROUP":
                     for obj in FnModel.iterate_mesh_objects(root):
                         FnMorph.store_uv_morph_data(obj, morph)
+                    logger.debug(f"Removed all UV morph offsets for {morph.name}")
                     return {"FINISHED"}
             morph.data.clear()
             morph.active_data = 0
+            logger.debug(f"Cleared all morph offsets for {morph.name}")
         else:
             morph.data.remove(morph.active_data)
             morph.active_data = max(0, morph.active_data - 1)
+            logger.debug(f"Removed morph offset at index {morph.active_data}")
         return {"FINISHED"}
 
 
@@ -269,7 +280,7 @@ class InitMaterialOffset(bpy.types.Operator):
         default=0,
     )
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
@@ -281,6 +292,7 @@ class InitMaterialOffset(bpy.types.Operator):
         mat_data.specular_color = mat_data.ambient_color = (val,) * 3
         mat_data.shininess = mat_data.edge_weight = val
         mat_data.texture_factor = mat_data.toon_texture_factor = mat_data.sphere_texture_factor = (val,) * 4
+        logger.debug(f"Initialized material offset with value {val}")
         return {"FINISHED"}
 
 
@@ -290,7 +302,7 @@ class ApplyMaterialOffset(bpy.types.Operator):
     bl_description = "Calculates the offsets and apply them, then the temporary material is removed"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
@@ -328,6 +340,7 @@ class ApplyMaterialOffset(bpy.types.Operator):
 
             except ZeroDivisionError:
                 mat_data.offset_type = "ADD"  # If there is any 0 division we automatically switch it to type ADD
+                logger.warning("Zero division detected, switching to ADD offset type")
             except ValueError:
                 self.report({"ERROR"}, "An unexpected error happened")
                 # We should stop on our tracks and re-raise the exception
@@ -345,6 +358,7 @@ class ApplyMaterialOffset(bpy.types.Operator):
             mat_data.edge_weight = work_mmd_mat.edge_weight - base_mmd_mat.edge_weight
 
         FnMaterial.clean_materials(meshObj, can_remove=lambda m: m == work_mat)
+        logger.info(f"Applied material offset for {mat_data.material}")
         return {"FINISHED"}
 
 
@@ -354,7 +368,7 @@ class CreateWorkMaterial(bpy.types.Operator):
     bl_description = "Creates a temporary material to edit this offset"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
@@ -413,6 +427,7 @@ class CreateWorkMaterial(bpy.types.Operator):
             work_mmd_mat.edge_color = list(edge_offset)
             work_mmd_mat.edge_weight += mat_data.edge_weight
 
+        logger.info(f"Created work material {work_mat_name}")
         return {"FINISHED"}
 
 
@@ -422,13 +437,13 @@ class ClearTempMaterials(bpy.types.Operator):
     bl_description = "Clears all the temporary materials"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
         for meshObj in FnModel.iterate_mesh_objects(root):
 
-            def __pre_remove(m):
+            def __pre_remove(m: Optional[bpy.types.Material]) -> bool:
                 if m and "_temp" in m.name:
                     base_mat_name = m.name.split("_temp")[0]
                     try:
@@ -439,6 +454,7 @@ class ClearTempMaterials(bpy.types.Operator):
                 return False
 
             FnMaterial.clean_materials(meshObj, can_remove=__pre_remove)
+        logger.info("Cleared all temporary materials")
         return {"FINISHED"}
 
 
@@ -448,7 +464,7 @@ class ViewBoneMorph(bpy.types.Operator):
     bl_description = "View the result of active bone morph"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
@@ -463,6 +479,7 @@ class ViewBoneMorph(bpy.types.Operator):
                 mtx = (p_bone.matrix_basis.to_3x3() @ Quaternion(*morph_data.rotation.to_axis_angle()).to_matrix()).to_4x4()
                 mtx.translation = p_bone.location + morph_data.location
                 p_bone.matrix_basis = mtx
+        logger.info(f"Viewing bone morph: {morph.name}")
         return {"FINISHED"}
 
 
@@ -472,13 +489,14 @@ class ClearBoneMorphView(bpy.types.Operator):
     bl_description = "Reset transforms of all bones to their default values"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
         armature = FnModel.find_armature_object(root)
         for p_bone in armature.pose.bones:
             p_bone.matrix_basis.identity()
+        logger.info("Cleared bone morph view")
         return {"FINISHED"}
 
 
@@ -488,7 +506,7 @@ class ApplyBoneMorph(bpy.types.Operator):
     bl_description = "Apply current pose to active bone morph"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
@@ -506,6 +524,7 @@ class ApplyBoneMorph(bpy.types.Operator):
                 p_bone.bone.select = True
             else:
                 p_bone.bone.select = False
+        logger.info(f"Applied current pose to bone morph: {morph.name}")
         return {"FINISHED"}
 
 
@@ -515,7 +534,7 @@ class SelectRelatedBone(bpy.types.Operator):
     bl_description = "Select the bone assigned to this offset in the armature"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
@@ -524,6 +543,7 @@ class SelectRelatedBone(bpy.types.Operator):
         morph = mmd_root.bone_morphs[mmd_root.active_morph]
         morph_data = morph.data[morph.active_data]
         utils.selectSingleBone(context, armature, morph_data.bone)
+        logger.debug(f"Selected bone: {morph_data.bone}")
         return {"FINISHED"}
 
 
@@ -533,7 +553,7 @@ class EditBoneOffset(bpy.types.Operator):
     bl_description = "Applies the location and rotation of this offset to the bone"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
@@ -546,6 +566,7 @@ class EditBoneOffset(bpy.types.Operator):
         mtx.translation = morph_data.location
         p_bone.matrix_basis = mtx
         utils.selectSingleBone(context, armature, p_bone.name)
+        logger.debug(f"Edited bone offset for {p_bone.name}")
         return {"FINISHED"}
 
 
@@ -555,7 +576,7 @@ class ApplyBoneOffset(bpy.types.Operator):
     bl_description = "Stores the current bone location and rotation into this offset"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
@@ -567,6 +588,7 @@ class ApplyBoneOffset(bpy.types.Operator):
         p_bone = armature.pose.bones[morph_data.bone]
         morph_data.location = p_bone.location
         morph_data.rotation = p_bone.rotation_quaternion if p_bone.rotation_mode == "QUATERNION" else p_bone.matrix_basis.to_quaternion()
+        logger.debug(f"Applied bone offset for {p_bone.name}")
         return {"FINISHED"}
 
 
@@ -576,7 +598,7 @@ class ViewUVMorph(bpy.types.Operator):
     bl_description = "View the result of active UV morph on current mesh object"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
@@ -627,6 +649,7 @@ class ViewUVMorph(bpy.types.Operator):
             uv_tex.active_render = True
         meshObj.hide_set(False)
         meshObj.select_set(selected)
+        logger.info(f"Viewing UV morph: {morph.name}")
         return {"FINISHED"}
 
 
@@ -636,7 +659,7 @@ class ClearUVMorphView(bpy.types.Operator):
     bl_description = "Clear all temporary data of UV morphs"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         assert root is not None
@@ -664,6 +687,7 @@ class ClearUVMorphView(bpy.types.Operator):
         for act in bpy.data.actions:
             if act.name.startswith("__uv.") and act.users < 1:
                 bpy.data.actions.remove(act)
+        logger.info("Cleared UV morph view")
         return {"FINISHED"}
 
 
@@ -674,14 +698,14 @@ class EditUVMorph(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
     @classmethod
-    def poll(cls, context):
+    def poll(cls, context: bpy.types.Context) -> bool:
         obj = context.active_object
         if obj.type != "MESH":
             return False
         active_uv_layer = obj.data.uv_layers.active
         return active_uv_layer and active_uv_layer.name.startswith("__uv.")
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         meshObj = obj
 
@@ -704,6 +728,7 @@ class EditUVMorph(bpy.types.Operator):
 
             bpy.ops.object.mode_set(mode="EDIT")
         meshObj.select_set(selected)
+        logger.info("Editing UV morph")
         return {"FINISHED"}
 
 
@@ -714,14 +739,14 @@ class ApplyUVMorph(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
     @classmethod
-    def poll(cls, context):
+    def poll(cls, context: bpy.types.Context) -> bool:
         obj = context.active_object
         if obj.type != "MESH":
             return False
         active_uv_layer = obj.data.uv_layers.active
         return active_uv_layer and active_uv_layer.name.startswith("__uv.")
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
@@ -756,6 +781,7 @@ class ApplyUVMorph(bpy.types.Operator):
             morph.data_type = "VERTEX_GROUP"
 
         meshObj.select_set(selected)
+        logger.info(f"Applied UV morph: {morph.name}")
         return {"FINISHED"}
 
 
@@ -766,11 +792,12 @@ class CleanDuplicatedMaterialMorphs(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
-    def poll(cls, context):
+    def poll(cls, context: bpy.types.Context) -> bool:
         return FnModel.find_root_object(context.active_object) is not None
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> Set[str]:
         mmd_root_object = FnModel.find_root_object(context.active_object)
         FnMorph.clean_duplicated_material_morphs(mmd_root_object)
+        logger.info("Cleaned duplicated material morphs")
 
         return {"FINISHED"}

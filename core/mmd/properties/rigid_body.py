@@ -8,32 +8,35 @@
 """Properties for rigid bodies and joints"""
 
 import bpy
+from typing import Optional, Any, Set, List, Dict, Tuple, Union
+from bpy.types import Context, Object, PropertyGroup, Material
 
 from .. import bpyutils
 from ..core import rigid_body
 from ..core.rigid_body import RigidBodyMaterial, FnRigidBody
 from ..core.model import FnModel
 from . import patch_library_overridable
+from ....core.logging_setup import logger
 
 
-def _updateCollisionGroup(prop, _context):
-    obj = prop.id_data
-    materials = obj.data.materials
+def _updateCollisionGroup(prop: PropertyGroup, _context: Context) -> None:
+    obj: Object = prop.id_data
+    materials: List[Material] = obj.data.materials
     if len(materials) == 0:
         materials.append(RigidBodyMaterial.getMaterial(prop.collision_group_number))
     else:
         obj.material_slots[0].material = RigidBodyMaterial.getMaterial(prop.collision_group_number)
 
 
-def _updateType(prop, _context):
-    obj = prop.id_data
+def _updateType(prop: PropertyGroup, _context: Context) -> None:
+    obj: Object = prop.id_data
     rb = obj.rigid_body
     if rb:
         rb.kinematic = int(prop.type) == rigid_body.MODE_STATIC
 
 
-def _updateShape(prop, _context):
-    obj = prop.id_data
+def _updateShape(prop: PropertyGroup, _context: Context) -> None:
+    obj: Object = prop.id_data
 
     if len(obj.data.vertices) > 0:
         size = prop.size
@@ -44,8 +47,8 @@ def _updateShape(prop, _context):
         rb.collision_shape = prop.shape
 
 
-def _get_bone(prop):
-    obj = prop.id_data
+def _get_bone(prop: PropertyGroup) -> str:
+    obj: Object = prop.id_data
     relation = obj.constraints.get("mmd_tools_rigid_parent", None)
     if relation:
         arm = relation.target
@@ -55,9 +58,9 @@ def _get_bone(prop):
     return prop.get("bone", "")
 
 
-def _set_bone(prop, value):
-    bone_name = value
-    obj = prop.id_data
+def _set_bone(prop: PropertyGroup, value: str) -> None:
+    bone_name: str = value
+    obj: Object = prop.id_data
     relation = obj.constraints.get("mmd_tools_rigid_parent", None)
     if relation is None:
         relation = obj.constraints.new("CHILD_OF")
@@ -78,16 +81,16 @@ def _set_bone(prop, value):
     prop["bone"] = bone_name
 
 
-def _get_size(prop):
+def _get_size(prop: PropertyGroup) -> Tuple[float, float, float]:
     if prop.id_data.mmd_type != "RIGID_BODY":
         return (0, 0, 0)
     return FnRigidBody.get_rigid_body_size(prop.id_data)
 
 
-def _set_size(prop, value):
-    obj = prop.id_data
+def _set_size(prop: PropertyGroup, value: Tuple[float, float, float]) -> None:
+    obj: Object = prop.id_data
     assert obj.mode == "OBJECT"  # not support other mode yet
-    shape = prop.shape
+    shape: str = prop.shape
 
     mesh = obj.data
     rb = obj.rigid_body
@@ -146,15 +149,15 @@ def _set_size(prop, value):
         mesh.update()
 
 
-def _get_rigid_name(prop):
+def _get_rigid_name(prop: PropertyGroup) -> str:
     return prop.get("name", "")
 
 
-def _set_rigid_name(prop, value):
+def _set_rigid_name(prop: PropertyGroup, value: str) -> None:
     prop["name"] = value
 
 
-class MMDRigidBody(bpy.types.PropertyGroup):
+class MMDRigidBody(PropertyGroup):
     name_j: bpy.props.StringProperty(
         name="Name",
         description="Japanese Name",
@@ -227,16 +230,18 @@ class MMDRigidBody(bpy.types.PropertyGroup):
     )
 
     @staticmethod
-    def register():
+    def register() -> None:
+        logger.debug("Registering MMDRigidBody property")
         bpy.types.Object.mmd_rigid = patch_library_overridable(bpy.props.PointerProperty(type=MMDRigidBody))
 
     @staticmethod
-    def unregister():
+    def unregister() -> None:
+        logger.debug("Unregistering MMDRigidBody property")
         del bpy.types.Object.mmd_rigid
 
 
-def _updateSpringLinear(prop, context):
-    obj = prop.id_data
+def _updateSpringLinear(prop: PropertyGroup, context: Context) -> None:
+    obj: Object = prop.id_data
     rbc = obj.rigid_body_constraint
     if rbc:
         rbc.spring_stiffness_x = prop.spring_linear[0]
@@ -244,8 +249,8 @@ def _updateSpringLinear(prop, context):
         rbc.spring_stiffness_z = prop.spring_linear[2]
 
 
-def _updateSpringAngular(prop, context):
-    obj = prop.id_data
+def _updateSpringAngular(prop: PropertyGroup, context: Context) -> None:
+    obj: Object = prop.id_data
     rbc = obj.rigid_body_constraint
     if rbc and hasattr(rbc, "use_spring_ang_x"):
         rbc.spring_stiffness_ang_x = prop.spring_angular[0]
@@ -253,7 +258,7 @@ def _updateSpringAngular(prop, context):
         rbc.spring_stiffness_ang_z = prop.spring_angular[2]
 
 
-class MMDJoint(bpy.types.PropertyGroup):
+class MMDJoint(PropertyGroup):
     name_j: bpy.props.StringProperty(
         name="Name",
         description="Japanese Name",
@@ -287,9 +292,12 @@ class MMDJoint(bpy.types.PropertyGroup):
     )
 
     @staticmethod
-    def register():
+    def register() -> None:
+        logger.debug("Registering MMDJoint property")
         bpy.types.Object.mmd_joint = patch_library_overridable(bpy.props.PointerProperty(type=MMDJoint))
 
     @staticmethod
-    def unregister():
+    def unregister() -> None:
+        logger.debug("Unregistering MMDJoint property")
         del bpy.types.Object.mmd_joint
+

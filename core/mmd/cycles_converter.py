@@ -5,39 +5,44 @@
 # Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Any, List, Tuple, Union
 
 import bpy
+from bpy.types import Material, NodeTree, Node, NodeSocket, ShaderNodeGroup, ShaderNodeOutputMaterial, NodeLink
 
+from ..logging_setup import logger
 from .core.shader import _NodeGroupUtils
 from .core.material import FnMaterial
 
 
-def __switchToCyclesRenderEngine():
+def __switchToCyclesRenderEngine() -> None:
     if bpy.context.scene.render.engine != "CYCLES":
+        logger.debug("Switching render engine to Cycles")
         bpy.context.scene.render.engine = "CYCLES"
 
 
-def __exposeNodeTreeInput(in_socket, name, default_value, node_input, shader):
+def __exposeNodeTreeInput(in_socket: NodeSocket, name: str, default_value: Any, node_input: Node, shader: NodeTree) -> None:
     _NodeGroupUtils(shader).new_input_socket(name, in_socket, default_value)
 
 
-def __exposeNodeTreeOutput(out_socket, name, node_output, shader):
+def __exposeNodeTreeOutput(out_socket: NodeSocket, name: str, node_output: Node, shader: NodeTree) -> None:
     _NodeGroupUtils(shader).new_output_socket(name, out_socket)
 
 
-def __getMaterialOutput(nodes, bl_idname):
+def __getMaterialOutput(nodes: bpy.types.Nodes, bl_idname: str) -> Node:
     o = next((n for n in nodes if n.bl_idname == bl_idname and n.is_active_output), None) or nodes.new(bl_idname)
     o.is_active_output = True
     return o
 
 
-def create_MMDAlphaShader():
+def create_MMDAlphaShader() -> NodeTree:
     __switchToCyclesRenderEngine()
 
     if "MMDAlphaShader" in bpy.data.node_groups:
+        logger.debug("Using existing MMDAlphaShader node group")
         return bpy.data.node_groups["MMDAlphaShader"]
 
+    logger.info("Creating new MMDAlphaShader node group")
     shader = bpy.data.node_groups.new(name="MMDAlphaShader", type="ShaderNodeTree")
 
     node_input = shader.nodes.new("NodeGroupInput")
@@ -59,26 +64,28 @@ def create_MMDAlphaShader():
     return shader
 
 
-def create_MMDBasicShader():
+def create_MMDBasicShader() -> NodeTree:
     __switchToCyclesRenderEngine()
 
     if "MMDBasicShader" in bpy.data.node_groups:
+        logger.debug("Using existing MMDBasicShader node group")
         return bpy.data.node_groups["MMDBasicShader"]
 
-    shader: bpy.types.ShaderNodeTree = bpy.data.node_groups.new(name="MMDBasicShader", type="ShaderNodeTree")
+    logger.info("Creating new MMDBasicShader node group")
+    shader: NodeTree = bpy.data.node_groups.new(name="MMDBasicShader", type="ShaderNodeTree")
 
-    node_input: bpy.types.NodeGroupInput = shader.nodes.new("NodeGroupInput")
-    node_output: bpy.types.NodeGroupOutput = shader.nodes.new("NodeGroupOutput")
+    node_input: Node = shader.nodes.new("NodeGroupInput")
+    node_output: Node = shader.nodes.new("NodeGroupOutput")
     node_output.location.x += 250
     node_input.location.x -= 500
 
-    dif: bpy.types.ShaderNodeBsdfDiffuse = shader.nodes.new("ShaderNodeBsdfDiffuse")
+    dif: Node = shader.nodes.new("ShaderNodeBsdfDiffuse")
     dif.location.x -= 250
     dif.location.y += 150
-    glo: bpy.types.ShaderNodeBsdfAnisotropic = shader.nodes.new("ShaderNodeBsdfAnisotropic")
+    glo: Node = shader.nodes.new("ShaderNodeBsdfAnisotropic")
     glo.location.x -= 250
     glo.location.y -= 150
-    mix: bpy.types.ShaderNodeMixShader = shader.nodes.new("ShaderNodeMixShader")
+    mix: Node = shader.nodes.new("ShaderNodeMixShader")
     shader.links.new(mix.inputs[1], dif.outputs["BSDF"])
     shader.links.new(mix.inputs[2], glo.outputs["BSDF"])
 
@@ -91,7 +98,7 @@ def create_MMDBasicShader():
     return shader
 
 
-def __enum_linked_nodes(node: bpy.types.Node) -> Iterable[bpy.types.Node]:
+def __enum_linked_nodes(node: Node) -> Iterable[Node]:
     yield node
     if node.parent:
         yield node.parent
@@ -99,7 +106,8 @@ def __enum_linked_nodes(node: bpy.types.Node) -> Iterable[bpy.types.Node]:
         yield from __enum_linked_nodes(n)
 
 
-def __cleanNodeTree(material: bpy.types.Material):
+def __cleanNodeTree(material: Material) -> None:
+    logger.debug(f"Cleaning node tree for material: {material.name}")
     nodes = material.node_tree.nodes
     node_names = set(n.name for n in nodes)
     for o in (n for n in nodes if n.bl_idname in {"ShaderNodeOutput", "ShaderNodeOutputMaterial"}):
@@ -109,40 +117,46 @@ def __cleanNodeTree(material: bpy.types.Material):
         nodes.remove(nodes[name])
 
 
-def convertToCyclesShader(obj: bpy.types.Object, use_principled=False, clean_nodes=False, subsurface=0.001):
+def convertToCyclesShader(obj: bpy.types.Object, use_principled: bool = False, clean_nodes: bool = False, subsurface: float = 0.001) -> None:
+    logger.info(f"Converting {obj.name} to Cycles shader (use_principled={use_principled}, clean_nodes={clean_nodes})")
     __switchToCyclesRenderEngine()
     convertToBlenderShader(obj, use_principled, clean_nodes, subsurface)
 
 
-def convertToBlenderShader(obj: bpy.types.Object, use_principled=False, clean_nodes=False, subsurface=0.001):
+def convertToBlenderShader(obj: bpy.types.Object, use_principled: bool = False, clean_nodes: bool = False, subsurface: float = 0.001) -> None:
     for i in obj.material_slots:
         if not i.material:
             continue
         if not i.material.use_nodes:
+            logger.debug(f"Enabling nodes for material: {i.material.name}")
             i.material.use_nodes = True
             __convertToMMDBasicShader(i.material)
         if use_principled:
+            logger.debug(f"Converting material to Principled BSDF: {i.material.name}")
             __convertToPrincipledBsdf(i.material, subsurface)
         if clean_nodes:
             __cleanNodeTree(i.material)
 
-def convertToMMDShader(obj):
+def convertToMMDShader(obj: bpy.types.Object) -> None:
     """BSDF -> MMDShaderDev conversion."""
+    logger.info(f"Converting {obj.name} to MMD shader")
     for i in obj.material_slots:
         if not i.material:
             continue
         if not i.material.use_nodes:
+            logger.debug(f"Enabling nodes for material: {i.material.name}")
             i.material.use_nodes = True
         FnMaterial.convert_to_mmd_material(i.material)
 
-def __convertToMMDBasicShader(material: bpy.types.Material):
+def __convertToMMDBasicShader(material: Material) -> None:
+    logger.debug(f"Converting material to MMD Basic Shader: {material.name}")
     # TODO: test me
     mmd_basic_shader_grp = create_MMDBasicShader()
     mmd_alpha_shader_grp = create_MMDAlphaShader()
 
-    if not any(filter(lambda x: isinstance(x, bpy.types.ShaderNodeGroup) and x.node_tree.name in {"MMDBasicShader", "MMDAlphaShader"}, material.node_tree.nodes)):
+    if not any(filter(lambda x: isinstance(x, ShaderNodeGroup) and x.node_tree.name in {"MMDBasicShader", "MMDAlphaShader"}, material.node_tree.nodes)):
         # Add nodes for Cycles Render
-        shader: bpy.types.ShaderNodeGroup = material.node_tree.nodes.new("ShaderNodeGroup")
+        shader: ShaderNodeGroup = material.node_tree.nodes.new("ShaderNodeGroup")
         shader.node_tree = mmd_basic_shader_grp
         shader.inputs[0].default_value[:3] = material.diffuse_color[:3]
         shader.inputs[1].default_value[:3] = material.specular_color[:3]
@@ -157,7 +171,8 @@ def __convertToMMDBasicShader(material: bpy.types.Material):
             alpha_value = material.diffuse_color[3]
 
         if alpha_value < 1.0:
-            alpha_shader: bpy.types.ShaderNodeGroup = material.node_tree.nodes.new("ShaderNodeGroup")
+            logger.debug(f"Material has alpha: {material.name}, alpha={alpha_value}")
+            alpha_shader: ShaderNodeGroup = material.node_tree.nodes.new("ShaderNodeGroup")
             alpha_shader.location.x = shader.location.x + 250
             alpha_shader.location.y = shader.location.y - 150
             alpha_shader.node_tree = mmd_alpha_shader_grp
@@ -165,21 +180,22 @@ def __convertToMMDBasicShader(material: bpy.types.Material):
             material.node_tree.links.new(alpha_shader.inputs[0], outplug)
             outplug = alpha_shader.outputs[0]
 
-        material_output: bpy.types.ShaderNodeOutputMaterial = __getMaterialOutput(material.node_tree.nodes, "ShaderNodeOutputMaterial")
+        material_output: ShaderNodeOutputMaterial = __getMaterialOutput(material.node_tree.nodes, "ShaderNodeOutputMaterial")
         material.node_tree.links.new(material_output.inputs["Surface"], outplug)
         material_output.location.x = shader.location.x + 500
         material_output.location.y = shader.location.y - 150
 
 
-def __convertToPrincipledBsdf(material: bpy.types.Material, subsurface: float):
+def __convertToPrincipledBsdf(material: Material, subsurface: float) -> None:
+    logger.debug(f"Converting material to Principled BSDF: {material.name}")
     node_names = set()
-    for s in (n for n in material.node_tree.nodes if isinstance(n, bpy.types.ShaderNodeGroup)):
+    for s in (n for n in material.node_tree.nodes if isinstance(n, ShaderNodeGroup)):
         if s.node_tree.name == "MMDBasicShader":
-            l: bpy.types.NodeLink
+            l: NodeLink
             for l in s.outputs[0].links:
                 to_node = l.to_node
                 # assuming there is no bpy.types.NodeReroute between MMDBasicShader and MMDAlphaShader
-                if isinstance(to_node, bpy.types.ShaderNodeGroup) and to_node.node_tree.name == "MMDAlphaShader":
+                if isinstance(to_node, ShaderNodeGroup) and to_node.node_tree.name == "MMDAlphaShader":
                     __switchToPrincipledBsdf(material.node_tree, s, subsurface, node_alpha=to_node)
                     node_names.add(to_node.name)
                 else:
@@ -194,8 +210,9 @@ def __convertToPrincipledBsdf(material: bpy.types.Material, subsurface: float):
         nodes.remove(nodes[name])
 
 
-def __switchToPrincipledBsdf(node_tree: bpy.types.NodeTree, node_basic: bpy.types.ShaderNodeGroup, subsurface: float, node_alpha: Optional[bpy.types.ShaderNodeGroup] = None):
-    shader: bpy.types.ShaderNodeBsdfPrincipled = node_tree.nodes.new("ShaderNodeBsdfPrincipled")
+def __switchToPrincipledBsdf(node_tree: NodeTree, node_basic: ShaderNodeGroup, subsurface: float, node_alpha: Optional[ShaderNodeGroup] = None) -> None:
+    logger.debug(f"Switching to Principled BSDF: {node_basic.name}")
+    shader: Node = node_tree.nodes.new("ShaderNodeBsdfPrincipled")
     shader.parent = node_basic.parent
     shader.location.x = node_basic.location.x
     shader.location.y = node_basic.location.y
