@@ -63,7 +63,7 @@ class AvatarToolkit_OT_StartPoseMode(Operator):
             
             return {'FINISHED'}
         except Exception as e:
-            logger.error(f"Failed to start pose mode: {str(e)}")
+            logger.error(f"Failed to start pose mode:", exception=e)
             self.report({'ERROR'}, t("PoseMode.error.start", error=str(e)))
             return {'CANCELLED'}
 
@@ -86,7 +86,7 @@ class AvatarToolkit_OT_StopPoseMode(Operator):
             bpy.ops.object.mode_set(mode='OBJECT')
             return {'FINISHED'}
         except Exception as e:
-            logger.error(f"Failed to stop pose mode: {str(e)}")
+            logger.error(f"Failed to stop pose mode:", exception=e)
             self.report({'ERROR'}, t("PoseMode.error.stop", error=str(e)))
             return {'CANCELLED'}
 
@@ -130,7 +130,7 @@ class AvatarToolkit_OT_ApplyPoseAsRest(Operator, BatchPoseOperationMixin):
 
             return {'FINISHED'}
         except Exception as e:
-            logger.error(f"Failed to apply pose as shape key: {str(e)}")
+            logger.error(f"Failed to apply pose as shape key:", exception=e)
             self.report({'ERROR'}, t("PoseMode.error.shapekey", error=str(e)))
             return {'CANCELLED'}
 
@@ -161,6 +161,6 @@ class AvatarToolkit_OT_ApplyPoseAsShapekey(Operator, BatchPoseOperationMixin):
             logger.info("Successfully applied pose as rest")
             return {'FINISHED'}
         except Exception as e:
-            logger.error(f"Failed to apply pose as rest: {str(e)}")
+            logger.error(f"Failed to apply pose as rest:", exception=e)
             self.report({'ERROR'}, t("PoseMode.error.rest_pose", error=str(e)))
             return {'CANCELLED'}

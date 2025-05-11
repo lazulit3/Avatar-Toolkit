@@ -52,7 +52,7 @@ class AvatarToolkit_OT_JoinAllMeshes(Operator):
                     return {'CANCELLED'}
                     
         except Exception as e:
-            logger.error(f"Failed to join meshes: {str(e)}")
+            logger.error(f"Failed to join meshes:", exception=e)
             self.report({'ERROR'}, t("Optimization.error.join_meshes", error=str(e)))
             return {'CANCELLED'}
 
@@ -96,6 +96,6 @@ class AvatarToolkit_OT_JoinSelectedMeshes(Operator):
                     return {'CANCELLED'}
                 
         except Exception as e:
-            logger.error(f"Failed to join selected meshes: {str(e)}")
+            logger.error(f"Failed to join selected meshes:", exception=e)
             self.report({'ERROR'}, t("Optimization.error.join_selected", error=str(e)))
             return {'CANCELLED'}

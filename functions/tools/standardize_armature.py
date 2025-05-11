@@ -103,7 +103,7 @@ class AvatarToolkit_OT_StandardizeArmature(Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            logger.error(f"Failed to standardize armature: {str(e)}")
+            logger.error(f"Failed to standardize armature:", exception=e)
             self.report({'ERROR'}, str(e))
             
             try:

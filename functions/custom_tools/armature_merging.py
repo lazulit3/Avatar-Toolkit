@@ -72,7 +72,7 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             return {'FINISHED'}
 
         except Exception as e:
-            logger.error(f"Error merging armatures: {str(e)}")
+            logger.error(f"Error merging armatures:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 

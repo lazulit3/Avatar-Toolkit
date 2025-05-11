@@ -222,7 +222,7 @@ class ATOOLKIT_OT_create_visemes(Operator):
             self.report({'INFO'}, t("Visemes.success"))
             return {'FINISHED'}
         except Exception as e:
-            logger.error(f"Error creating visemes: {str(e)}")
+            logger.error(f"Error creating visemes:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
         

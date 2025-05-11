@@ -57,7 +57,7 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            logger.error(f"Failed to convert Rigify: {str(e)}", exc_info=True)
+            logger.error(f"Failed to convert Rigify:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 

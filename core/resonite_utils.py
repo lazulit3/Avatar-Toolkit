@@ -92,7 +92,7 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
                     progress.step(t("Tools.convert_resonite.processing", name=bone.name))
 
         except Exception as e:
-            logger.error(f"Error during Resonite conversion: {str(e)}")
+            logger.error(f"Error during Resonite conversion:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 
@@ -100,7 +100,7 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
             try:
                 bpy.ops.object.mode_set(mode='OBJECT')
             except Exception as e:
-                logger.warning(f"Error returning to object mode: {str(e)}")
+                logger.warning(f"Error returning to object mode:", exception=e)
 
         if translate_bone_fails > 0:
             logger.info(f"Conversion completed with {translate_bone_fails} untranslated bones")

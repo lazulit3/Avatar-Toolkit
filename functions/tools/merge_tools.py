@@ -51,7 +51,7 @@ class AvatarToolkit_OT_ConnectBones(Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            logger.error(f"Failed to connect bones: {str(e)}")
+            logger.error(f"Failed to connect bones:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 
@@ -105,7 +105,7 @@ class AvatarToolkit_OT_MergeToActive(Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            logger.error(f"Failed to merge bones: {str(e)}")
+            logger.error(f"Failed to merge bones:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 
@@ -157,6 +157,6 @@ class AvatarToolkit_OT_MergeToParent(Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            logger.error(f"Failed to merge bones: {str(e)}")
+            logger.error(f"Failed to merge bones:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}

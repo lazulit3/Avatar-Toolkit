@@ -43,7 +43,7 @@ class AvatarToolkit_OT_ApplyTransforms(Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            logger.error(f"Failed to apply transforms: {str(e)}")
+            logger.error(f"Failed to apply transforms:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 
@@ -87,6 +87,6 @@ class AvatarToolkit_OT_CleanShapekeys(Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            logger.error(f"Failed to clean shape keys: {str(e)}")
+            logger.error(f"Failed to clean shape keys:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}

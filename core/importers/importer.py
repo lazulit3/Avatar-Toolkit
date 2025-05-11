@@ -84,7 +84,7 @@ def import_multi_files(
                 progress.update(file["name"])
                 
     except Exception as e:
-        logger.error(f"Import failed: {str(e)}", exc_info=True)
+        logger.error(f"Import failed:", exception=e)
         raise
 
 ImportMethod = Callable[[str, List[Dict[str, str]], str], None]

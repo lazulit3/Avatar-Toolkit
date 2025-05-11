@@ -115,7 +115,7 @@ class AvatarToolkit_OT_AttachMesh(Operator):
             return {'FINISHED'}
 
         except Exception as e:
-            logger.error(f"Failed to attach mesh: {str(e)}")
+            logger.error(f"Failed to attach mesh:", exception=e)
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 
