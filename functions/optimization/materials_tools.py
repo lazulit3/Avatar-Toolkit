@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import re
 from typing import Set, Dict, List, Optional, Tuple
@@ -143,7 +144,7 @@ class AvatarToolkit_OT_CombineMaterials(Operator):
                 
         except Exception as e:
             logger.error(f"Failed to combine materials:", exception=e)
-            self.report({'ERROR'}, t("Optimization.error.combine_materials", error=str(e)))
+            self.report({'ERROR'}, t("Optimization.error.combine_materials", error=traceback.format_exc()))
             return {'CANCELLED'}
 
     def consolidate_materials(self, meshes: List[Object]) -> int:

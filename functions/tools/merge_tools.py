@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import math
 from typing import Set, List
@@ -52,7 +53,7 @@ class AvatarToolkit_OT_ConnectBones(Operator):
             
         except Exception as e:
             logger.error(f"Failed to connect bones:", exception=e)
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_MergeToActive(Operator):
@@ -106,7 +107,7 @@ class AvatarToolkit_OT_MergeToActive(Operator):
             
         except Exception as e:
             logger.error(f"Failed to merge bones:", exception=e)
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_MergeToParent(Operator):
@@ -158,5 +159,5 @@ class AvatarToolkit_OT_MergeToParent(Operator):
             
         except Exception as e:
             logger.error(f"Failed to merge bones:", exception=e)
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}

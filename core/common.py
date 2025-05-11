@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import numpy as np
 import threading
@@ -18,7 +19,7 @@ from bpy.utils import register_class
 from ..core.logging_setup import logger
 from ..core.translations import t
 from ..core.dictionaries import bone_names
-from .dictionaries import reverse_bone_lookup, bone_names
+from .dictionaries import reverse_bone_lookup, bone_names, simplify_bonename
 
 class SceneMatClass(PropertyGroup):
     mat: PointerProperty(type=Material)
@@ -202,7 +203,7 @@ def apply_pose_as_rest(context: Context, armature_obj: Object, meshes: List[Obje
             
     except Exception as e:
         logger.error(f"Error applying pose as rest:", exception=e)
-        return False, str(e)
+        return False, traceback.format_exc()
     
 def apply_armature_to_mesh(armature_obj: Object, mesh_obj: Object) -> None:
     """Apply armature deformation to mesh"""

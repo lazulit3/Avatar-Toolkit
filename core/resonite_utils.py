@@ -1,3 +1,4 @@
+import traceback
 from types import FrameType
 import bpy
 import bpy_extras
@@ -93,7 +94,7 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
 
         except Exception as e:
             logger.error(f"Error during Resonite conversion:", exception=e)
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
         finally:

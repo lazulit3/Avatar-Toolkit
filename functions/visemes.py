@@ -1,6 +1,7 @@
 # This code was taken from Cats Blender Plugin Unoffical, some of this code is by the original developers, however was improved by myself.
 # Didn't think it was necessary to re-make something that works well.
 
+import traceback
 import bpy
 from typing import Dict, List, Optional, Tuple, Any, Set, Union
 from bpy.types import Operator, Context, Object, ShapeKey
@@ -223,7 +224,7 @@ class ATOOLKIT_OT_create_visemes(Operator):
             return {'FINISHED'}
         except Exception as e:
             logger.error(f"Error creating visemes:", exception=e)
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
         
     def create_visemes(self, context: Context, mesh: Object) -> None:

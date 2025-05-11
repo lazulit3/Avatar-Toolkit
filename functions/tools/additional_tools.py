@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import numpy as np
 from bpy.types import Operator, Context
@@ -44,7 +45,7 @@ class AvatarToolkit_OT_ApplyTransforms(Operator):
             
         except Exception as e:
             logger.error(f"Failed to apply transforms:", exception=e)
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_CleanShapekeys(Operator):
@@ -88,5 +89,5 @@ class AvatarToolkit_OT_CleanShapekeys(Operator):
             
         except Exception as e:
             logger.error(f"Failed to clean shape keys:", exception=e)
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
