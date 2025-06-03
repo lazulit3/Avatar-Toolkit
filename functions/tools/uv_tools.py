@@ -246,7 +246,7 @@ class AvatarToolkit_OT_AlignUVEdgesToTarget(Operator):
                 logger.info(f"Finished mesh {source} for UV's")
 
             except Exception as e:
-                logger.error(f"Error processing source {source}: {str(e)}")
+                logger.error(f"Error processing source {source}:", exception=e)
                 return {'CANCELLED'}
 
         bpy.ops.object.mode_set(mode=prev_mode)

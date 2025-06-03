@@ -1,3 +1,4 @@
+import traceback
 import bpy
 from bpy.types import Operator, Context, Object, ArmatureModifier, VertexGroup
 from mathutils import Vector
@@ -115,8 +116,8 @@ class AvatarToolkit_OT_AttachMesh(Operator):
             return {'FINISHED'}
 
         except Exception as e:
-            logger.error(f"Failed to attach mesh: {str(e)}")
-            self.report({'ERROR'}, str(e))
+            logger.error(f"Failed to attach mesh:", exception=e)
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
 def validate_mesh_transforms(mesh: Optional[Object]) -> tuple[bool, str]:

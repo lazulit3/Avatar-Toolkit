@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import math
 from typing import Dict, List, Set, Tuple, Optional, Any, Union
@@ -103,8 +104,8 @@ class AvatarToolkit_OT_StandardizeArmature(Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            logger.error(f"Failed to standardize armature: {str(e)}")
-            self.report({'ERROR'}, str(e))
+            logger.error(f"Failed to standardize armature:", exception=e)
+            self.report({'ERROR'}, traceback.format_exc())
             
             try:
                 if original_mode == 'EDIT_ARMATURE':

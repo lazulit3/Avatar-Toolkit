@@ -81,7 +81,7 @@ class AvatarToolKit_OT_ExpandSectionMaterials(Operator):
             
             return {'FINISHED'}
         except Exception as e:
-            logger.error(f"Error loading materials: {str(e)}", exc_info=True)
+            logger.error(f"Error loading materials:", exception=e)
             self.report({'ERROR'}, t("TextureAtlas.load_error"))
             return {'CANCELLED'}
 

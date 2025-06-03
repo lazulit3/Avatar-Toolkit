@@ -1,3 +1,4 @@
+import traceback
 import bpy
 from bpy.types import Operator, Context
 from ...core.translations import t
@@ -33,7 +34,7 @@ class AvatarToolKit_OT_SeparateByMaterials(Operator):
             self.report({'INFO'}, t("Tools.separate_materials_success"))
             return {'FINISHED'}
         except Exception as e:
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
 class AvatarToolKit_OT_SeparateByLooseParts(Operator):
@@ -65,5 +66,5 @@ class AvatarToolKit_OT_SeparateByLooseParts(Operator):
             self.report({'INFO'}, t("Tools.separate_loose_success"))
             return {'FINISHED'}
         except Exception as e:
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}

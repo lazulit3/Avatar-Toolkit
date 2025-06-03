@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import re
 from typing import Set, Dict, List, Optional, Tuple
@@ -113,7 +114,7 @@ class AvatarToolkit_OT_CombineMaterials(Operator):
                 try:
                     num_combined = self.consolidate_materials(meshes)
                 except Exception as e:
-                    logger.error(f"Material consolidation failed: {str(e)}")
+                    logger.error(f"Material consolidation failed:", exception=e)
                     self.report({'ERROR'}, t("Optimization.error.consolidation"))
                     return {'CANCELLED'}
                 progress.step("Consolidated materials")
@@ -121,7 +122,7 @@ class AvatarToolkit_OT_CombineMaterials(Operator):
                 try:
                     num_cleaned = self.clean_material_slots(meshes)
                 except Exception as e:
-                    logger.error(f"Material slot cleanup failed: {str(e)}")
+                    logger.error(f"Material slot cleanup failed:", exception=e)
                     self.report({'ERROR'}, t("Optimization.error.slot_cleanup"))
                     return {'CANCELLED'}
                 progress.step("Cleaned material slots")
@@ -129,7 +130,7 @@ class AvatarToolkit_OT_CombineMaterials(Operator):
                 try:
                     num_removed = clear_unused_data_blocks()
                 except Exception as e:
-                    logger.error(f"Data block cleanup failed: {str(e)}")
+                    logger.error(f"Data block cleanup failed:", exception=e)
                     self.report({'ERROR'}, t("Optimization.error.data_cleanup"))
                     return {'CANCELLED'}
                 progress.step("Removed unused data blocks")
@@ -142,8 +143,8 @@ class AvatarToolkit_OT_CombineMaterials(Operator):
                 return {'FINISHED'}
                 
         except Exception as e:
-            logger.error(f"Failed to combine materials: {str(e)}")
-            self.report({'ERROR'}, t("Optimization.error.combine_materials", error=str(e)))
+            logger.error(f"Failed to combine materials:", exception=e)
+            self.report({'ERROR'}, t("Optimization.error.combine_materials", error=traceback.format_exc()))
             return {'CANCELLED'}
 
     def consolidate_materials(self, meshes: List[Object]) -> int:

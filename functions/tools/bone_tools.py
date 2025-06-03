@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import re
 from bpy.types import Operator, Context, EditBone, Object, Armature, Mesh
@@ -99,7 +100,7 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
             return True
 
         except Exception as e:
-            self.report({'ERROR'}, t("Tools.digitigrade_error", error=str(e)))
+            self.report({'ERROR'}, t("Tools.digitigrade_error", error=traceback.format_exc()))
             return False
 
     def execute(self, context: Context) -> set[str]:

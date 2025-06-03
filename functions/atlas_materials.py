@@ -306,6 +306,6 @@ class AvatarToolKit_OT_AtlasMaterials(Operator):
             return {"FINISHED"}
             
         except Exception as e:
-            logger.error(f"Error creating material atlas: {str(e)}", exc_info=True)
+            logger.error(f"Error creating material atlas:", exception=e)
             self.report({'ERROR'}, t("TextureAtlas.atlas_error"))
             raise e

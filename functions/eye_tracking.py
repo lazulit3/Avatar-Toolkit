@@ -105,7 +105,7 @@ class CreateEyesAV3Button(bpy.types.Operator):
                 return {'FINISHED'}
 
             except Exception as e:
-                logger.error(f"Eye tracking setup failed: {str(e)}")
+                logger.error(f"Eye tracking setup failed:", exception=e)
                 return {'CANCELLED'}
 
 class CreateEyesSDK2Button(bpy.types.Operator):
@@ -197,7 +197,7 @@ class CreateEyesSDK2Button(bpy.types.Operator):
                 return {'FINISHED'}
 
             except Exception as e:
-                logger.error(f"Eye tracking setup failed: {str(e)}")
+                logger.error(f"Eye tracking setup failed:", exception=e)
                 return {'CANCELLED'}
 
 class EyeTrackingBackup:
@@ -223,7 +223,7 @@ class EyeTrackingBackup:
                 json.dump(self.bone_positions, f)
             return True
         except Exception as e:
-            logger.error(f"Backup failed: {str(e)}")
+            logger.error(f"Backup failed:", exception=e)
             return False
             
     def restore_bone_positions(self, armature) -> bool:
@@ -244,7 +244,7 @@ class EyeTrackingBackup:
                     
             return True
         except Exception as e:
-            logger.error(f"Restore failed: {str(e)}")
+            logger.error(f"Restore failed:", exception=e)
             return False
 
 class EyeTrackingValidator:

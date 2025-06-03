@@ -1,3 +1,4 @@
+import traceback
 import bpy
 from typing import Set, List, Tuple, ClassVar
 from bpy.types import Operator, Context, Object
@@ -52,8 +53,8 @@ class AvatarToolkit_OT_JoinAllMeshes(Operator):
                     return {'CANCELLED'}
                     
         except Exception as e:
-            logger.error(f"Failed to join meshes: {str(e)}")
-            self.report({'ERROR'}, t("Optimization.error.join_meshes", error=str(e)))
+            logger.error(f"Failed to join meshes:", exception=e)
+            self.report({'ERROR'}, t("Optimization.error.join_meshes", error=traceback.format_exc()))
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_JoinSelectedMeshes(Operator):
@@ -96,6 +97,6 @@ class AvatarToolkit_OT_JoinSelectedMeshes(Operator):
                     return {'CANCELLED'}
                 
         except Exception as e:
-            logger.error(f"Failed to join selected meshes: {str(e)}")
-            self.report({'ERROR'}, t("Optimization.error.join_selected", error=str(e)))
+            logger.error(f"Failed to join selected meshes:", exception=e)
+            self.report({'ERROR'}, t("Optimization.error.join_selected", error=traceback.format_exc()))
             return {'CANCELLED'}

@@ -1,3 +1,4 @@
+import traceback
 from types import FrameType
 import bpy
 import bpy_extras
@@ -92,15 +93,15 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
                     progress.step(t("Tools.convert_resonite.processing", name=bone.name))
 
         except Exception as e:
-            logger.error(f"Error during Resonite conversion: {str(e)}")
-            self.report({'ERROR'}, str(e))
+            logger.error(f"Error during Resonite conversion:", exception=e)
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
         finally:
             try:
                 bpy.ops.object.mode_set(mode='OBJECT')
             except Exception as e:
-                logger.warning(f"Error returning to object mode: {str(e)}")
+                logger.warning(f"Error returning to object mode:", exception=e)
 
         if translate_bone_fails > 0:
             logger.info(f"Conversion completed with {translate_bone_fails} untranslated bones")

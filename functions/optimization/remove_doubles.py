@@ -164,7 +164,7 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
             return {'RUNNING_MODAL'}
             
         except Exception as e:
-            logger.error(f"Error in execute: {str(e)}")
+            logger.error(f"Error in execute:", exception=e)
             return {'CANCELLED'}
 
     def modify_mesh(self, context: Context, mesh: MeshEntry) -> None:
@@ -188,7 +188,7 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
             mesh["mesh"].select_set(False)
             
         except Exception as e:
-            logger.error(f"Error in modify_mesh: {str(e)}")
+            logger.error(f"Error in modify_mesh:", exception=e)
 
     def modify_mesh_advanced(self, context: Context, mesh_entry: MeshEntry) -> int:
         """Advanced mesh modification with shape key handling"""
@@ -221,7 +221,7 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
             return len(final_merged_vertex_group)
             
         except Exception as e:
-            logger.error(f"Error in modify_mesh_advanced: {str(e)}")
+            logger.error(f"Error in modify_mesh_advanced:", exception=e)
             return 1
 
     def apply_final_merging(self, context: Context, mesh_entry: MeshEntry, vertex_group: list[int], merge_distance: float) -> None:
@@ -310,5 +310,5 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
             return {'RUNNING_MODAL'}
             
         except Exception as e:
-            logger.error(f"Error in modal: {str(e)}")
+            logger.error(f"Error in modal:", exception=e)
             return {'CANCELLED'}

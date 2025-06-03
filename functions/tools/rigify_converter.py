@@ -1,3 +1,4 @@
+import traceback
 import bpy
 from typing import Dict, List, Set, Optional, Tuple, Any
 from bpy.types import Operator, Context, Object, PoseBone, EditBone, Bone, Constraint
@@ -57,8 +58,8 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            logger.error(f"Failed to convert Rigify: {str(e)}", exc_info=True)
-            self.report({'ERROR'}, str(e))
+            logger.error(f"Failed to convert Rigify:", exception=e)
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
     def cleanup_extra_bones(self, armature: Object) -> None:

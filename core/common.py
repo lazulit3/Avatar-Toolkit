@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import numpy as np
 import threading
@@ -18,7 +19,7 @@ from bpy.utils import register_class
 from ..core.logging_setup import logger
 from ..core.translations import t
 from ..core.dictionaries import bone_names
-from .dictionaries import reverse_bone_lookup, bone_names
+from .dictionaries import reverse_bone_lookup, bone_names, simplify_bonename
 
 class SceneMatClass(PropertyGroup):
     mat: PointerProperty(type=Material)
@@ -201,8 +202,8 @@ def apply_pose_as_rest(context: Context, armature_obj: Object, meshes: List[Obje
             return True, t("Operation.pose_applied")
             
     except Exception as e:
-        logger.error(f"Error applying pose as rest: {str(e)}")
-        return False, str(e)
+        logger.error(f"Error applying pose as rest:", exception=e)
+        return False, traceback.format_exc()
     
 def apply_armature_to_mesh(armature_obj: Object, mesh_obj: Object) -> None:
     """Apply armature deformation to mesh"""
@@ -336,7 +337,7 @@ def join_mesh_objects(context: Context, meshes: List[Object], progress: Optional
         return joined_mesh
             
     except Exception as e:
-        logger.error(f"Failed to join meshes: {str(e)}")
+        logger.error(f"Failed to join meshes:", exception=e)
         return None
 
 
@@ -366,7 +367,7 @@ def fix_uv_coordinates(context: Context) -> None:
         logger.debug(f"UV Fix - Successfully processed {obj.name}")
 
     except Exception as e:
-        logger.warning(f"UV Fix - Skipped processing for {obj.name}: {str(e)}")
+        logger.warning(f"UV Fix - Skipped processing for {obj.name}:", exception=e)
 
     finally:
         bpy.ops.object.mode_set(mode='OBJECT')

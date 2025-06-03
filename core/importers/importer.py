@@ -16,7 +16,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 import importlib.util
 
 if importlib.util.find_spec("io_scene_valvesource") is not None:
-    from io_scene_valvesource.import_smd import SmdImporter
+    from io_scene_valvesource.import_smd import SmdImporter # type: ignore
 
 class ImportProgress:
     """Tracks and logs the progress of multi-file imports"""
@@ -84,7 +84,7 @@ def import_multi_files(
                 progress.update(file["name"])
                 
     except Exception as e:
-        logger.error(f"Import failed: {str(e)}", exc_info=True)
+        logger.error(f"Import failed:", exception=e)
         raise
 
 ImportMethod = Callable[[str, List[Dict[str, str]], str], None]

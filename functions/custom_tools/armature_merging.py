@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import numpy as np
 from typing import List, Optional, Dict, Set, Tuple, Any
@@ -72,8 +73,8 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             return {'FINISHED'}
 
         except Exception as e:
-            logger.error(f"Error merging armatures: {str(e)}")
-            self.report({'ERROR'}, str(e))
+            logger.error(f"Error merging armatures:", exception=e)
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
 def delete_rigidbodies_and_joints(armature: Object) -> None:
