@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Set, Tuple, Any
 from bpy.types import Context, Object, Operator, ArmatureModifier, EditBone, VertexGroup, Mesh, ShapeKey
 from ...core.logging_setup import logger
 from ...core.translations import t
+import traceback
 from ...core.common import (
     get_all_meshes,
     fix_zero_length_bones,
@@ -73,8 +74,8 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             return {'FINISHED'}
 
         except Exception as e:
-            logger.error(f"Error merging armatures: {str(e)}")
-            self.report({'ERROR'}, str(e))
+            logger.error(f"Error merging armatures:", exception=e)
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
 def delete_rigidbodies_and_joints(armature: Object) -> None:
@@ -149,6 +150,9 @@ def merge_armatures(
 
     # Store meshes that need to be reparented
     meshes_to_reparent = [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj.parent == merge_armature]
+
+    base_armature.hide_set(False)
+    merge_armature.hide_set(False)
     
     # Check transforms early
     if not validate_merge_armature_transforms(base_armature, merge_armature, None, tolerance):
@@ -170,6 +174,8 @@ def merge_armatures(
     fix_zero_length_bones(base_armature)
     fix_zero_length_bones(merge_armature)
 
+    
+
     # Store original parent relationships
     original_parents: Dict[str, Optional[str]] = {}
     merge_armature_data: bpy.types.Armature = merge_armature.data
@@ -187,9 +193,9 @@ def merge_armatures(
     for standard,bone_name in identified_bone_names_source.items():
         if standard in identifed_base_bone_names: #if the bone we are at on our merge armature has a standard name translation for the target armature
             merge_armature_data.edit_bones[bone_name].name = identifed_base_bone_names[standard] #change it's name to the one on the target merge to armature's coorisponding standard bone
-            bone_name = merge_armature_data.edit_bones[bone_name].name
+            bone_name = identifed_base_bone_names[standard]
             #adjust original parents list to point to the new name.
-            for child_bone in merge_armature_data.edit_bones[bone_name]:
+            for child_bone in merge_armature_data.edit_bones[bone_name].children:
                 original_parents[child_bone.name] = bone_name
             #then remove so it doesn't clash when merged.
             merge_armature_data.edit_bones.remove(merge_armature_data.edit_bones[bone_name])
@@ -201,6 +207,7 @@ def merge_armatures(
     bpy.ops.object.select_all(action='DESELECT')
     base_armature.select_set(True)
     merge_armature.select_set(True)
+    
     bpy.context.view_layer.objects.active = base_armature
     bpy.ops.object.join()
 

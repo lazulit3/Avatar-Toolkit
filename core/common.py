@@ -313,6 +313,7 @@ def join_mesh_objects(context: Context, meshes: List[Object], progress: Optional
             
         for mesh in valid_meshes:
             mesh.select_set(True)
+            mesh.hide_set(False)
         
         context.view_layer.objects.active = valid_meshes[0]
         

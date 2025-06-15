@@ -27,7 +27,7 @@ from ...core.armature_validation import validate_armature
 
 class AvatarToolkit_OT_ApplyModifierForShapkeyObj(bpy.types.Operator):
     """Operator for forcing the application of a modifier. A shortened way of saying \"Apply modifier for object with shapekeys\""""
-    bl_idname: str = 'avatar_toolkit.merge_armatures'
+    bl_idname: str = 'avatar_toolkit.apply_shapekey_force'
     bl_label: str = t('Tools.apply_modifier_on_shapekey_obj')
     bl_description: str = t('Tools.apply_modifier_on_shapekey_obj_desc')
     bl_options: Set[str] = {'REGISTER', 'UNDO'}
