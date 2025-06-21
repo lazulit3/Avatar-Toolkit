@@ -64,9 +64,12 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
             calf.parent = digi0
             
             # Calculate new positions
-            end = ((digi0.tail) + (digi2.tail-digi2.head))
+            
+            
+            end = (((digi0.tail-digi0.head)*(1/digi0.length))*(digi0.length+digi2.length) + digi0.head)
             calf.head = end
-            calf.tail = digi2.tail
+            calf.tail = (digi1.tail-digi1.head)+calf.head
+            digi2.tail = calf.tail
             
             # Reparent foot to new calf
             digi3.parent = calf
