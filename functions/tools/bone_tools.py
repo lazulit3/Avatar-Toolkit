@@ -78,7 +78,7 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
             digi1.tail = (digi0.tail)+(calf.tail-calf.head)
             
             # Mark original bones as non-IK
-            for bone in [digi0, digi1, digi2]:
+            for bone in [digi1, digi2]:
                 if "<noik>" not in bone.name:
                     bone.name = bone.name.split('.')[0] + "<noik>"
 
