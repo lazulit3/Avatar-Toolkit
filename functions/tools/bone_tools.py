@@ -11,6 +11,7 @@ from ...core.common import (
     remove_unused_vertex_groups,
     identify_bones,
 )
+import traceback
 from ...core.armature_validation import validate_armature, validate_bone_hierarchy
 
 def duplicate_bone(bone: EditBone) -> EditBone:
@@ -41,25 +42,7 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
                 context.mode == 'EDIT_ARMATURE' and
                 context.selected_editable_bones is not None and
                 len(context.selected_editable_bones) == 2)
-
-    def store_bone_chain_data(self, digi0: EditBone) -> Dict[str, Any]:
-        """Store initial bone chain data"""
-        chain_data = {}
-        current = digi0
-        while current:
-            chain_data[current.name] = {
-                'head': current.head.copy(),
-                'tail': current.tail.copy(),
-                'roll': current.roll,
-                'matrix': current.matrix.copy(),
-                'parent': current.parent.name if current.parent else None
-            }
-            if current.children:
-                current = current.children[0]
-            else:
-                break
-        return chain_data
-
+    
     def process_leg_chain(self, digi0: EditBone) -> bool:
         """Process a single leg bone chain"""
         try:
@@ -74,24 +57,22 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
                 bone.select = True
             bpy.ops.armature.roll_clear()
             bpy.ops.armature.select_all(action='DESELECT')
-
-            # Create thigh bone
-            thigh = duplicate_bone(digi0)
-            base_name = digi0.name.split('.')[0]
-            thigh.name = base_name
             
             # Create and position calf bone
             calf = duplicate_bone(digi1)
             calf.name = digi1.name.split('.')[0]
-            calf.parent = thigh
+            calf.parent = digi0
             
             # Calculate new positions
-            midpoint = (digi1.tail + digi2.tail) * 0.5
-            calf.head = thigh.tail
-            calf.tail = midpoint
+            end = ((digi0.tail) + (digi2.tail-digi2.head))
+            calf.head = end
+            calf.tail = digi2.tail
             
             # Reparent foot to new calf
             digi3.parent = calf
+
+            #enforce parallelagram onto midparts.
+            digi1.tail = (digi0.tail)+(calf.tail-calf.head)
             
             # Mark original bones as non-IK
             for bone in [digi0, digi1, digi2]:
@@ -101,7 +82,7 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
             return True
 
         except Exception as e:
-            self.report({'ERROR'}, t("Tools.digitigrade_error", error=str(e)))
+            self.report({'ERROR'}, t("Tools.digitigrade_error", error=traceback.format_exc()))
             return False
 
     def execute(self, context: Context) -> set[str]:
