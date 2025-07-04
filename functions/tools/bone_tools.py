@@ -77,6 +77,8 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
             #enforce parallelagram onto midparts.
             digi1.tail = (digi0.tail)+(calf.tail-calf.head)
             
+            calf.name = calf.name.replace("<noik>","")
+            
             # Mark original bones as non-IK
             for bone in [digi1, digi2]:
                 if "<noik>" not in bone.name:
