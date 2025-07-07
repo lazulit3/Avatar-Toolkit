@@ -8,11 +8,9 @@ from collections import OrderedDict
 from ..core.logging_setup import logger
 from ..core.translations import t
 from ..core.common import (
-    get_active_armature,
     get_all_meshes,
     validate_mesh_for_pose
 )
-from ..core.armature_validation import validate_armature
 
 class VisemeCache:
     """Manages caching of generated viseme shape data for performance optimization"""
@@ -140,12 +138,8 @@ class AvatarToolkit_OT_PreviewVisemes(Operator):
         props = context.scene.avatar_toolkit
         mesh_obj = bpy.data.objects.get(props.viseme_mesh)
         
-        # Validate armature and mesh
-        armature = get_active_armature(context)
-        if not armature:
-            return False
-        valid, _, _ = validate_armature(armature)
-        return valid and mesh_obj and mesh_obj.type == 'MESH'
+        # Validate mesh
+        return mesh_obj and mesh_obj.type == 'MESH'
     
     def execute(self, context: Context) -> Set[str]:
         props = context.scene.avatar_toolkit
@@ -198,12 +192,8 @@ class AvatarToolkit_OT_CreateVisemes(Operator):
         props = context.scene.avatar_toolkit
         mesh_obj = bpy.data.objects.get(props.viseme_mesh)
         
-        # Validate armature and mesh
-        armature = get_active_armature(context)
-        if not armature:
-            return False
-        valid, _, _ = validate_armature(armature)
-        return valid and mesh_obj and mesh_obj.type == 'MESH'
+        # Validate mesh
+        return mesh_obj and mesh_obj.type == 'MESH'
 
     def execute(self, context: Context) -> Set[str]:
         props = context.scene.avatar_toolkit
