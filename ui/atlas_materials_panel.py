@@ -6,6 +6,7 @@ from ..core.common import SceneMatClass, MaterialListBool, get_active_armature
 from ..functions.atlas_materials import AvatarToolKit_OT_AtlasMaterials
 from ..core.translations import t
 from ..core.logging_setup import logger
+import traceback
 
 class AvatarToolKit_OT_SelectAllMaterials(Operator):
     bl_idname = 'avatar_toolkit.select_all_materials'
@@ -80,8 +81,8 @@ class AvatarToolKit_OT_ExpandSectionMaterials(Operator):
                 logger.debug("Hiding material list")
             
             return {'FINISHED'}
-        except Exception as e:
-            logger.error(f"Error loading materials: {str(e)}", exc_info=True)
+        except Exception:
+            logger.error(f"Error loading materials: {traceback.format_exc()}", exc_info=True)
             self.report({'ERROR'}, t("TextureAtlas.load_error"))
             return {'CANCELLED'}
 

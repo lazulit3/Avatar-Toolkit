@@ -11,6 +11,7 @@ from typing import Optional, List, Tuple, Callable, Any, Union
 import bpy
 from bpy.types import Object, ID, Camera, Context
 from mathutils import Vector, Matrix, Euler
+import traceback
 
 from ..bpyutils import FnContext, Props
 from ....core.logging_setup import logger
@@ -87,8 +88,8 @@ class FnCamera:
             __add_driver(camera_object.data, "type", "not $is_perspective")
             __add_driver(camera_object.data, "lens", "$sensor_height/tan($angle/2)/2")
             logger.debug(f"Successfully added drivers to camera: {camera_object.name}")
-        except Exception as e:
-            logger.error(f"Failed to add drivers to camera {camera_object.name}: {str(e)}")
+        except Exception:
+            logger.error(f"Failed to add drivers to camera {camera_object.name}: {traceback.format_exc()}")
 
     @staticmethod
     def remove_drivers(camera_object: Object) -> None:
@@ -100,8 +101,8 @@ class FnCamera:
             camera_object.data.driver_remove("ortho_scale")
             camera_object.data.driver_remove("lens")
             logger.debug(f"Successfully removed drivers from camera: {camera_object.name}")
-        except Exception as e:
-            logger.error(f"Failed to remove drivers from camera {camera_object.name}: {str(e)}")
+        except Exception:
+            logger.error(f"Failed to remove drivers from camera {camera_object.name}: {traceback.format_exc()}")
 
 
 class MigrationFnCamera:
@@ -124,8 +125,8 @@ class MigrationFnCamera:
                 FnCamera.remove_drivers(camera_object)
                 FnCamera.add_drivers(camera_object)
                 updated_count += 1
-            except Exception as e:
-                logger.error(f"Failed to update MMD camera {camera_object.name}: {str(e)}")
+            except Exception:
+                logger.error(f"Failed to update MMD camera {camera_object.name}: {traceback.format_exc()}")
                 
         logger.info(f"Updated {updated_count} MMD cameras")
 
@@ -197,8 +198,8 @@ class MMDCamera:
             
             logger.info(f"Successfully converted {cameraObj.name} to MMD camera")
             return MMDCamera(empty)
-        except Exception as e:
-            logger.error(f"Failed to convert camera {cameraObj.name} to MMD camera: {str(e)}")
+        except Exception:
+            logger.error(f"Failed to convert camera {cameraObj.name} to MMD camera: {traceback.format_exc()}")
             raise
 
     @staticmethod
@@ -305,8 +306,8 @@ class MMDCamera:
             logger.info(f"Successfully created MMD camera animation with {frame_count} frames")
             return MMDCamera(mmd_cam_root)
             
-        except Exception as e:
-            logger.error(f"Failed to create MMD camera animation: {str(e)}")
+        except Exception:
+            logger.error(f"Failed to create MMD camera animation: {traceback.format_exc()}")
             raise
 
     def object(self) -> Object:

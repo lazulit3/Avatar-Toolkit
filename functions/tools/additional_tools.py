@@ -6,6 +6,7 @@ from ...core.translations import t
 from ...core.logging_setup import logger
 from ...core.common import get_active_armature, get_all_meshes, remove_unused_shapekeys
 from ...core.armature_validation import validate_armature
+import traceback
 
 class AvatarToolkit_OT_ApplyTransforms(Operator):
     """Apply all transformations to armature and associated meshes"""
@@ -42,9 +43,9 @@ class AvatarToolkit_OT_ApplyTransforms(Operator):
             self.report({'INFO'}, t("Tools.transforms_applied"))
             return {'FINISHED'}
             
-        except Exception as e:
-            logger.error(f"Failed to apply transforms: {str(e)}")
-            self.report({'ERROR'}, str(e))
+        except Exception:
+            logger.error(f"Failed to apply transforms: {traceback.format_exc()}")
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_CleanShapekeys(Operator):
@@ -86,7 +87,7 @@ class AvatarToolkit_OT_CleanShapekeys(Operator):
             self.report({'INFO'}, t("Tools.shapekeys_removed", count=removed_count))
             return {'FINISHED'}
             
-        except Exception as e:
-            logger.error(f"Failed to clean shape keys: {str(e)}")
-            self.report({'ERROR'}, str(e))
+        except Exception:
+            logger.error(f"Failed to clean shape keys: {traceback.format_exc()}")
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}

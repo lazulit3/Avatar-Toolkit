@@ -8,6 +8,7 @@ from ..core.common import SceneMatClass, MaterialListBool, ProgressTracker
 from ..core.packer.rectangle_packer import MaterialImageList, BinPacker
 from ..core.translations import t
 from ..core.logging_setup import logger
+import traceback
 
 class MaterialImageList:
     def __init__(self):
@@ -306,6 +307,6 @@ class AvatarToolKit_OT_AtlasMaterials(Operator):
             return {"FINISHED"}
             
         except Exception as e:
-            logger.error(f"Error creating material atlas: {str(e)}", exc_info=True)
+            logger.error(f"Error creating material atlas: {traceback.format_exc()}", exc_info=True)
             self.report({'ERROR'}, t("TextureAtlas.atlas_error"))
             raise e

@@ -14,6 +14,7 @@ from ..core.common import (
     process_armature_modifiers,
     ProgressTracker
 )
+import traceback
 from ..core.armature_validation import validate_armature
 
 class BatchPoseOperationMixin:
@@ -62,9 +63,9 @@ class AvatarToolkit_OT_StartPoseMode(Operator):
             bpy.ops.object.mode_set(mode='POSE')
             
             return {'FINISHED'}
-        except Exception as e:
-            logger.error(f"Failed to start pose mode: {str(e)}")
-            self.report({'ERROR'}, t("PoseMode.error.start", error=str(e)))
+        except Exception:
+            logger.error(f"Failed to start pose mode: {traceback.format_exc()}")
+            self.report({'ERROR'}, t("PoseMode.error.start", error=traceback.format_exc()))
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_StopPoseMode(Operator):
@@ -85,9 +86,9 @@ class AvatarToolkit_OT_StopPoseMode(Operator):
             bpy.ops.pose.select_all(action="INVERT")
             bpy.ops.object.mode_set(mode='OBJECT')
             return {'FINISHED'}
-        except Exception as e:
-            logger.error(f"Failed to stop pose mode: {str(e)}")
-            self.report({'ERROR'}, t("PoseMode.error.stop", error=str(e)))
+        except Exception:
+            logger.error(f"Failed to stop pose mode: {traceback.format_exc()}")
+            self.report({'ERROR'}, t("PoseMode.error.stop", error=traceback.format_exc()))
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_ApplyPoseAsRest(Operator, BatchPoseOperationMixin):
@@ -129,9 +130,9 @@ class AvatarToolkit_OT_ApplyPoseAsRest(Operator, BatchPoseOperationMixin):
                     progress.step(f"Processed {mesh_obj.name}")
 
             return {'FINISHED'}
-        except Exception as e:
-            logger.error(f"Failed to apply pose as shape key: {str(e)}")
-            self.report({'ERROR'}, t("PoseMode.error.shapekey", error=str(e)))
+        except Exception:
+            logger.error(f"Failed to apply pose as shape key: {traceback.format_exc()}")
+            self.report({'ERROR'}, t("PoseMode.error.shapekey", error=traceback.format_exc()))
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_ApplyPoseAsShapekey(Operator, BatchPoseOperationMixin):
@@ -160,7 +161,7 @@ class AvatarToolkit_OT_ApplyPoseAsShapekey(Operator, BatchPoseOperationMixin):
             
             logger.info("Successfully applied pose as rest")
             return {'FINISHED'}
-        except Exception as e:
-            logger.error(f"Failed to apply pose as rest: {str(e)}")
-            self.report({'ERROR'}, t("PoseMode.error.rest_pose", error=str(e)))
+        except Exception:
+            logger.error(f"Failed to apply pose as rest: {traceback.format_exc()}")
+            self.report({'ERROR'}, t("PoseMode.error.rest_pose", error=traceback.format_exc()))
             return {'CANCELLED'}

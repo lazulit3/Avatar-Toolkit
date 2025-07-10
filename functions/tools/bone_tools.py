@@ -10,19 +10,13 @@ from ...core.common import (
     restore_bone_transforms,
     remove_unused_vertex_groups,
     identify_bones,
+    duplicate_bone,
+    store_breaking_settings_armature,
+    restore_breaking_settings_armature,
 )
 import traceback
 from ...core.armature_validation import validate_armature, validate_bone_hierarchy
 
-def duplicate_bone(bone: EditBone) -> EditBone:
-    """Create a duplicate of the given bone"""
-    arm = bone.id_data
-    new_bone = arm.edit_bones.new(bone.name + "_copy")
-    new_bone.head = bone.head
-    new_bone.tail = bone.tail
-    new_bone.roll = bone.roll
-    new_bone.parent = bone.parent
-    return new_bone
 
 class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
     """Operator to convert standard legs to digitigrade setup"""
@@ -39,13 +33,15 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
             return False
         valid, _, _ = validate_armature(armature)
         return (valid and 
-                context.mode == 'EDIT_ARMATURE' and
+                (context.mode == 'EDIT_ARMATURE' or context.mode == 'POSE') and
                 context.selected_editable_bones is not None and
                 len(context.selected_editable_bones) == 2)
     
     def process_leg_chain(self, digi0: EditBone) -> bool:
         """Process a single leg bone chain"""
         try:
+            bpy.ops.object.mode_set(mode='EDIT')
+
             # Get bone chain
             digi1: EditBone = digi0.children[0]
             digi2: EditBone = digi1.children[0]
@@ -83,23 +79,23 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
             for bone in [digi1, digi2]:
                 if "<noik>" not in bone.name:
                     bone.name = bone.name.split('.')[0] + "<noik>"
-
             return True
 
         except Exception as e:
             self.report({'ERROR'}, t("Tools.digitigrade_error", error=traceback.format_exc()))
+            
             return False
 
     def execute(self, context: Context) -> set[str]:
         """Execute the digitigrade conversion"""
         bpy.ops.object.mode_set(mode='EDIT')
-        
+        data_breaking = store_breaking_settings_armature(context.armature)
         with ProgressTracker(context, len(context.selected_editable_bones), t("Tools.digitigrade")) as progress:
             for digi0 in context.selected_editable_bones:
                 progress.step(t("Tools.processing_leg", bone=digi0.name))
                 if not self.process_leg_chain(digi0):
                     return {'CANCELLED'}
-
+        restore_breaking_settings_armature(context.armature, data_breaking)
         self.report({'INFO'}, t("Tools.digitigrade_success"))
         return {'FINISHED'}
 
@@ -125,6 +121,8 @@ class AvatarToolKit_OT_DeleteBoneConstraints(Operator):
         armature = get_active_armature(context)
         bpy.ops.object.select_all(action='DESELECT')
         armature.select_set(True)
+        data_breaking = store_breaking_settings_armature(armature)
+
         context.view_layer.objects.active = armature
         bpy.ops.object.mode_set(mode='POSE')
         
@@ -135,6 +133,7 @@ class AvatarToolKit_OT_DeleteBoneConstraints(Operator):
                 constraints_removed += 1
 
         bpy.ops.object.mode_set(mode='OBJECT')
+        restore_breaking_settings_armature(armature, data_breaking)
         self.report({'INFO'}, t("Tools.clean_constraints_success", count=constraints_removed))
         return {'FINISHED'}
 
@@ -187,6 +186,8 @@ class AvatarToolKit_OT_RemoveZeroWeightBones(Operator):
         # Store initial transforms
         bpy.ops.object.mode_set(mode='EDIT')
         initial_transforms: Dict[str, Dict[str, Any]] = {}
+        data_breaking = store_breaking_settings_armature(armature)
+
         for bone in armature.data.edit_bones:
             initial_transforms[bone.name] = {
                 'head': bone.head.copy(),
@@ -246,7 +247,7 @@ class AvatarToolKit_OT_RemoveZeroWeightBones(Operator):
         if context.scene.avatar_toolkit.list_only_mode:
             self.populate_bone_list(context, zero_weight_bones)
             return {'FINISHED'}
-            
+        restore_breaking_settings_armature(armature, data_breaking)
         self.report({'INFO'}, t("Tools.clean_weights_success", count=removed_count))
         return {'FINISHED'}
 
@@ -276,6 +277,7 @@ class AvatarToolKit_OT_RemoveSelectedBones(Operator):
     
     def execute(self, context: Context) -> set[str]:
         armature = get_active_armature(context)
+        data_breaking = store_breaking_settings_armature(armature)
         toolkit = context.scene.avatar_toolkit
         
         selected_bones = [item.name for item in toolkit.zero_weight_bones 
@@ -288,7 +290,7 @@ class AvatarToolKit_OT_RemoveSelectedBones(Operator):
                 
         bpy.ops.object.mode_set(mode='OBJECT')
         toolkit.zero_weight_bones.clear()
-        
+        restore_breaking_settings_armature(armature, data_breaking)
         self.report({'INFO'}, t("Tools.bones_removed", count=len(selected_bones)))
         return {'FINISHED'}
 
@@ -315,7 +317,8 @@ class AvatarToolKit_OT_FlipCurrentKeyFrames(Operator):
 
     def execute(self, context: Context) -> set[str]:
         armature = get_active_armature(context)
-
+        data_breaking = store_breaking_settings_armature(armature)
+        
         
 
         armature_data: bpy.types.Armature = armature.data
@@ -380,6 +383,7 @@ class AvatarToolKit_OT_FlipCurrentKeyFrames(Operator):
                     #if armature.keyframe_insert(data_path=new_path, index=curve.array_index, frame=time):
                     continue
                 self.report({'ERROR'}, f"Keyframe insertion for key with data path \"{curve.data_path}\" and frame {time} failed!")
+                restore_breaking_settings_armature(armature, data_breaking)
                 return {'FINISHED'}
 
 
@@ -397,4 +401,5 @@ class AvatarToolKit_OT_FlipCurrentKeyFrames(Operator):
 
         # restore selection
         armature_data.bones.foreach_set("select", selected) 
+        restore_breaking_settings_armature(armature, data_breaking)
         return {'FINISHED'}

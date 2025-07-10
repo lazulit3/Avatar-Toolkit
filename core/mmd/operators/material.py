@@ -16,6 +16,7 @@ from ..core.exceptions import MaterialNotFoundError
 from ..core.material import FnMaterial
 from ..core.shader import _NodeGroupUtils
 from ....core.logging_setup import logger
+import traceback
 
 
 class ConvertMaterialsForCycles(Operator):
@@ -50,8 +51,8 @@ class ConvertMaterialsForCycles(Operator):
     def execute(self, context: Context) -> Set[str]:
         try:
             context.scene.render.engine = "CYCLES"
-        except Exception as e:
-            logger.error(f"Failed to change to Cycles render engine: {str(e)}")
+        except Exception:
+            logger.error(f"Failed to change to Cycles render engine: {traceback.format_exc()}")
             self.report({"ERROR"}, " * Failed to change to Cycles render engine.")
             return {"CANCELLED"}
             

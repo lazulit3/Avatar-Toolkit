@@ -9,6 +9,7 @@ from typing import Optional, Callable, Dict, List, Union, Set
 from ..common import clear_default_objects
 from ..translations import t
 from ..mmd.core.pmx.importer import PMXImporter
+import traceback
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -84,8 +85,8 @@ def import_multi_files(
                     progress_callback(fullpath)
                 progress.update(file["name"])
                 
-    except Exception as e:
-        logger.error(f"Import failed: {str(e)}", exc_info=True)
+    except Exception:
+        logger.error(f"Import failed: {traceback.format_exc()}", exc_info=True)
         raise
 
 ImportMethod = Callable[[str, List[Dict[str, str]], str], None]
@@ -230,6 +231,6 @@ def import_pmx_file(filepath: str) -> None:
     try:
         importer.execute(**import_settings)
         logger.info(f"Successfully imported PMX file: {filepath}")
-    except Exception as e:
-        logger.error(f"Failed to import PMX file: {str(e)}", exc_info=True)
+    except Exception:
+        logger.error(f"Failed to import PMX file: {traceback.format_exc()}", exc_info=True)
         raise

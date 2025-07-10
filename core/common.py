@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import numpy as np
 import threading
@@ -199,9 +200,9 @@ def apply_pose_as_rest(context: Context, armature_obj: Object, meshes: List[Obje
             
             return True, t("Operation.pose_applied")
             
-    except Exception as e:
-        logger.error(f"Error applying pose as rest: {str(e)}")
-        return False, str(e)
+    except Exception:
+        logger.error(f"Error applying pose as rest: {traceback.format_exc()}")
+        return False, traceback.format_exc()
     
 def apply_armature_to_mesh(armature_obj: Object, mesh_obj: Object) -> None:
     """Apply armature deformation to mesh"""
@@ -335,8 +336,8 @@ def join_mesh_objects(context: Context, meshes: List[Object], progress: Optional
         
         return joined_mesh
             
-    except Exception as e:
-        logger.error(f"Failed to join meshes: {str(e)}")
+    except Exception:
+        logger.error(f"Failed to join meshes: {traceback.format_exc()}")
         return None
 
 
@@ -365,8 +366,8 @@ def fix_uv_coordinates(context: Context) -> None:
             
         logger.debug(f"UV Fix - Successfully processed {obj.name}")
 
-    except Exception as e:
-        logger.warning(f"UV Fix - Skipped processing for {obj.name}: {str(e)}")
+    except Exception:
+        logger.warning(f"UV Fix - Skipped processing for {obj.name}: {traceback.format_exc()}")
 
     finally:
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -488,7 +489,6 @@ def fix_zero_length_bones(armature: Object) -> None:
     """Fix zero length bones by setting a minimum length"""
     if not armature:
         return
-        
     bpy.ops.object.mode_set(mode='EDIT')
     for bone in armature.data.edit_bones:
         if bone.length < 0.001:
@@ -631,6 +631,7 @@ def get_objects() -> bpy.types.BlendData:
 
 def duplicate_bone(bone: EditBone) -> EditBone:
     """Create a duplicate of the given bone"""
+
     new_bone: EditBone = bone.id_data.edit_bones.new(bone.name + "_copy")
     new_bone.head = bone.head.copy()
     new_bone.tail = bone.tail.copy()
@@ -642,14 +643,18 @@ def duplicate_bone(bone: EditBone) -> EditBone:
     new_bone.use_deform = bone.use_deform
     return new_bone
 
-#Binary tools
 
 
+class ArmatureData(Tuple[bool,bool]):
+    pass
 
+def store_breaking_settings_armature(armature: bpy.types.Object) -> ArmatureData:
+    armature_data: bpy.types.Armature = armature.data
+    return (armature_data.use_mirror_x, armature.pose.use_mirror_x)
 
-#encoding FrooxEngine/C# types in binary:
-
-
+def restore_breaking_settings_armature(armature: bpy.types.Object, data: ArmatureData) -> None:
+    armature_data: bpy.types.Armature = armature.data
+    armature_data.use_mirror_x, armature.pose.use_mirror_x = data
 
 
 

@@ -10,6 +10,7 @@ from typing import Optional, Dict, Tuple, Set, List, Any, Union, ClassVar
 from collections import OrderedDict
 from random import random
 from itertools import chain
+import traceback
 
 from ..core.logging_setup import logger
 from ..core.translations import t
@@ -104,8 +105,8 @@ class CreateEyesAV3Button(bpy.types.Operator):
                 self.report({'INFO'}, t('EyeTracking.success'))
                 return {'FINISHED'}
 
-            except Exception as e:
-                logger.error(f"Eye tracking setup failed: {str(e)}")
+            except Exception:
+                logger.error(f"Eye tracking setup failed: {traceback.format_exc()}")
                 return {'CANCELLED'}
 
 class CreateEyesSDK2Button(bpy.types.Operator):
@@ -197,7 +198,7 @@ class CreateEyesSDK2Button(bpy.types.Operator):
                 return {'FINISHED'}
 
             except Exception as e:
-                logger.error(f"Eye tracking setup failed: {str(e)}")
+                logger.error(f"Eye tracking setup failed: {traceback.format_exc()}")
                 return {'CANCELLED'}
 
 class EyeTrackingBackup:
@@ -222,8 +223,8 @@ class EyeTrackingBackup:
             with open(self.backup_path, 'w') as f:
                 json.dump(self.bone_positions, f)
             return True
-        except Exception as e:
-            logger.error(f"Backup failed: {str(e)}")
+        except Exception:
+            logger.error(f"Backup failed: {traceback.format_exc()}")
             return False
             
     def restore_bone_positions(self, armature) -> bool:
@@ -243,8 +244,8 @@ class EyeTrackingBackup:
                     bone.tail = positions['tail']
                     
             return True
-        except Exception as e:
-            logger.error(f"Restore failed: {str(e)}")
+        except Exception:
+            logger.error(f"Restore failed: {traceback.format_exc()}")
             return False
 
 class EyeTrackingValidator:

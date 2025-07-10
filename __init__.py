@@ -1,6 +1,7 @@
 import bpy
 from bpy.app.handlers import persistent
 
+
 modules = None
 ordered_classes = None
 
@@ -42,6 +43,10 @@ def register():
         log_level = get_preference("log_level", "WARNING")
         configure_logging(get_preference("enable_logging", False), log_level)
     
+    #this needs to be done last, or at least after whatever things this uses is imported - @989onan
+    from .functions.tools.apply_shapekey_to_basis import add_to_menu
+    bpy.types.MESH_MT_shape_key_context_menu.append(add_to_menu)
+
     print("Registration complete")
 
 def unregister():

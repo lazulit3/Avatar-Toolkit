@@ -4,6 +4,7 @@ import bpy_extras
 from numpy import double
 from typing import Set, Dict
 import re
+import traceback
 
 from .common import get_active_armature, ProgressTracker, identify_bones
 from bpy.types import Context, Operator
@@ -91,16 +92,16 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
 
                     progress.step(t("Tools.convert_resonite.processing", name=bone.name))
 
-        except Exception as e:
-            logger.error(f"Error during Resonite conversion: {str(e)}")
-            self.report({'ERROR'}, str(e))
+        except Exception:
+            logger.error(f"Error during Resonite conversion: {traceback.format_exc()}")
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
         finally:
             try:
                 bpy.ops.object.mode_set(mode='OBJECT')
-            except Exception as e:
-                logger.warning(f"Error returning to object mode: {str(e)}")
+            except Exception:
+                logger.warning(f"Error returning to object mode: {traceback.format_exc()}")
 
         if translate_bone_fails > 0:
             logger.info(f"Conversion completed with {translate_bone_fails} untranslated bones")

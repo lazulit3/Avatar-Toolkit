@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import math
 from typing import Dict, List, Set, Tuple, Optional, Any, Union
@@ -25,7 +26,7 @@ class AvatarToolkit_OT_StandardizeArmature(Operator):
     @classmethod
     def poll(cls, context: Context) -> bool:
         armature: Optional[Object] = get_active_armature(context)
-        return armature is not None and context.mode in {'OBJECT', 'EDIT_ARMATURE'}
+        return armature is not None and context.mode in {'OBJECT', 'EDIT_ARMATURE', 'POSE'}
     
     def invoke(self, context: Context, event: Any) -> Set[str]:
         logger.debug("Invoking standardize armature dialog")
@@ -99,20 +100,24 @@ class AvatarToolkit_OT_StandardizeArmature(Operator):
             
             if original_mode == 'EDIT_ARMATURE':
                 bpy.ops.object.mode_set(mode='EDIT')
+            if original_mode == 'POSE':
+                bpy.ops.object.mode_set(mode='POSE')
             
             return {'FINISHED'}
             
-        except Exception as e:
-            logger.error(f"Failed to standardize armature: {str(e)}")
-            self.report({'ERROR'}, str(e))
+        except Exception:
+            logger.error(f"Failed to standardize armature: {traceback.format_exc()}")
+            self.report({'ERROR'}, traceback.format_exc())
             
             try:
                 if original_mode == 'EDIT_ARMATURE':
                     bpy.ops.object.mode_set(mode='EDIT')
+                if original_mode == 'POSE':
+                    bpy.ops.object.mode_set(mode='POSE')
                 else:
                     bpy.ops.object.mode_set(mode='OBJECT')
-            except Exception as restore_error:
-                logger.error(f"Failed to restore original mode: {str(restore_error)}")
+            except Exception:
+                logger.error(f"Failed to restore original mode: {traceback.format_exc()}")
                 
             return {'CANCELLED'}
     

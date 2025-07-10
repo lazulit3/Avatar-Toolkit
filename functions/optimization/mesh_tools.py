@@ -11,6 +11,7 @@ from ...core.common import (
     ProgressTracker
 )
 from ...core.armature_validation import validate_armature
+import traceback
 
 class AvatarToolkit_OT_JoinAllMeshes(Operator):
     """Operator to join all meshes in the scene"""
@@ -51,9 +52,9 @@ class AvatarToolkit_OT_JoinAllMeshes(Operator):
                     self.report({'ERROR'}, t("Optimization.error.join_meshes"))
                     return {'CANCELLED'}
                     
-        except Exception as e:
-            logger.error(f"Failed to join meshes: {str(e)}")
-            self.report({'ERROR'}, t("Optimization.error.join_meshes", error=str(e)))
+        except Exception:
+            logger.error(f"Failed to join meshes: {traceback.format_exc()}")
+            self.report({'ERROR'}, t("Optimization.error.join_meshes", error=traceback.format_exc()))
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_JoinSelectedMeshes(Operator):
@@ -95,7 +96,7 @@ class AvatarToolkit_OT_JoinSelectedMeshes(Operator):
                     self.report({'ERROR'}, t("Optimization.error.join_selected"))
                     return {'CANCELLED'}
                 
-        except Exception as e:
-            logger.error(f"Failed to join selected meshes: {str(e)}")
-            self.report({'ERROR'}, t("Optimization.error.join_selected", error=str(e)))
+        except Exception:
+            logger.error(f"Failed to join selected meshes: {traceback.format_exc()}")
+            self.report({'ERROR'}, t("Optimization.error.join_selected", error=traceback.format_exc()))
             return {'CANCELLED'}

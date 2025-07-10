@@ -4,8 +4,9 @@ from typing import Set, List
 from bpy.types import Operator, Context, Armature, EditBone
 from ...core.translations import t
 from ...core.logging_setup import logger
-from ...core.common import get_active_armature, get_all_meshes, get_vertex_weights, transfer_vertex_weights
+from ...core.common import get_active_armature, get_all_meshes, get_vertex_weights, transfer_vertex_weights, store_breaking_settings_armature, restore_breaking_settings_armature
 from ...core.armature_validation import validate_armature
+import traceback
 
 class AvatarToolkit_OT_ConnectBones(Operator):
     """Connect disconnected bones in chain"""
@@ -23,8 +24,12 @@ class AvatarToolkit_OT_ConnectBones(Operator):
         return valid
         
     def execute(self, context: Context) -> Set[str]:
+        armature = get_active_armature(context)
+        data_breaking = store_breaking_settings_armature(armature)
         try:
-            armature = get_active_armature(context)
+            
+            
+
             logger.info("Starting bone connection operation")
             
             bpy.ops.object.mode_set(mode='EDIT')
@@ -47,12 +52,14 @@ class AvatarToolkit_OT_ConnectBones(Operator):
                         bones_connected += 1
                         
             bpy.ops.object.mode_set(mode='OBJECT')
+            restore_breaking_settings_armature(armature, data_breaking)
             self.report({'INFO'}, t("Tools.connect_bones_success", count=bones_connected))
             return {'FINISHED'}
             
-        except Exception as e:
-            logger.error(f"Failed to connect bones: {str(e)}")
-            self.report({'ERROR'}, str(e))
+        except Exception:
+            logger.error(f"Failed to connect bones: {traceback.format_exc()}")
+            self.report({'ERROR'}, traceback.format_exc())
+            restore_breaking_settings_armature(armature, data_breaking)
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_MergeToActive(Operator):
@@ -67,11 +74,15 @@ class AvatarToolkit_OT_MergeToActive(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        return context.mode == 'EDIT_ARMATURE' and context.active_bone
+        return (context.mode == 'EDIT_ARMATURE' or context.mode == 'POSE') and context.active_bone
         
     def execute(self, context: Context) -> Set[str]:
+        armature = get_active_armature(context)
+        data_breaking = store_breaking_settings_armature(armature)
+        
         try:
-            armature = get_active_armature(context)
+            bpy.ops.object.mode_set(mode='EDIT')
+            
             active_bone = context.active_bone
             selected_bones = [b for b in context.selected_editable_bones if b != active_bone]
             
@@ -102,11 +113,13 @@ class AvatarToolkit_OT_MergeToActive(Operator):
                 armature.data.edit_bones.remove(bone)
             
             self.report({'INFO'}, t("Tools.merge_to_active_success", count=len(selected_bones)))
+            restore_breaking_settings_armature(armature, data_breaking)
             return {'FINISHED'}
             
-        except Exception as e:
-            logger.error(f"Failed to merge bones: {str(e)}")
-            self.report({'ERROR'}, str(e))
+        except Exception:
+            logger.error(f"Failed to merge bones: {traceback.format_exc()}")
+            self.report({'ERROR'}, traceback.format_exc())
+            restore_breaking_settings_armature(armature, data_breaking)
             return {'CANCELLED'}
 
 class AvatarToolkit_OT_MergeToParent(Operator):
@@ -121,11 +134,13 @@ class AvatarToolkit_OT_MergeToParent(Operator):
         armature = get_active_armature(context)
         if not armature:
             return False
-        return context.mode == 'EDIT_ARMATURE'
+        return (context.mode == 'EDIT_ARMATURE' or context.mode == 'POSE')
         
     def execute(self, context: Context) -> Set[str]:
+        armature = get_active_armature(context)
+        data_breaking = store_breaking_settings_armature(armature)
         try:
-            armature = get_active_armature(context)
+            bpy.ops.object.mode_set(mode='EDIT')
             selected_bones = [b for b in context.selected_editable_bones if b.parent]
             
             if not selected_bones:
@@ -153,10 +168,12 @@ class AvatarToolkit_OT_MergeToParent(Operator):
                 armature.data.edit_bones.remove(bone)
                 merged_count += 1
             
+            restore_breaking_settings_armature(armature, data_breaking)
             self.report({'INFO'}, t("Tools.merge_to_parent_success", count=merged_count))
             return {'FINISHED'}
             
-        except Exception as e:
-            logger.error(f"Failed to merge bones: {str(e)}")
-            self.report({'ERROR'}, str(e))
+        except Exception:
+            logger.error(f"Failed to merge bones: {traceback.format_exc()}")
+            self.report({'ERROR'}, traceback.format_exc())
+            restore_breaking_settings_armature(armature, data_breaking)
             return {'CANCELLED'}

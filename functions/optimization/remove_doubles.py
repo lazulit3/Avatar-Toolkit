@@ -119,8 +119,8 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
             context.window_manager.modal_handler_add(self)
             return {'RUNNING_MODAL'}
             
-        except Exception as e:
-            logger.error(f"Error in execute: {str(e)}")
+        except Exception:
+            logger.error(f"Error in execute: {traceback.format_exc()}")
             return {'CANCELLED'}
 
     def modal(self, context: Context, event: Event) -> set[ModalReturnType]:

@@ -13,6 +13,8 @@ from ...core.common import (
     join_mesh_objects,
     remove_unused_shapekeys,
     identify_bones,
+    store_breaking_settings_armature,
+    restore_breaking_settings_armature,
 )
 from ...core.dictionaries import simplify_bonename
 
@@ -42,6 +44,9 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
                 logger.error(f"Armature not found: {merge_armature_name}")
                 self.report({'ERROR'}, t('MergeArmature.error.not_found', name=merge_armature_name))
                 return {'CANCELLED'}
+            #Store current armature settings that can mess us up.
+            data_breaking_base = store_breaking_settings_armature(base_armature)
+            data_breaking_merge = store_breaking_settings_armature(merge_armature)
 
             # Remove Rigid Bodies and Joints
             delete_rigidbodies_and_joints(base_armature)
@@ -70,7 +75,11 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             wm.progress_update(100)
             wm.progress_end()
 
+            restore_breaking_settings_armature(base_armature, data_breaking_base)
+            restore_breaking_settings_armature(merge_armature, data_breaking_merge)
+            
             self.report({'INFO'}, t('MergeArmature.success'))
+            
             return {'FINISHED'}
 
         except Exception as e:

@@ -11,6 +11,7 @@ from ..core.common import (
     get_all_meshes,
     validate_mesh_for_pose
 )
+import traceback
 
 class VisemeCache:
     """Manages caching of generated viseme shape data for performance optimization"""
@@ -211,9 +212,9 @@ class AvatarToolkit_OT_CreateVisemes(Operator):
             self.create_visemes(context, mesh)
             self.report({'INFO'}, t("Visemes.success"))
             return {'FINISHED'}
-        except Exception as e:
-            logger.error(f"Error creating visemes: {str(e)}")
-            self.report({'ERROR'}, str(e))
+        except Exception:
+            logger.error(f"Error creating visemes: {traceback.format_exc()}")
+            self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
         
     def create_visemes(self, context: Context, mesh: Object) -> None:

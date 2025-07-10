@@ -117,14 +117,11 @@ class AvatarToolkit_OT_ApplyModifierForShapkeyObj(bpy.types.Operator):
                 obj.select_set(True)
                 context.view_layer.objects.active = obj
                 bpy.ops.object.join_shapes()
-            except Exception as e:
+            except Exception:
                 
                 self.report({'ERROR'}, f"Shapekey joining failed!!")
                 print(f"Shapekey joining failed!!")
-                print(traceback.format_exc(e))
-                #clean up after critical failure
-                for shape in shapes: 
-                    bpy.data.objects.remove(shape)#faster than ops delete
+                print(traceback.format_exc())
                 
             #final clean up
             for shape in shapes: 
@@ -137,3 +134,5 @@ class AvatarToolkit_OT_ApplyModifierForShapkeyObj(bpy.types.Operator):
 
 
         return {'FINISHED'}
+    
+
