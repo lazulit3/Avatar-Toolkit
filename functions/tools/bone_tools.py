@@ -89,13 +89,13 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
     def execute(self, context: Context) -> set[str]:
         """Execute the digitigrade conversion"""
         bpy.ops.object.mode_set(mode='EDIT')
-        data_breaking = store_breaking_settings_armature(context.armature)
+        data_breaking = store_breaking_settings_armature(context.active_object)
         with ProgressTracker(context, len(context.selected_editable_bones), t("Tools.digitigrade")) as progress:
             for digi0 in context.selected_editable_bones:
                 progress.step(t("Tools.processing_leg", bone=digi0.name))
                 if not self.process_leg_chain(digi0):
                     return {'CANCELLED'}
-        restore_breaking_settings_armature(context.armature, data_breaking)
+        restore_breaking_settings_armature(context.active_object, data_breaking)
         self.report({'INFO'}, t("Tools.digitigrade_success"))
         return {'FINISHED'}
 
