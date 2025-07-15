@@ -639,7 +639,6 @@ def duplicate_bone(bone: EditBone) -> EditBone:
     new_bone.use_connect = bone.use_connect
     new_bone.use_local_location = bone.use_local_location
     new_bone.use_inherit_rotation = bone.use_inherit_rotation
-    new_bone.use_inherit_scale = bone.use_inherit_scale
     new_bone.use_deform = bone.use_deform
     return new_bone
 

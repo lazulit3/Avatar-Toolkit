@@ -16,7 +16,7 @@ def show_version_error_popup():
 def register():
     import bpy
     version = bpy.app.version
-    if version[0] > 4 or (version[0] == 4 and version[1] >= 5): 
+    if version[0] > 5 or (version[0] == 5 and version[1] >= 3): 
         show_version_error_popup()
         return
         

@@ -55,7 +55,10 @@ class AvatarToolKit_OT_CreateDigitigradeLegs(Operator):
             bpy.ops.armature.select_all(action='DESELECT')
             
             # Create and position calf bone
+            prev_connect = digi1.use_connect
+            digi1.use_connect = False
             calf = duplicate_bone(digi1)
+            digi1.use_connect = prev_connect
             calf.name = digi1.name.split('.')[0]
             calf.parent = digi0
             
