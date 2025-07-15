@@ -23,11 +23,11 @@ If you like what we do and want to help support the development of cats you can 
 
 ## Blender version support policies.
 
-You can find them on the wiki here [HERE](https://avatartoolkit.xyz/wiki.html?version=0.2.0#what-is-avatar-toolkits-version-support-policy)
+You can find them on the wiki here [HERE](https://avatartoolkit.xyz/legacywiki.html?version=0.2.1#what-is-avatar-toolkits-version-support-policy)
 
 ## Features
 
-See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/wiki.html)
+See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/legacywiki.html)
 
 ## Requirements
 
@@ -48,7 +48,7 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/wiki
 Currently None.
 
 ## Installation
-You can find out how to install Avatar Toolkit [here](https://avatartoolkit.xyz/wiki.html?version=0.2.0#how-to-install-avatar-toolkit)
+You can find out how to install Avatar Toolkit [here](https://avatartoolkit.xyz/legacywiki.html?version=0.2.0#how-to-install-avatar-toolkit)
 
 ## Help
 

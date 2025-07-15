@@ -1,3 +1,4 @@
+import traceback
 import bpy
 from bpy.types import Operator, Context, Object, ArmatureModifier, VertexGroup
 from mathutils import Vector

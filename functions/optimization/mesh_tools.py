@@ -1,3 +1,4 @@
+import traceback
 import bpy
 from typing import Set, List, Tuple, ClassVar
 from bpy.types import Operator, Context, Object

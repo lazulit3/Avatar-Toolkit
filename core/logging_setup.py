@@ -33,7 +33,7 @@ def configure_logging(enabled: bool = False, level: str = "WARNING") -> None:
         logger.addHandler(handler)
         
         def error_with_traceback(msg, *args, **kwargs):
-            if kwargs.get('exc_info', False) or isinstance(msg, Exception):
+            if isinstance(kwargs.get('exception', None), Exception):
                 full_msg = f"{msg}\n{traceback.format_exc()}"
                 _original_error(full_msg, *args, **{**kwargs, 'exc_info': False})
             else:

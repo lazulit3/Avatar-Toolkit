@@ -1,3 +1,4 @@
+import traceback
 from types import FrameType
 import bpy
 import bpy_extras

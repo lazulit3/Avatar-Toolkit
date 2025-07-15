@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import math
 from typing import Set, List

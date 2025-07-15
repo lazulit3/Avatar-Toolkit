@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import numpy as np
 from bpy.types import Operator, Context

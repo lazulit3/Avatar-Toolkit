@@ -16,9 +16,10 @@ from bpy.types import (Context, Object, Modifier, EditBone, Operator, Material,
 from functools import lru_cache
 from bpy.props import PointerProperty, IntProperty, StringProperty
 from bpy.utils import register_class
-from .logging_setup import logger
-from .translations import t
-from .dictionaries import reverse_bone_lookup, simplify_bonename
+from ..core.logging_setup import logger
+from ..core.translations import t
+from ..core.dictionaries import bone_names
+from .dictionaries import reverse_bone_lookup, bone_names, simplify_bonename
 
 class SceneMatClass(PropertyGroup):
     mat: PointerProperty(type=Material)

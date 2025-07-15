@@ -1,6 +1,7 @@
 # This code was taken from Cats Blender Plugin Unoffical, some of this code is by the original developers, however was improved by myself.
 # Didn't think it was necessary to re-make something that works well.
 
+import traceback
 import bpy
 from typing import Dict, List, Optional, Tuple, Any, Set, Union
 from bpy.types import Operator, Context, Object, ShapeKey

@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import numpy as np
 from typing import List, Optional, Dict, Set, Tuple, Any

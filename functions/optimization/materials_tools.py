@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import re
 from typing import Set, Dict, List, Optional, Tuple
@@ -121,6 +122,7 @@ class AvatarToolkit_OT_CombineMaterials(Operator):
                 
                 try:
                     num_cleaned = self.clean_material_slots(meshes)
+
                 except Exception:
                     logger.error(f"Material slot cleanup failed: {traceback.format_exc()}")
                     self.report({'ERROR'}, t("Optimization.error.slot_cleanup"))

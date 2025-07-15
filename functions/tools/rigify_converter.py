@@ -1,3 +1,4 @@
+import traceback
 import bpy
 from typing import Dict, List, Set, Optional, Tuple, Any
 from bpy.types import Operator, Context, Object, PoseBone, EditBone, Bone, Constraint
