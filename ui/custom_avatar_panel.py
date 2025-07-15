@@ -175,12 +175,12 @@ class AvatarToolKit_PT_CustomPanel(Panel):
         # Armature selection with better alignment
         row: UILayout = col.row(align=True)
         row.label(text=t('MergeArmature.into'), icon='ARMATURE_DATA')
-        row.operator("avatar_toolkit.search_merge_armature_into",
+        row.operator(AvatarToolkit_OT_SearchMergeArmatureInto.bl_idname,
                     text=toolkit.merge_armature_into)
 
         row: UILayout = col.row(align=True)
         row.label(text=t('MergeArmature.from'), icon='ARMATURE_DATA')
-        row.operator("avatar_toolkit.search_merge_armature",
+        row.operator(AvatarToolkit_OT_SearchMergeArmature.bl_idname,
                     text=toolkit.merge_armature)
 
         # Merge button with emphasis
@@ -188,7 +188,7 @@ class AvatarToolKit_PT_CustomPanel(Panel):
         col: UILayout = merge_box.column(align=True)
         row: UILayout = col.row(align=True)
         row.scale_y = 1.5
-        row.operator("avatar_toolkit.merge_armatures", icon='ARMATURE_DATA')
+        row.operator(AvatarToolkit_OT_MergeArmature.bl_idname, icon='ARMATURE_DATA')
 
     def draw_mesh_tools(self, layout: UILayout, context: Context) -> None:
         """Draw the mesh attachment tools section"""
@@ -213,17 +213,17 @@ class AvatarToolKit_PT_CustomPanel(Panel):
         # Selection rows with icons and better alignment
         row: UILayout = col.row(align=True)
         row.label(text=t('CustomPanel.select_armature'), icon='ARMATURE_DATA')
-        row.operator("avatar_toolkit.search_merge_armature_into",
+        row.operator(AvatarToolkit_OT_SearchMergeArmatureInto.bl_idname,
                     text=toolkit.merge_armature_into)
 
         row: UILayout = col.row(align=True)
         row.label(text=t('CustomPanel.select_mesh'), icon='MESH_DATA')
-        row.operator("avatar_toolkit.search_attach_mesh",
+        row.operator(AvatarToolkit_OT_SearchAttachMesh.bl_idname,
                     text=toolkit.attach_mesh)
 
         row: UILayout = col.row(align=True)
         row.label(text=t('CustomPanel.select_bone'), icon='BONE_DATA')
-        row.operator("avatar_toolkit.search_attach_bone",
+        row.operator(AvatarToolkit_OT_SearchAttachBone.bl_idname,
                     text=toolkit.attach_bone)
 
         # Attach button with emphasis
@@ -231,4 +231,4 @@ class AvatarToolKit_PT_CustomPanel(Panel):
         col: UILayout = attach_box.column(align=True)
         row: UILayout = col.row(align=True)
         row.scale_y = 1.5
-        row.operator("avatar_toolkit.attach_mesh", icon='ARMATURE_DATA')
+        row.operator(AvatarToolkit_OT_AttachMesh.bl_idname, icon='ARMATURE_DATA')

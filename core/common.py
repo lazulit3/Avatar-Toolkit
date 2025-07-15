@@ -201,8 +201,8 @@ def apply_pose_as_rest(context: Context, armature_obj: Object, meshes: List[Obje
             
             return True, t("Operation.pose_applied")
             
-    except Exception as e:
-        logger.error(f"Error applying pose as rest:", exception=e)
+    except Exception:
+        logger.error(f"Error applying pose as rest: {traceback.format_exc()}")
         return False, traceback.format_exc()
     
 def apply_armature_to_mesh(armature_obj: Object, mesh_obj: Object) -> None:
@@ -315,6 +315,7 @@ def join_mesh_objects(context: Context, meshes: List[Object], progress: Optional
             
         for mesh in valid_meshes:
             mesh.select_set(True)
+            mesh.hide_set(False)
         
         context.view_layer.objects.active = valid_meshes[0]
         
@@ -336,8 +337,8 @@ def join_mesh_objects(context: Context, meshes: List[Object], progress: Optional
         
         return joined_mesh
             
-    except Exception as e:
-        logger.error(f"Failed to join meshes:", exception=e)
+    except Exception:
+        logger.error(f"Failed to join meshes: {traceback.format_exc()}")
         return None
 
 
@@ -366,8 +367,8 @@ def fix_uv_coordinates(context: Context) -> None:
             
         logger.debug(f"UV Fix - Successfully processed {obj.name}")
 
-    except Exception as e:
-        logger.warning(f"UV Fix - Skipped processing for {obj.name}:", exception=e)
+    except Exception:
+        logger.warning(f"UV Fix - Skipped processing for {obj.name}: {traceback.format_exc()}")
 
     finally:
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -384,7 +385,7 @@ def clear_unused_data_blocks() -> int:
                       if isinstance(getattr(bpy.data, attr), bpy.types.bpy_prop_collection))
     return initial_count - final_count
 
-def identify_bones(arm_data: bpy.types.Armature, context: bpy.types.Context) -> Dict[str,str]:
+def identify_bones(arm_data: bpy.types.Armature) -> Dict[str,str]:
     """Identify bone names in an armature based on our reverse dictionary, so there is no confusion to what a bone is.
     Essentially makes a dictionary of keys from dictionaries.bone_names like "hips", and the corosponding value is the bone that can be mapped to that key."""
     returned: Dict[str,str] = {}
@@ -489,12 +490,29 @@ def fix_zero_length_bones(armature: Object) -> None:
     """Fix zero length bones by setting a minimum length"""
     if not armature:
         return
-        
     bpy.ops.object.mode_set(mode='EDIT')
     for bone in armature.data.edit_bones:
         if bone.length < 0.001:
             bone.length = 0.001
     bpy.ops.object.mode_set(mode='OBJECT')
+
+def remove_unused_vertex_groups(mesh: Object) -> int:
+    """Remove vertex groups with no weights"""
+    removed: int = 0
+    for vg in mesh.vertex_groups:
+        has_weights: bool = False
+        for vert in mesh.data.vertices:
+            for group in vert.groups:
+                if group.group == vg.index and group.weight > 0.001:
+                    has_weights = True
+                    break
+            if has_weights:
+                break
+        if not has_weights:
+            mesh.vertex_groups.remove(vg)
+            removed = removed+1
+
+    return removed
 
 def calculate_bone_orientation(mesh: Object, vertices: List[Any]) -> Tuple[Vector, float]:
     """Calculate optimal bone orientation based on mesh geometry"""
@@ -518,6 +536,18 @@ def add_armature_modifier(mesh: Object, armature: Object) -> None:
 
     modifier: Modifier = mesh.modifiers.new('Armature', 'ARMATURE')
     modifier.object = armature
+
+def get_modifiers(self: Optional[Any] = None, context: Optional[Context] = None) -> List[Tuple[str, str, str]]:
+    returned: List[Tuple[str, str, str]] = []
+    if context.active_object == None:
+        return returned
+    if context.active_object.type != "MESH":
+        return returned
+    for mod in context.active_object.modifiers:
+        returned.append((mod.name,mod.name,""))
+
+    return returned
+
 
 def get_shapekeys(context: Context, 
                   names: List[str], 
@@ -602,6 +632,7 @@ def get_objects() -> bpy.types.BlendData:
 
 def duplicate_bone(bone: EditBone) -> EditBone:
     """Create a duplicate of the given bone"""
+
     new_bone: EditBone = bone.id_data.edit_bones.new(bone.name + "_copy")
     new_bone.head = bone.head.copy()
     new_bone.tail = bone.tail.copy()
@@ -609,18 +640,21 @@ def duplicate_bone(bone: EditBone) -> EditBone:
     new_bone.use_connect = bone.use_connect
     new_bone.use_local_location = bone.use_local_location
     new_bone.use_inherit_rotation = bone.use_inherit_rotation
-    new_bone.use_inherit_scale = bone.use_inherit_scale
     new_bone.use_deform = bone.use_deform
     return new_bone
 
-#Binary tools
 
 
+class ArmatureData(Tuple[bool,bool]):
+    pass
 
+def store_breaking_settings_armature(armature: bpy.types.Object) -> ArmatureData:
+    armature_data: bpy.types.Armature = armature.data
+    return (armature_data.use_mirror_x, armature.pose.use_mirror_x)
 
-#encoding FrooxEngine/C# types in binary:
-
-
+def restore_breaking_settings_armature(armature: bpy.types.Object, data: ArmatureData) -> None:
+    armature_data: bpy.types.Armature = armature.data
+    armature_data.use_mirror_x, armature.pose.use_mirror_x = data
 
 
 

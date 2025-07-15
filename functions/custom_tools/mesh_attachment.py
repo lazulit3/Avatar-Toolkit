@@ -3,6 +3,7 @@ import bpy
 from bpy.types import Operator, Context, Object, ArmatureModifier, VertexGroup
 from mathutils import Vector
 from typing import Set, Optional, List, Any
+import traceback
 
 from ...core.logging_setup import logger
 from ...core.translations import t
@@ -11,7 +12,9 @@ from ...core.common import (
     get_all_meshes,
     ProgressTracker,
     calculate_bone_orientation,
-    add_armature_modifier
+    add_armature_modifier,
+    store_breaking_settings_armature,
+    restore_breaking_settings_armature,
 )
 from ...core.armature_validation import validate_armature
 
@@ -84,11 +87,11 @@ class AvatarToolkit_OT_AttachMesh(Operator):
                 attach_to_bone = armature.data.edit_bones.get(attach_bone_name)
                 if not attach_to_bone:
                     raise ValueError(t("AttachMesh.error.bone_not_found", bone=attach_bone_name))
-
+                data_breaking = store_breaking_settings_armature(armature)
                 mesh_bone = armature.data.edit_bones.new(mesh_name)
                 mesh_bone.parent = attach_to_bone
                 progress.step(t("AttachMesh.create_bone"))
-
+                
                 # Calculate bone placement
                 verts_in_group: List[Any] = [v for v in mesh.data.vertices 
                                 for g in v.groups if g.group == vg.index]
@@ -105,6 +108,7 @@ class AvatarToolkit_OT_AttachMesh(Operator):
                 mesh_bone.head = center
                 mesh_bone.tail = center + Vector((0, 0, max(0.1, dimensions.z)))
                 mesh_bone.roll = roll_angle
+                restore_breaking_settings_armature(armature, data_breaking)
                 progress.step(t("AttachMesh.position_bone"))
 
                 bpy.ops.object.mode_set(mode='OBJECT')
@@ -115,8 +119,8 @@ class AvatarToolkit_OT_AttachMesh(Operator):
             self.report({'INFO'}, t("AttachMesh.success"))
             return {'FINISHED'}
 
-        except Exception as e:
-            logger.error(f"Failed to attach mesh:", exception=e)
+        except Exception:
+            logger.error(f"Failed to attach mesh: {traceback.format_exc()}")
             self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 

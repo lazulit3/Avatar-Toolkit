@@ -7,6 +7,7 @@ from ...core.logging_setup import logger
 from ...core.translations import t
 from ...core.dictionaries import rigify_unity_names, rigify_basic_unity_names, rigify_unnecessary_bones
 from ...core.armature_validation import validate_armature
+import traceback
 
 class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
     """Convert Rigify armature to Unity-compatible format"""
@@ -57,8 +58,8 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
             self.report({'INFO'}, t("Tools.rigify_converted"))
             return {'FINISHED'}
             
-        except Exception as e:
-            logger.error(f"Failed to convert Rigify:", exception=e)
+        except Exception:
+            logger.error(f"Failed to convert Rigify: {traceback.format_exc()}", exc_info=True)
             self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 

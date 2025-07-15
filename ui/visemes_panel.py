@@ -3,6 +3,7 @@ from bpy.types import Panel, Context, UILayout, Object, ShapeKey
 from ..core.translations import t
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
 from ..core.common import get_active_armature
+from ..functions.visemes import AvatarToolkit_OT_PreviewVisemes, AvatarToolkit_OT_CreateVisemes
 
 class AvatarToolKit_PT_VisemesPanel(Panel):
     """Panel containing viseme creation and preview tools"""
@@ -65,11 +66,11 @@ class AvatarToolKit_PT_VisemesPanel(Panel):
             col.separator()
 
         preview_text: str = t("Visemes.stop_preview") if props.viseme_preview_mode else t("Visemes.start_preview")
-        col.operator("avatar_toolkit.preview_visemes", text=preview_text, icon='HIDE_OFF')
+        col.operator(AvatarToolkit_OT_PreviewVisemes.bl_idname, text=preview_text, icon='HIDE_OFF')
 
         # Create Box
         create_box: UILayout = layout.box()
         col: UILayout = create_box.column(align=True)
         col.label(text=t("Visemes.create_label"), icon='ADD')
         col.separator(factor=0.5)
-        col.operator("avatar_toolkit.create_visemes", icon='ADD')
+        col.operator(AvatarToolkit_OT_CreateVisemes.bl_idname, icon='ADD')

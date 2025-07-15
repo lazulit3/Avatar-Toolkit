@@ -6,6 +6,7 @@ import numpy as np
 import math
 from ...core.translations import t
 from ...core.logging_setup import logger
+import traceback
 
 class GenerateLoopTreeResult(TypedDict):
     tree: Dict[str, Set[str]]
@@ -30,6 +31,8 @@ class AvatarToolkit_OT_AlignUVEdgesToTarget(Operator):
             if obj.type != "MESH":
                 return False
         if not context.space_data:
+            return False
+        if not hasattr(context.space_data, "show_uvedit"):
             return False
         if not context.space_data.show_uvedit:
             return False
@@ -245,8 +248,8 @@ class AvatarToolkit_OT_AlignUVEdgesToTarget(Operator):
 
                 logger.info(f"Finished mesh {source} for UV's")
 
-            except Exception as e:
-                logger.error(f"Error processing source {source}:", exception=e)
+            except Exception:
+                logger.error(f"Error processing source {source}: {traceback.format_exc()}")
                 return {'CANCELLED'}
 
         bpy.ops.object.mode_set(mode=prev_mode)

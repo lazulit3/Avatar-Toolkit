@@ -4,6 +4,7 @@ from bpy.types import Operator, Context
 from ...core.translations import t
 from ...core.common import get_active_armature
 from ...core.armature_validation import validate_armature
+import traceback
 
 class AvatarToolKit_OT_SeparateByMaterials(Operator):
     """Operator to separate mesh by materials"""
@@ -33,7 +34,7 @@ class AvatarToolKit_OT_SeparateByMaterials(Operator):
             bpy.ops.object.mode_set(mode='OBJECT')
             self.report({'INFO'}, t("Tools.separate_materials_success"))
             return {'FINISHED'}
-        except Exception as e:
+        except Exception:
             self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
@@ -65,6 +66,6 @@ class AvatarToolKit_OT_SeparateByLooseParts(Operator):
             bpy.ops.object.mode_set(mode='OBJECT')
             self.report({'INFO'}, t("Tools.separate_loose_success"))
             return {'FINISHED'}
-        except Exception as e:
+        except Exception:
             self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}

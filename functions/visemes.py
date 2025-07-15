@@ -9,11 +9,10 @@ from collections import OrderedDict
 from ..core.logging_setup import logger
 from ..core.translations import t
 from ..core.common import (
-    get_active_armature,
     get_all_meshes,
     validate_mesh_for_pose
 )
-from ..core.armature_validation import validate_armature
+import traceback
 
 class VisemeCache:
     """Manages caching of generated viseme shape data for performance optimization"""
@@ -125,7 +124,7 @@ class VisemePreview:
         cls._preview_shapes = None
         cls._mesh_name = ""
 
-class ATOOLKIT_OT_preview_visemes(Operator):
+class AvatarToolkit_OT_PreviewVisemes(Operator):
     """Operator for previewing viseme shapes in real-time"""
     bl_idname: str = "avatar_toolkit.preview_visemes"
     bl_label: str = t("Visemes.preview_label")
@@ -141,12 +140,8 @@ class ATOOLKIT_OT_preview_visemes(Operator):
         props = context.scene.avatar_toolkit
         mesh_obj = bpy.data.objects.get(props.viseme_mesh)
         
-        # Validate armature and mesh
-        armature = get_active_armature(context)
-        if not armature:
-            return False
-        valid, _, _ = validate_armature(armature)
-        return valid and mesh_obj and mesh_obj.type == 'MESH'
+        # Validate mesh
+        return mesh_obj and mesh_obj.type == 'MESH'
     
     def execute(self, context: Context) -> Set[str]:
         props = context.scene.avatar_toolkit
@@ -182,7 +177,7 @@ def validate_deformation(mesh, mix_data):
     mesh_size = max(mesh.dimensions)
     return max_deform < (mesh_size * 0.4)
 
-class ATOOLKIT_OT_create_visemes(Operator):
+class AvatarToolkit_OT_CreateVisemes(Operator):
     """Operator for generating VRChat-compatible viseme shape keys"""
     bl_idname: str = "avatar_toolkit.create_visemes"
     bl_label: str = t("Visemes.create_label")
@@ -199,12 +194,8 @@ class ATOOLKIT_OT_create_visemes(Operator):
         props = context.scene.avatar_toolkit
         mesh_obj = bpy.data.objects.get(props.viseme_mesh)
         
-        # Validate armature and mesh
-        armature = get_active_armature(context)
-        if not armature:
-            return False
-        valid, _, _ = validate_armature(armature)
-        return valid and mesh_obj and mesh_obj.type == 'MESH'
+        # Validate mesh
+        return mesh_obj and mesh_obj.type == 'MESH'
 
     def execute(self, context: Context) -> Set[str]:
         props = context.scene.avatar_toolkit
@@ -222,8 +213,8 @@ class ATOOLKIT_OT_create_visemes(Operator):
             self.create_visemes(context, mesh)
             self.report({'INFO'}, t("Visemes.success"))
             return {'FINISHED'}
-        except Exception as e:
-            logger.error(f"Error creating visemes:", exception=e)
+        except Exception:
+            logger.error(f"Error creating visemes: {traceback.format_exc()}")
             self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
         

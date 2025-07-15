@@ -43,6 +43,13 @@ def update_logging_state(self: PropertyGroup, context: Context) -> None:
     from .logging_setup import configure_logging
     configure_logging(self.enable_logging)
 
+def update_log_level(self: PropertyGroup, context: Context) -> None:
+    """Updates log level and configures logging"""
+    logger.info(f"Updating log level to: {self.log_level}")
+    save_preference("log_level", self.log_level)
+    from .logging_setup import configure_logging
+    configure_logging(self.enable_logging, self.log_level)
+
 
 def update_shape_intensity(self: PropertyGroup, context: Context) -> None:
     """Updates shape key intensity and refreshes preview"""
@@ -586,6 +593,19 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         name=t("Tools.standardize_fix_scale"),
         description=t("Tools.standardize_fix_scale_desc"),
         default=True
+    )
+
+    log_level: EnumProperty(
+        name=t("Settings.log_level"),
+        description=t("Settings.log_level_desc"),
+        items=[
+            ('DEBUG', t("Settings.log_level.debug"), t("Settings.log_level.debug_desc")),
+            ('INFO', t("Settings.log_level.info"), t("Settings.log_level.info_desc")),
+            ('WARNING', t("Settings.log_level.warning"), t("Settings.log_level.warning_desc")),
+            ('ERROR', t("Settings.log_level.error"), t("Settings.log_level.error_desc")),
+        ],
+        default=get_preference("log_level", "WARNING"),
+        update=update_log_level
     )
 
 def register() -> None:

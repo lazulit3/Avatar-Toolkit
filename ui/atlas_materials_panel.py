@@ -6,6 +6,7 @@ from ..core.common import SceneMatClass, MaterialListBool, get_active_armature
 from ..functions.atlas_materials import AvatarToolKit_OT_AtlasMaterials
 from ..core.translations import t
 from ..core.logging_setup import logger
+import traceback
 
 class AvatarToolKit_OT_SelectAllMaterials(Operator):
     bl_idname = 'avatar_toolkit.select_all_materials'
@@ -80,8 +81,8 @@ class AvatarToolKit_OT_ExpandSectionMaterials(Operator):
                 logger.debug("Hiding material list")
             
             return {'FINISHED'}
-        except Exception as e:
-            logger.error(f"Error loading materials:", exception=e)
+        except Exception:
+            logger.error(f"Error loading materials: {traceback.format_exc()}", exc_info=True)
             self.report({'ERROR'}, t("TextureAtlas.load_error"))
             return {'CANCELLED'}
 
@@ -97,14 +98,14 @@ class AvatarToolKit_UL_MaterialTextureAtlasProperties(UIList):
         row = layout.row(align=True)
         row.scale_y = 1.2
         
-        row.operator("avatar_toolkit.select_all_materials", text="", icon='CHECKBOX_HLT', 
+        row.operator(AvatarToolKit_OT_SelectAllMaterials.bl_idname, text="", icon='CHECKBOX_HLT', 
                     emboss=True).tooltip = t("TextureAtlas.select_all_tooltip")
-        row.operator("avatar_toolkit.select_none_materials", text="", icon='CHECKBOX_DEHLT', 
+        row.operator(AvatarToolKit_OT_SelectNoneMaterials.bl_idname, text="", icon='CHECKBOX_DEHLT', 
                     emboss=True).tooltip = t("TextureAtlas.select_none_tooltip")
         row.separator(factor=0.5)
-        row.operator("avatar_toolkit.expand_all_materials", text="", icon='DISCLOSURE_TRI_DOWN', 
+        row.operator(AvatarToolKit_OT_ExpandAllMaterials.bl_idname, text="", icon='DISCLOSURE_TRI_DOWN', 
                     emboss=True).tooltip = t("TextureAtlas.expand_all_tooltip")
-        row.operator("avatar_toolkit.collapse_all_materials", text="", icon='DISCLOSURE_TRI_RIGHT', 
+        row.operator(AvatarToolKit_OT_CollapseAllMaterials.bl_idname, text="", icon='DISCLOSURE_TRI_RIGHT', 
                     emboss=True).tooltip = t("TextureAtlas.collapse_all_tooltip")
         
         row.separator(factor=1.0)

@@ -19,6 +19,7 @@ from ...core.common import (
     ProgressTracker
 )
 from ...core.armature_validation import validate_armature
+import traceback
 
 def textures_match(tex1: ShaderNodeTexImage, tex2: ShaderNodeTexImage) -> bool:
     """Compare two texture nodes for matching properties and image data"""
@@ -113,24 +114,25 @@ class AvatarToolkit_OT_CombineMaterials(Operator):
             with ProgressTracker(context, 4, "Combining Materials") as progress:         
                 try:
                     num_combined = self.consolidate_materials(meshes)
-                except Exception as e:
-                    logger.error(f"Material consolidation failed:", exception=e)
+                except Exception:
+                    logger.error(f"Material consolidation failed: {traceback.format_exc()}")
                     self.report({'ERROR'}, t("Optimization.error.consolidation"))
                     return {'CANCELLED'}
                 progress.step("Consolidated materials")
                 
                 try:
                     num_cleaned = self.clean_material_slots(meshes)
-                except Exception as e:
-                    logger.error(f"Material slot cleanup failed:", exception=e)
+
+                except Exception:
+                    logger.error(f"Material slot cleanup failed: {traceback.format_exc()}")
                     self.report({'ERROR'}, t("Optimization.error.slot_cleanup"))
                     return {'CANCELLED'}
                 progress.step("Cleaned material slots")
                 
                 try:
                     num_removed = clear_unused_data_blocks()
-                except Exception as e:
-                    logger.error(f"Data block cleanup failed:", exception=e)
+                except Exception:
+                    logger.error(f"Data block cleanup failed: {traceback.format_exc()}")
                     self.report({'ERROR'}, t("Optimization.error.data_cleanup"))
                     return {'CANCELLED'}
                 progress.step("Removed unused data blocks")
@@ -142,8 +144,8 @@ class AvatarToolkit_OT_CombineMaterials(Operator):
                 
                 return {'FINISHED'}
                 
-        except Exception as e:
-            logger.error(f"Failed to combine materials:", exception=e)
+        except Exception:
+            logger.error(f"Failed to combine materials: {traceback.format_exc()}")
             self.report({'ERROR'}, t("Optimization.error.combine_materials", error=traceback.format_exc()))
             return {'CANCELLED'}
 

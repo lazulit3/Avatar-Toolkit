@@ -1,6 +1,7 @@
 import bpy
 from bpy.types import Panel, Context, UILayout
 from ..core.translations import t
+from .main_panel import CATEGORY_NAME
 
 class AvatarToolKit_PT_UVPanel(Panel):
     """Main UV Tools panel for Avatar Toolkit"""
@@ -8,7 +9,7 @@ class AvatarToolKit_PT_UVPanel(Panel):
     bl_idname = "OBJECT_PT_avatar_toolkit_uv_main"
     bl_space_type = 'IMAGE_EDITOR'
     bl_region_type = 'UI'
-    bl_category = "Avatar Toolkit"
+    bl_category = CATEGORY_NAME
 
     def draw(self, context: Context) -> None:
         layout: UILayout = self.layout

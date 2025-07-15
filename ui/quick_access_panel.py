@@ -23,7 +23,10 @@ from ..functions.pose_mode import (
     AvatarToolkit_OT_ApplyPoseAsShapekey,
     AvatarToolkit_OT_ApplyPoseAsRest
 )
-from ..core.armature_validation import validate_armature
+from ..core.armature_validation import validate_armature, AvatarToolkit_OT_ValidateTPose
+from ..core.importers.importer import AvatarToolKit_OT_Import
+from ..core.resonite_utils import AvatarToolKit_OT_ExportResonite
+from ..functions.tools.standardize_armature import AvatarToolkit_OT_StandardizeArmature
 
 class AvatarToolKit_OT_ExportFBX(Operator):
     """Export selected objects as FBX"""
@@ -41,8 +44,8 @@ class AvatarToolKit_MT_ExportMenu(Menu):
 
     def draw(self, context: Context) -> None:
         layout: UILayout = self.layout
-        layout.operator("avatar_toolkit.export_fbx", text=t("QuickAccess.export_fbx"))
-        layout.operator("avatar_toolkit.export_resonite", text=t("QuickAccess.export_resonite"))
+        layout.operator(AvatarToolKit_OT_ExportFBX.bl_idname, text=t("QuickAccess.export_fbx"))
+        layout.operator(AvatarToolKit_OT_ExportResonite.bl_idname, text=t("QuickAccess.export_resonite"))
 
 class AvatarToolKit_OT_ExportMenu(Operator):
     """Open the export menu"""
@@ -86,16 +89,33 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         if active_armature:
             is_valid, messages, is_acceptable, hierarchy_messages, scale_messages, non_standard_messages = validate_armature(active_armature, detailed_messages=True)
             
+            # Check if this is a PMX model
+            is_pmx_model = False
+            if hasattr(active_armature, 'mmd_type') or (hasattr(active_armature, 'parent') and active_armature.parent and hasattr(active_armature.parent, 'mmd_type')):
+                is_pmx_model = True
+            
             info_box = col.box()
+            
+            # If it's a PMX model, display a prominent notice
+            if is_pmx_model:
+                pmx_box = info_box.box()
+                pmx_box.label(text=t("Armature.validation.pmx_model_detected"), icon='INFO')
+                
+                validation_mode = context.scene.avatar_toolkit.validation_mode
+                if validation_mode == 'STRICT':
+                    pmx_box.label(text=t("Armature.validation.pmx_model_strict"))
+                    pmx_box.label(text=t("Armature.validation.pmx_model_standardize"))
+                else:
+                    pmx_box.label(text=t("Armature.validation.pmx_model_basic"))
             
             if not is_valid:
                 # Display non-standard bones and hierarchy issues
-                if len(messages) > 1:
+                if messages and len(messages) > 0:
                     # Found Bones section
                     validation_box = info_box.box()
                     row = validation_box.row()
                     row.prop(props, "show_found_bones", text=t("Validation.section.found_bones"), icon='TRIA_DOWN' if props.show_found_bones else 'TRIA_RIGHT', emboss=False)
-                    if props.show_found_bones:
+                    if props.show_found_bones and len(messages) > 0:
                         for line in messages[0].split('\n'):
                             validation_box.label(text=line)
                     
@@ -124,15 +144,31 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                     row.prop(props, "show_non_standard", text=t("Validation.section.non_standard"), 
                             icon='TRIA_DOWN' if props.show_non_standard else 'TRIA_RIGHT', emboss=False)
                     if props.show_non_standard:
-                        if non_standard_messages:
+                        if non_standard_messages and len(non_standard_messages) > 0:
                             for message in non_standard_messages:
                                 for line in message.split('\n'):
                                     sub_row = validation_box.row()
                                     sub_row.alert = True
                                     sub_row.label(text=line)
                         else:
-                            sub_row = validation_box.row()
-                            sub_row.label(text=t("Validation.no_non_standard_issues"))
+                            # For PMX models, if no non-standard messages but it's a PMX model,
+                            # we should still indicate there might be non-standard bones
+                            if is_pmx_model:
+                                sub_row = validation_box.row()
+                                sub_row.alert = True
+                                sub_row.label(text=t("Armature.validation.pmx_model_basic"))
+                                
+                                sub_row = validation_box.row()
+                                sub_row.alert = True
+                                sub_row.label(text=t("Armature.validation.pmx_model_strict"))
+                                
+                                sub_row = validation_box.row()
+                                sub_row.alert = True
+                                sub_row.label(text=t("Armature.validation.pmx_model_standardize"))
+                                
+                            else:
+                                sub_row = validation_box.row()
+                                sub_row.label(text=t("Validation.no_non_standard_issues"))
                             
                     # Hierarchy Issues section
                     validation_box = info_box.box()
@@ -170,7 +206,7 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                     col = pose_box.column(align=True)
                     col.label(text=t("Validation.tpose.label"), icon='ARMATURE_DATA')
                     col.separator(factor=0.5)
-                    col.operator("avatar_toolkit.validate_tpose", icon='CHECKMARK')
+                    col.operator(AvatarToolkit_OT_ValidateTPose.bl_idname, icon='CHECKMARK')
 
                     if props.show_tpose_validation:
                         validation_box = col.box()
@@ -187,9 +223,14 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                                 row.label(text=msg.name)
                 else:
                     # If no specific issues, show acceptable message
-                    info_box.label(text=messages[0], icon='INFO')
-                    info_box.label(text=messages[1])
-                    info_box.label(text=messages[2])
+                    if messages and len(messages) > 0:
+                        info_box.label(text=messages[0], icon='INFO')
+                        if len(messages) > 1:
+                            info_box.label(text=messages[1])
+                        if len(messages) > 2:
+                            info_box.label(text=messages[2])
+                    else:
+                        info_box.label(text=t("Validation.no_messages"), icon='INFO')
             elif is_valid and not is_acceptable:
                 row = info_box.row()
                 split = row.split(factor=0.6)
@@ -201,13 +242,20 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                     info_box.label(text=t("QuickAccess.pose_bones_available"), icon='POSE_HLT')
             elif is_valid and is_acceptable:
                 # Show acceptable standard message
-                info_box.label(text=messages[0], icon='INFO')
-                info_box.label(text=messages[1])
-                info_box.label(text=messages[2])
+                if messages and len(messages) > 0:
+                    info_box.label(text=messages[0], icon='INFO')
+                    
+                    # Only try to access additional messages if they exist
+                    if len(messages) > 1:
+                        info_box.label(text=messages[1])
+                    if len(messages) > 2:
+                        info_box.label(text=messages[2])
+                else:
+                    info_box.label(text=t("Validation.no_messages"), icon='INFO')
                 
                 # Add standardize button
                 standardize_box = info_box.box()
-                standardize_box.operator("avatar_toolkit.standardize_armature", 
+                standardize_box.operator(AvatarToolkit_OT_StandardizeArmature.bl_idname, 
                                     text=t("QuickAccess.standardize_armature"),
                                     icon='MODIFIER')
 
@@ -247,5 +295,6 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         # Import/Export Buttons
         button_row: UILayout = col.row(align=True)
         button_row.scale_y = 1.5
-        button_row.operator("avatar_toolkit.import", text=t("QuickAccess.import"), icon='IMPORT')
-        button_row.operator("avatar_toolkit.export", text=t("QuickAccess.export"), icon='EXPORT')
+        button_row.operator(AvatarToolKit_OT_Import.bl_idname, text=t("QuickAccess.import"), icon='IMPORT')
+        button_row.operator(AvatarToolKit_OT_ExportMenu.bl_idname, text=t("QuickAccess.export"), icon='EXPORT')
+

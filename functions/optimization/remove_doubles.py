@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import numpy as np
 from typing import List, TypedDict, Any, Literal, TypeAlias, cast
@@ -9,6 +10,8 @@ from ...core.common import (
     get_all_meshes,
 )
 from ...core.armature_validation import validate_armature
+import bmesh
+import mathutils
 
 # Constants
 MERGE_ITERATION_COUNT = 20
@@ -19,83 +22,36 @@ ModalReturnType: TypeAlias = Literal['RUNNING_MODAL', 'FINISHED', 'CANCELLED']
 
 class MeshEntry(TypedDict):
     mesh: Object
-    shapekeys: list[str]
-    vertices: int
-    cur_vertex_pass: int
+    shapekeys: list[bpy.types.Object]
 
-def create_duplicate_for_merge(context: Context, mesh: Object, shapekey_name: str) -> Object:
+def create_duplicate_for_merge(context: Context, mesh: Object, shapekey_name: str = "") -> Object:
     """Creates a duplicate mesh object for merge testing"""
-    context.view_layer.objects.active = mesh
+
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     mesh.select_set(True)
+    context.view_layer.objects.active = mesh
     bpy.ops.object.duplicate()
-    bpy.ops.object.shape_key_move(type='TOP')
-    
     duplicate = context.view_layer.objects.active
-    duplicate.name = f"{shapekey_name}_object_is_{mesh.name}"
+    
+    if(shapekey_name != ""):
+        for shape in duplicate.data.shape_keys.key_blocks:
+            shape.value = 0
+        duplicate.active_shape_key_index = mesh.data.shape_keys.key_blocks.find(shapekey_name)
+        duplicate.active_shape_key.value = 1
+        bpy.ops.object.shape_key_remove(all=True,apply_mix=True)
+        duplicate.name = f"{shapekey_name}_object_is_{mesh.name}"
+    else:
+        duplicate.name = f"object_is_{mesh.name}"
     return duplicate
 
-def process_vertex_merging(mesh_data: bpy.types.Mesh, vertices_original: dict[int, Any], current_vertex: int) -> list[int]:
-    """Process vertex merging and return merged vertex indices"""
-    merged_vertices = []
-    i, j = 0, 0
-    
-    while i < len(vertices_original):
-        if j + 1 > len(mesh_data.vertices):
-            merged_vertices.append(i)
-            j = j - 1
-        elif mesh_data.vertices[j].co.xyz != vertices_original[i]:
-            merged_vertices.append(i)
-            j = j - 1
-        elif vertices_original[i] == vertices_original[current_vertex]:
-            merged_vertices.append(i)
-        i, j = i + 1, j + 1
-    
-    return merged_vertices
-
-def vertex_moves(mesh_data: bpy.types.Mesh, vertex: int) -> bool:
-
-    for shapekey in mesh_data.shape_keys.key_blocks:
-        data: bpy.types.ShapeKey = shapekey
-
-        if data.points[vertex].co.xyz != mesh_data.vertices[vertex].co.xyz:
-            return True
-
-    return False
-
-def merge_vertex_at_index(mesh_data: bpy.types.Mesh, index: int, distance: float):
-
-    select_target_vertex = [False]*len(mesh_data.vertices)
-    select_target_vertex[index] = True
-
+def select_obj(context: Context, obj: Object, target_mode='OBJECT'):
     bpy.ops.object.mode_set(mode='OBJECT')
-    mesh_data.vertices.foreach_set("select",select_target_vertex)
-    bpy.ops.object.mode_set(mode='EDIT')
-    for _ in range(0,20): #for some reason, if using merge to unselected on a vertex, the vertex will only merge to 1 other vertex. so we gotta spam it to fix it.
-        bpy.ops.mesh.remove_doubles(threshold=distance, use_unselected=True, use_sharp_edge_from_normals=False)
-    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode=target_mode)
 
-class AvatarToolkit_OT_RemoveDoublesAdvanced(Operator):
-    bl_idname = "avatar_toolkit.remove_doubles_advanced"
-    bl_label = t("Optimization.remove_doubles_advanced")
-    bl_description = t("Optimization.remove_doubles_advanced_desc")
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context: Context) -> bool:
-        """Check if the operator can be executed"""
-        armature = get_active_armature(context)
-        if not armature:
-            return False
-        valid, _, _ = validate_armature(armature)
-        return valid
-
-    def execute(self, context: Context) -> set[str]:
-        """Execute the advanced remove doubles operator"""
-        context.scene.avatar_toolkit.remove_doubles_advanced = True
-        bpy.ops.avatar_toolkit.remove_doubles('INVOKE_DEFAULT')
-        return {'RUNNING_MODAL'}
 
 class AvatarToolkit_OT_RemoveDoubles(Operator):
     bl_idname = "avatar_toolkit.remove_doubles"
@@ -104,7 +60,7 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     objects_to_do: list[MeshEntry] = []
-
+    merge_distance: bpy.props.FloatProperty(name=t("Optimization.merge_distance"), description=t("Optimization.merge_distance_desc"), default=.001)
     @classmethod
     def poll(cls, context: Context) -> bool:
         """Check if the operator can be executed"""
@@ -117,27 +73,27 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
     def draw(self, context: Context) -> None:
         """Draw the operator's UI"""
         layout = self.layout
-        layout.prop(context.scene.avatar_toolkit, "remove_doubles_merge_distance")
-        layout.label(text=t("Optimization.remove_doubles_warning"))
-        layout.label(text=t("Optimization.remove_doubles_wait"))
+        layout.prop(self, "merge_distance")
 
     def invoke(self, context: Context, event: Event) -> set[str]:
         """Initialize the operator"""
         logger.info("Starting modal execution of merge doubles safely")
         return context.window_manager.invoke_props_dialog(self)
 
-    def setup_mesh_entry(self, mesh: Object) -> MeshEntry:
+    def setup_mesh_entry(self, context: Context, mesh: Object) -> MeshEntry:
         """Set up mesh entry data structure"""
+        #create shapekey objects to merge doubles on.
+        shapes: list[bpy.types.Object] = []
+        if(mesh.data.shape_keys):
+            for shape in mesh.data.shape_keys.key_blocks:
+                shapes.append(create_duplicate_for_merge(context,mesh,shape.name))
+        else:
+            shapes.append(create_duplicate_for_merge(context,mesh))
         mesh_entry: MeshEntry = {
             "mesh": mesh,
-            "shapekeys": [],
-            "vertices": len(mesh.data.vertices),
-            "cur_vertex_pass": 0
+            "shapekeys": shapes
         }
-        
-        if mesh.data.shape_keys:
-            mesh_entry["shapekeys"] = [shape.name for shape in mesh.data.shape_keys.key_blocks]
-        
+
         return mesh_entry
 
     def execute(self, context: Context) -> set[str]:
@@ -157,158 +113,77 @@ class AvatarToolkit_OT_RemoveDoubles(Operator):
             for mesh in objects:
                 if mesh.data.name not in [obj["mesh"].data.name for obj in self.objects_to_do]:
                     logger.debug(f"Setting up data for object {mesh.name}")
-                    mesh_entry = self.setup_mesh_entry(mesh)
+                    mesh_entry = self.setup_mesh_entry(context, mesh)
                     self.objects_to_do.append(mesh_entry)
 
             context.window_manager.modal_handler_add(self)
             return {'RUNNING_MODAL'}
             
-        except Exception as e:
-            logger.error(f"Error in execute:", exception=e)
+        except Exception:
+            logger.error(f"Error in execute: {traceback.format_exc()}")
             return {'CANCELLED'}
-
-    def modify_mesh(self, context: Context, mesh: MeshEntry) -> None:
-        """Basic mesh modification for simple cases"""
-        try:
-            mesh["mesh"].select_set(True)
-            context.view_layer.objects.active = mesh["mesh"]
-            mesh_data = mesh["mesh"].data
-            
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.object.mode_set(mode='OBJECT')
-            
-            # Select vertices with different positions in shape keys
-            for index, point in enumerate(mesh["mesh"].active_shape_key.points):
-                if point.co.xyz != mesh_data.shape_keys.key_blocks[0].points[index].co.xyz:
-                    mesh_data.vertices[index].select = True
-                    logger.debug(f"Shapekey has moved vertex at index {index}")
-                    
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.object.mode_set(mode='OBJECT')
-            mesh["mesh"].select_set(False)
-            
-        except Exception as e:
-            logger.error(f"Error in modify_mesh:", exception=e)
-
-    def modify_mesh_advanced(self, context: Context, mesh_entry: MeshEntry) -> int:
-        """Advanced mesh modification with shape key handling"""
-        try:
-            final_merged_vertex_group = []
-            initialized_final = False
-            merge_distance = context.scene.avatar_toolkit.remove_doubles_merge_distance
-
-            for shapekey_name in mesh_entry["shapekeys"]:
-                duplicate = create_duplicate_for_merge(context, mesh_entry["mesh"], shapekey_name)
-                vertices_original = {i: v.co.xyz for i, v in enumerate(duplicate.data.vertices)}
-                
-                
-                merge_vertex_at_index(duplicate.data, mesh_entry["cur_vertex_pass"], merge_distance) #merge the vertex at our pass to find vertices that would merge to our vertex at this shapekey.
-
-                # Process merging
-                merged_vertices = process_vertex_merging(duplicate.data, vertices_original, mesh_entry["cur_vertex_pass"]) # find what vertices actually merged.
-                
-                if not initialized_final:
-                    final_merged_vertex_group = merged_vertices.copy()
-                    initialized_final = True
-                else:
-                    final_merged_vertex_group = [v for v in final_merged_vertex_group if v in merged_vertices] # remove vertices that merged from the list if they didn't merge during this shapkey.
-                bpy.ops.object.delete()
-
-            # Apply final merging
-            if final_merged_vertex_group:
-                self.apply_final_merging(context, mesh_entry, final_merged_vertex_group, merge_distance) # merge all vertices that merged on every shapekey no matter the shapekey during the loop.
-                
-            return len(final_merged_vertex_group)
-            
-        except Exception as e:
-            logger.error(f"Error in modify_mesh_advanced:", exception=e)
-            return 1
-
-    def apply_final_merging(self, context: Context, mesh_entry: MeshEntry, vertex_group: list[int], merge_distance: float) -> None:
-        """Apply final vertex merging operations"""
-        mesh = mesh_entry["mesh"]
-        context.view_layer.objects.active = mesh
-        mesh.select_set(True)
-        
-        bpy.ops.object.mode_set(mode='OBJECT')
-        select_target_group = [False] * len(mesh.data.vertices)
-        for vertex_index in vertex_group:
-            select_target_group[vertex_index] = True
-            
-        mesh.data.vertices.foreach_set("select", select_target_group)
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.remove_doubles(threshold=merge_distance, use_unselected=False)
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-    def process_simple_mesh(self, context: Context, mesh: MeshEntry, merge_distance: float) -> None:
-        """Process mesh without shapekeys using simple merge operation"""
-        logger.debug(f"Processing mesh without shapekeys: {mesh['mesh'].name}")
-        mesh["mesh"].select_set(True)
-        context.view_layer.objects.active = mesh["mesh"]
-        bpy.ops.object.mode_set(mode='EDIT')
-        mesh["mesh"].data.vertices.foreach_set("select", [False] * len(mesh["mesh"].data.vertices))
-
-        bpy.ops.mesh.select_all(action="INVERT")
-        bpy.ops.mesh.remove_doubles(threshold=merge_distance, use_unselected=False)
-        bpy.ops.object.mode_set(mode='OBJECT')
-        mesh["mesh"].select_set(False)
-
-    def finish_mesh_processing(self, context: Context, mesh: MeshEntry, advanced: bool, merge_distance: float) -> None:
-        """Complete the mesh processing by performing final merge operations"""
-        logger.debug("Finishing mesh processing")
-        mesh["mesh"].select_set(True)
-        context.view_layer.objects.active = mesh["mesh"]
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action="INVERT")
-        bpy.ops.mesh.remove_doubles(threshold=merge_distance, use_unselected=False)
-        
-        bpy.ops.object.mode_set(mode='OBJECT')
-        mesh["mesh"].select_set(False)
-
     def modal(self, context: Context, event: Event) -> set[ModalReturnType]:
         """Modal operator execution"""
         try:
-            if not self.objects_to_do:
+            if not self.objects_to_do or len(self.objects_to_do) <= 0:
                 self.report({'INFO'}, t("Optimization.remove_doubles_completed"))
                 logger.info("Finishing modal execution of merge doubles safely")
                 return {'FINISHED'}
+            
+            mesh: MeshEntry = self.objects_to_do.pop(0)
+            merge_distance: float = self.merge_distance
+            
+            
+            #find which vertices merge on all shapekeys using bmesh, a fast way of doing it - @989onan
+            #final_merged_vertex_group = [i for i in range(0,len(mesh['mesh'].data.vertices))]
+            final_merged_vertex_group: dict[set[int],list[int]] = []
+            for shape in mesh["shapekeys"]:
+                select_obj(context, shape, target_mode='EDIT')
+                bmesh_mesh: bmesh.types.BMesh = bmesh.from_edit_mesh(shape.data)
+                selected_verts: list[bmesh.types.BMVert] = [vert for vert in bmesh_mesh.verts if vert.select == True]
+                i: int = 0
+                merged_vertices: dict[set[int],list[int]] = {} #make a list of sets which act as pairs. the pairs being sets means it doesn't matter if element 0 is at index 1, it is still considered the same pair
+                mergers: dict[bmesh.types.BMVert, bmesh.types.BMVert]
+                for name,mergers in bmesh.ops.find_doubles(bmesh_mesh,verts=selected_verts,dist=merge_distance).items():
+                    for source_vert,target_vert in mergers.items():
+                        pair: set[int] = set()
+                        pair.add(source_vert.index)
+                        pair.add(target_vert.index)
+                        frozen_pair = frozenset(pair)
+                        merged_vertices[frozen_pair] = [source_vert.index,target_vert.index] #put the pairs we have found into a list.
+                    
+                if(final_merged_vertex_group == []): #populate list if it is empty
+                    final_merged_vertex_group = merged_vertices
+                new_dict: dict[set[int],list[int]] = {}
 
-            mesh = self.objects_to_do[0]
-            mesh_data = mesh["mesh"].data
-            advanced = context.scene.avatar_toolkit.remove_doubles_advanced
-            merge_distance = context.scene.avatar_toolkit.remove_doubles_merge_distance
+                #update our final list, keeping pairs that exist on all shapekeys and not just one.
+                for key,value in final_merged_vertex_group.items():
+                    if key in merged_vertices.keys():
+                        new_dict[key] = value
+                final_merged_vertex_group = new_dict 
+            
+            #create an edit mesh and ensure it's vertex table
+            select_obj(context, mesh['mesh'], target_mode='EDIT')
+            data_mesh: bpy.types.Mesh = mesh['mesh'].data
+            mappings: dict[bmesh.types.BMVert,bmesh.types.BMVert] = {}
+            bmesh_mesh: bmesh.types.BMesh = bmesh.from_edit_mesh(data_mesh)
+            bmesh_mesh.verts.ensure_lookup_table()
 
-            if len(mesh['shapekeys']) > 0 and not advanced:
-                shapekeyname = mesh['shapekeys'].pop(0)
-                mesh["mesh"].active_shape_key_index = mesh_data.shape_keys.key_blocks.find(shapekeyname)
-                logger.debug(f"Processing shapekey {shapekeyname}")
-                self.modify_mesh(context, mesh)
-                
-            elif not mesh_data.shape_keys:
-                self.process_simple_mesh(context, mesh, merge_distance)
-                self.objects_to_do.pop(0)
-                
-            elif not (mesh["cur_vertex_pass"] > mesh["vertices"]) and advanced: #advanced merging vertex by vertex
-                if(mesh["cur_vertex_pass"] < 0): #make sure it doesn't go below 0 and explode when advancing backwards from a previous step
-                    mesh["cur_vertex_pass"] = 0
-                
-                if vertex_moves(mesh["mesh"].data, mesh["cur_vertex_pass"]): # do not do advanced merging for vertices that don't move
-                    mesh["cur_vertex_pass"] -= self.modify_mesh_advanced(context, mesh)-2 #advance forward or backwards based on how many vertices actually got merged, changing the list size.
-                    #if above returns 1 (no vertices other than this one being merged to ourselves), advance by 1. else don't advance or go backwards. Makes sure all vertices get merged in the end.
-                else:
-                    mesh["cur_vertex_pass"] += 1
+            #turn our pairs into a dictionary, which allows for merging vertices based on the shared pairs.
+            for key,value in final_merged_vertex_group.items():
+                mappings[bmesh_mesh.verts[value[0]]] = bmesh_mesh.verts[value[1]]
 
-            elif (mesh["cur_vertex_pass"] > mesh["vertices"]) and advanced and len(mesh['shapekeys']) > 0: #after advanced merging has gone past all the moving vertices, now we need to merge non moving vertices.
-                shapekeyname = mesh['shapekeys'].pop(0)
-                mesh["mesh"].active_shape_key_index = mesh_data.shape_keys.key_blocks.find(shapekeyname)
-                logger.debug(f"Processing shapekey {shapekeyname}")
-                self.modify_mesh(context, mesh)
-            else:
-                self.finish_mesh_processing(context, mesh, advanced, merge_distance)
-                self.objects_to_do.pop(0)
+            #weld the verts and update the source mesh
+            bmesh.ops.weld_verts(bmesh_mesh,targetmap=mappings)
+            bmesh.update_edit_mesh(data_mesh, destructive=True)
+
+            #delete the shapekey reading meshes.
+            for shape in mesh["shapekeys"]: 
+                bpy.data.objects.remove(shape)
 
             return {'RUNNING_MODAL'}
             
         except Exception as e:
-            logger.error(f"Error in modal:", exception=e)
+            print(traceback.format_exception(e))
+            logger.error(f"Error in modal: {traceback.format_exception(e)}")
             return {'CANCELLED'}
