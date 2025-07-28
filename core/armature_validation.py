@@ -105,29 +105,40 @@ def validate_armature(armature: Object, detailed_messages: bool = False) -> Unio
         
         # Non-standard bones check
         non_standard_bones = []
-        required_patterns = [
-            'Hips', 'Spine', 'Chest', 'Neck', 'Head',
-            'Upper', 'Lower', 'Hand', 'Foot', 'Toe',
-            'Thumb', 'Index', 'Middle', 'Ring', 'Pinky',
-            'Eye'
+        
+        # Bones to ignore
+        ignore_patterns = [
+            'tail', 'skirt', 'dress', 'hair', 'ribbon', 'bow', 'hat', 'cap',
+            'butt', 'breast', 'boob', 'chest_', 'belly', 'stomach',
+            'wing', 'fin', 'horn', 'ear_', 'accessory', 'extra',
+            'cloth', 'fabric', 'cape', 'coat', 'jacket', 'shirt',
+            'pants', 'shoe', 'boot', 'sock', 'glove', 'mitten',
+            'belt', 'strap', 'buckle', 'button', 'zipper',
+            'jewel', 'gem', 'ring', 'necklace', 'earring',
+            'flower', 'leaf', 'feather', 'fur', 'scale',
+            'bangs', 'sideburn', 'bell', 'leash', 'ears', 'chain',
+            'headband', 'necklace', 'necktie', 'strapNeck', 'ring',
+            'pin', 'hair',
+
         ]
         
+        # Create normalized lookup sets for faster comparison
+        normalized_standard_bones = {simplify_bonename(name) for name in standard_bones.values()}
+        normalized_acceptable_bones = set()
+        for names in acceptable_bone_names.values():
+            normalized_acceptable_bones.update(simplify_bonename(name) for name in names)
+        
         for bone_name in found_bones:
-            if any(pattern in bone_name for pattern in required_patterns):
-                # Normalize bone name for comparison
-                normalized_bone_name = simplify_bonename(bone_name)
-                
-                # Check against normalized standard bones
-                normalized_standard_bones = [simplify_bonename(name) for name in standard_bones.values()]
+            # Normalize bone name for comparison
+            normalized_bone_name = simplify_bonename(bone_name)
+            
+            # Check if bone should be ignored (accessory bone)
+            is_ignored = any(pattern in normalized_bone_name for pattern in ignore_patterns)
+            
+            if not is_ignored:
+                # Check if bone is in standard or acceptable lists
                 is_standard = normalized_bone_name in normalized_standard_bones
-                
-                # Check against normalized acceptable bones
-                is_acceptable_bone = False
-                for names in acceptable_bone_names.values():
-                    normalized_acceptable_names = [simplify_bonename(name) for name in names]
-                    if normalized_bone_name in normalized_acceptable_names:
-                        is_acceptable_bone = True
-                        break
+                is_acceptable_bone = normalized_bone_name in normalized_acceptable_bones
                 
                 if not (is_standard or is_acceptable_bone):
                     non_standard_bones.append(bone_name)
