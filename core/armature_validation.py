@@ -10,7 +10,8 @@ from ..core.dictionaries import (
     bone_hierarchy,
     finger_hierarchy,
     acceptable_bone_hierarchy,
-    acceptable_bone_names
+    acceptable_bone_names,
+    simplify_bonename
 )
 from ..core.logging_setup import logger
 
@@ -113,8 +114,21 @@ def validate_armature(armature: Object, detailed_messages: bool = False) -> Unio
         
         for bone_name in found_bones:
             if any(pattern in bone_name for pattern in required_patterns):
-                is_standard = bone_name in standard_bones.values()
-                is_acceptable_bone = any(bone_name in names for names in acceptable_bone_names.values())
+                # Normalize bone name for comparison
+                normalized_bone_name = simplify_bonename(bone_name)
+                
+                # Check against normalized standard bones
+                normalized_standard_bones = [simplify_bonename(name) for name in standard_bones.values()]
+                is_standard = normalized_bone_name in normalized_standard_bones
+                
+                # Check against normalized acceptable bones
+                is_acceptable_bone = False
+                for names in acceptable_bone_names.values():
+                    normalized_acceptable_names = [simplify_bonename(name) for name in names]
+                    if normalized_bone_name in normalized_acceptable_names:
+                        is_acceptable_bone = True
+                        break
+                
                 if not (is_standard or is_acceptable_bone):
                     non_standard_bones.append(bone_name)
         
@@ -192,25 +206,28 @@ def validate_symmetry(bones: Dict[str, Bone], base: str, left: str, right: str) 
     left_bone_names = set()
     right_bone_names = set()
     
+    # Normalize bone names in the bones dict for comparison
+    normalized_bones = {simplify_bonename(name): name for name in bones.keys()}
+    
     # Add standard bones
     for key, value in standard_bones.items():
         if base in key.lower():
             if '_l' in key.lower():
-                left_bone_names.add(value)
+                left_bone_names.add(simplify_bonename(value))
             elif '_r' in key.lower():
-                right_bone_names.add(value)
+                right_bone_names.add(simplify_bonename(value))
                 
     # Add acceptable bones
     for key, names in acceptable_bone_names.items():
         if base in key.lower():
             if '_l' in key.lower():
-                left_bone_names.update(names)
+                left_bone_names.update(simplify_bonename(name) for name in names)
             elif '_r' in key.lower():
-                right_bone_names.update(names)
+                right_bone_names.update(simplify_bonename(name) for name in names)
     
     # Check if at least one pair exists and matches
-    left_exists = any(name in bones for name in left_bone_names)
-    right_exists = any(name in bones for name in right_bone_names)
+    left_exists = any(name in normalized_bones for name in left_bone_names)
+    right_exists = any(name in normalized_bones for name in right_bone_names)
     
     return left_exists == right_exists
 
@@ -224,22 +241,34 @@ def validate_finger_chain(bones: Dict[str, Bone], chain: Tuple[str, ...]) -> boo
 def check_acceptable_standards(bones: Dict[str, Bone]) -> bool:
     """Check if armature matches acceptable non-standard hierarchy"""
     logger.debug("Checking for acceptable standards")
+    
+    # Create normalized lookup for existing bones
+    normalized_bones = {simplify_bonename(name): name for name in bones.keys()}
+    
     # Check if bones exist in acceptable list
     for bone_category, acceptable_names in acceptable_bone_names.items():
         found = False
         for name in acceptable_names:
-            if name in bones:
+            normalized_name = simplify_bonename(name)
+            if normalized_name in normalized_bones:
                 found = True
                 break
         if not found:
             logger.debug(f"Missing acceptable bone for category: {bone_category}")
             return False
     
-    # Validate acceptable hierarchy
+    # Validate acceptable hierarchy using normalized names
     for parent, child in acceptable_bone_hierarchy:
-        if parent in bones and child in bones:
-            if not validate_bone_hierarchy(bones, parent, child):
-                logger.debug(f"Invalid acceptable hierarchy: {parent} -> {child}")
+        parent_normalized = simplify_bonename(parent)
+        child_normalized = simplify_bonename(child)
+        
+        # Find actual bone names from normalized names
+        actual_parent = normalized_bones.get(parent_normalized)
+        actual_child = normalized_bones.get(child_normalized)
+        
+        if actual_parent and actual_child:
+            if not validate_bone_hierarchy(bones, actual_parent, actual_child):
+                logger.debug(f"Invalid acceptable hierarchy: {actual_parent} -> {actual_child}")
                 return False
                 
     logger.debug("Armature meets acceptable standards")
