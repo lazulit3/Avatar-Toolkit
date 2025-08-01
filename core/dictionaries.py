@@ -743,17 +743,17 @@ non_standard_mappings = {
     'left_arm': [
         'mixamorig:LeftArm', 'mixamorig_LeftArm',
         'ORG-upper_arm.L', 'upper_arm.L',
-        'lShldrBend', 'lShldrTwist', 'lArm'
+        'lShldrBend', 'lShldrTwist', 'lArm', 'UpperArm.L'
     ],
     'left_elbow': [
         'mixamorig:LeftForeArm', 'mixamorig_LeftForeArm',
         'ORG-forearm.L', 'forearm.L',
-        'lForearmBend', 'lElbow', 'lForeArm'
+        'lForearmBend', 'lElbow', 'lForeArm', 'LowerArm.L'
     ],
     'left_wrist': [
         'mixamorig:LeftHand', 'mixamorig_LeftHand',
         'ORG-hand.L', 'hand.L',
-        'lHand', 'lWrist'
+        'lHand', 'lWrist', 'Hand.L'
     ],
     
     'right_shoulder': [
@@ -764,59 +764,59 @@ non_standard_mappings = {
     'right_arm': [
         'mixamorig:RightArm', 'mixamorig_RightArm',
         'ORG-upper_arm.R', 'upper_arm.R',
-        'rShldrBend', 'rShldrTwist', 'rArm'
+        'rShldrBend', 'rShldrTwist', 'rArm', 'UpperArm.R'
     ],
     'right_elbow': [
         'mixamorig:RightForeArm', 'mixamorig_RightForeArm',
         'ORG-forearm.R', 'forearm.R',
-        'rForearmBend', 'rElbow', 'rForeArm'
+        'rForearmBend', 'rElbow', 'rForeArm', 'LowerArm.R'
     ],
     'right_wrist': [
         'mixamorig:RightHand', 'mixamorig_RightHand',
         'ORG-hand.R', 'hand.R',
-        'rHand', 'rWrist'
+        'rHand', 'rWrist', 'Hand.R'
     ],
     
     'left_leg': [
         'mixamorig:LeftUpLeg', 'mixamorig_LeftUpLeg',
         'ORG-thigh.L', 'thigh.L',
-        'lThighBend', 'lThigh'
+        'lThighBend', 'lThigh', 'UpperLeg.L'
     ],
     'left_knee': [
         'mixamorig:LeftLeg', 'mixamorig_LeftLeg',
         'ORG-shin.L', 'shin.L',
-        'lShin', 'lKnee', 'lLeg'
+        'lShin', 'lKnee', 'lLeg', 'LowerLeg.L'
     ],
     'left_ankle': [
         'mixamorig:LeftFoot', 'mixamorig_LeftFoot',
         'ORG-foot.L', 'foot.L',
-        'lFoot', 'lAnkle'
+        'lFoot', 'lAnkle', 'Foot.L'
     ],
     'left_toe': [
         'mixamorig:LeftToeBase', 'mixamorig_LeftToeBase',
         'ORG-toe.L', 'toe.L',
-        'lToe'
+        'lToe', 'Toes.L'
     ],
     
     'right_leg': [
         'mixamorig:RightUpLeg', 'mixamorig_RightUpLeg',
         'ORG-thigh.R', 'thigh.R',
-        'rThighBend', 'rThigh'
+        'rThighBend', 'rThigh', 'UpperLeg.R'
     ],
     'right_knee': [
         'mixamorig:RightLeg', 'mixamorig_RightLeg',
         'ORG-shin.R', 'shin.R',
-        'rShin', 'rKnee', 'rLeg'
+        'rShin', 'rKnee', 'rLeg', 'LowerLeg.R'
     ],
     'right_ankle': [
         'mixamorig:RightFoot', 'mixamorig_RightFoot',
         'ORG-foot.R', 'foot.R',
-        'rFoot', 'rAnkle'
+        'rFoot', 'rAnkle', 'Foot.R'
     ],
     'right_toe': [
         'mixamorig:RightToeBase', 'mixamorig_RightToeBase',
         'ORG-toe.R', 'toe.R',
-        'rToe'
+        'rToe', 'Toes.R'
     ],
     
     'thumb_1_l': [
@@ -982,12 +982,12 @@ non_standard_mappings = {
     'left_eye': [
         'mixamorig:LeftEye', 'mixamorig_LeftEye',
         'ORG-eye.L', 'eye.L',
-        'lEye'
+        'lEye', 'Eye.L'
     ],
     'right_eye': [
         'mixamorig:RightEye', 'mixamorig_RightEye',
         'ORG-eye.R', 'eye.R',
-        'rEye'
+        'rEye', 'Eye.R'
     ]
 }
 
