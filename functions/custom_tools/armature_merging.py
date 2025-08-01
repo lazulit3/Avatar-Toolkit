@@ -48,6 +48,9 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             #Store current armature settings that can mess us up.
             data_breaking_base = store_breaking_settings_armature(base_armature)
             data_breaking_merge = store_breaking_settings_armature(merge_armature)
+            
+            # Store the merge armature name before it gets removed during join
+            merge_armature_name_stored = merge_armature.name
 
             # Remove Rigid Bodies and Joints
             delete_rigidbodies_and_joints(base_armature)
@@ -77,14 +80,17 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             wm.progress_end()
 
             restore_breaking_settings_armature(base_armature, data_breaking_base)
-            restore_breaking_settings_armature(merge_armature, data_breaking_merge)
+            
+            if merge_armature_name_stored in bpy.data.objects:
+                merge_armature_obj = bpy.data.objects[merge_armature_name_stored]
+                restore_breaking_settings_armature(merge_armature_obj, data_breaking_merge)
             
             self.report({'INFO'}, t('MergeArmature.success'))
             
             return {'FINISHED'}
 
         except Exception as e:
-            logger.error(f"Error merging armatures:", exception=e)
+            logger.error(f"Error merging armatures: {str(e)}\n{traceback.format_exc()}")
             self.report({'ERROR'}, traceback.format_exc())
             return {'CANCELLED'}
 
