@@ -289,8 +289,8 @@ bone_names.update({
     'right_toe': bone_names['right_toe'] + ['jbiprrtoe', 'jrtoe', 'jbiprtoebase'],
     
     # VRM eyes
-    'left_eye': bone_names['left_eye'] + ['jbipcleye', 'jleye'],
-    'right_eye': bone_names['right_eye'] + ['jbipcreye', 'jreye'],
+    'left_eye': bone_names['left_eye'] + ['jbipcleye', 'jleye', 'jadjlfaceeye'],
+    'right_eye': bone_names['right_eye'] + ['jbipcreye', 'jreye', 'jadjrfaceeye'],
     
     # VRM fingers - Left (including Little finger variations)
     'thumb_1_l': bone_names['thumb_1_l'] + ['jbipllthumb1', 'jlthumb1', 'jbiplthumb1'],

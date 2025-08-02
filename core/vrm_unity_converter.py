@@ -2,7 +2,7 @@ import bpy
 from typing import Dict, List, Optional, Tuple, Set
 from bpy.types import Object, Bone
 from .common import get_active_armature
-from .dictionaries import simplify_bonename, standard_bones, bone_hierarchy
+from .dictionaries import simplify_bonename, standard_bones, bone_hierarchy, reverse_bone_lookup
 from .logging_setup import logger
 
 
@@ -47,168 +47,31 @@ def detect_vrm_armature(armature: Object) -> bool:
     return found_vrm_bones >= 5
 
 
-def get_vrm_to_unity_mapping() -> Dict[str, str]:
-    """
-    Get mapping from VRM bone names to Unity humanoid bone names
-    """
-    return {
-        # Core structure
-        'jbipchips': standard_bones['hips'],
-        'jbipcspine': standard_bones['spine'],
-        'jbipcchest': standard_bones['chest'],
-        'jbipcupperchest': standard_bones.get('upper_chest', 'UpperChest'),
-        'jbipcneck': standard_bones['neck'],
-        'jbipchead': standard_bones['head'],
-        
-        # Left arm
-        'jbipllshoulder': standard_bones.get('left_shoulder', 'LeftShoulder'),
-        'jbiplshoulder': standard_bones.get('left_shoulder', 'LeftShoulder'),
-        'jbiplupperarm': standard_bones['left_arm'],
-        'jbipllforearm': standard_bones['left_elbow'],
-        'jbipllowerarm': standard_bones['left_elbow'],
-        'jbipllhand': standard_bones['left_wrist'],
-        'jbiplhand': standard_bones['left_wrist'],
-        
-        # Right arm (both jbipr and jbiprr patterns)
-        'jbiprlshoulder': standard_bones.get('right_shoulder', 'RightShoulder'),
-        'jbiprshoulder': standard_bones.get('right_shoulder', 'RightShoulder'),
-        'jbiprrshoulder': standard_bones.get('right_shoulder', 'RightShoulder'),
-        'jbiprupperarm': standard_bones['right_arm'],
-        'jbiprrupperarm': standard_bones['right_arm'],
-        'jbiprforearm': standard_bones['right_elbow'],
-        'jbiprrforearm': standard_bones['right_elbow'],
-        'jbiprlowerarm': standard_bones['right_elbow'],
-        'jbiprhand': standard_bones['right_wrist'],
-        'jbiprrhand': standard_bones['right_wrist'],
-        
-        # Left leg
-        'jbiplupperleg': standard_bones['left_leg'],
-        'jbipllowerleg': standard_bones['left_knee'],
-        'jbipllfoot': standard_bones['left_ankle'],
-        'jbiplfoot': standard_bones['left_ankle'],
-        'jbiplltoe': standard_bones['left_toe'],
-        'jbipltoebase': standard_bones['left_toe'],
-        
-        # Right leg (both jbipr and jbiprr patterns)
-        'jbiprupperleg': standard_bones['right_leg'],
-        'jbiprrupperleg': standard_bones['right_leg'],
-        'jbiprlowerleg': standard_bones['right_knee'],
-        'jbiprrlowerleg': standard_bones['right_knee'],
-        'jbiprfoot': standard_bones['right_ankle'],
-        'jbiprrfoot': standard_bones['right_ankle'],
-        'jbiprtoe': standard_bones['right_toe'],
-        'jbiprrtoe': standard_bones['right_toe'],
-        'jbiprtoebase': standard_bones['right_toe'],
-        
-        # Eyes
-        'jbipcleye': standard_bones.get('left_eye', 'Eye.L'),
-        'jbipcreye': standard_bones.get('right_eye', 'Eye.R'),
-        'jadjlfaceeye': standard_bones.get('left_eye', 'Eye.L'),
-        'jadjrfaceeye': standard_bones.get('right_eye', 'Eye.R'),
-        
-        # Fingers - Left thumb
-        'jbipllthumb1': standard_bones.get('thumb_1_l', 'Thumb1.L'),
-        'jbipllthumb2': standard_bones.get('thumb_2_l', 'Thumb2.L'),
-        'jbipllthumb3': standard_bones.get('thumb_3_l', 'Thumb3.L'),
-        'jbiplthumb1': standard_bones.get('thumb_1_l', 'Thumb1.L'),
-        'jbiplthumb2': standard_bones.get('thumb_2_l', 'Thumb2.L'),
-        'jbiplthumb3': standard_bones.get('thumb_3_l', 'Thumb3.L'),
-        
-        # Fingers - Left index
-        'jbipllindex1': standard_bones.get('index_1_l', 'Index1.L'),
-        'jbipllindex2': standard_bones.get('index_2_l', 'Index2.L'),
-        'jbipllindex3': standard_bones.get('index_3_l', 'Index3.L'),
-        'jbiplindex1': standard_bones.get('index_1_l', 'Index1.L'),
-        'jbiplindex2': standard_bones.get('index_2_l', 'Index2.L'),
-        'jbiplindex3': standard_bones.get('index_3_l', 'Index3.L'),
-        
-        # Fingers - Left middle
-        'jbipllmiddle1': standard_bones.get('middle_1_l', 'Middle1.L'),
-        'jbipllmiddle2': standard_bones.get('middle_2_l', 'Middle2.L'),
-        'jbipllmiddle3': standard_bones.get('middle_3_l', 'Middle3.L'),
-        'jbiplmiddle1': standard_bones.get('middle_1_l', 'Middle1.L'),
-        'jbiplmiddle2': standard_bones.get('middle_2_l', 'Middle2.L'),
-        'jbiplmiddle3': standard_bones.get('middle_3_l', 'Middle3.L'),
-        
-        # Fingers - Left ring
-        'jbipllring1': standard_bones.get('ring_1_l', 'Ring1.L'),
-        'jbipllring2': standard_bones.get('ring_2_l', 'Ring2.L'),
-        'jbipllring3': standard_bones.get('ring_3_l', 'Ring3.L'),
-        'jbiplring1': standard_bones.get('ring_1_l', 'Ring1.L'),
-        'jbiplring2': standard_bones.get('ring_2_l', 'Ring2.L'),
-        'jbiplring3': standard_bones.get('ring_3_l', 'Ring3.L'),
-        
-        # Fingers - Left pinky
-        'jbipllpinky1': standard_bones.get('pinkie_1_l', 'Pinky1.L'),
-        'jbipllpinky2': standard_bones.get('pinkie_2_l', 'Pinky2.L'),
-        'jbipllpinky3': standard_bones.get('pinkie_3_l', 'Pinky3.L'),
-        'jbipllittle1': standard_bones.get('pinkie_1_l', 'Pinky1.L'),
-        'jbipllittle2': standard_bones.get('pinkie_2_l', 'Pinky2.L'),
-        'jbipllittle3': standard_bones.get('pinkie_3_l', 'Pinky3.L'),
-        
-        # Fingers - Right thumb (both jbipr and jbiprr patterns)
-        'jbiprthumb1': standard_bones.get('thumb_1_r', 'Thumb1.R'),
-        'jbiprthumb2': standard_bones.get('thumb_2_r', 'Thumb2.R'),
-        'jbiprthumb3': standard_bones.get('thumb_3_r', 'Thumb3.R'),
-        'jbiprrrthumb1': standard_bones.get('thumb_1_r', 'Thumb1.R'),
-        'jbiprrrthumb2': standard_bones.get('thumb_2_r', 'Thumb2.R'),
-        'jbiprrrthumb3': standard_bones.get('thumb_3_r', 'Thumb3.R'),
-        
-        # Fingers - Right index
-        'jbiprindex1': standard_bones.get('index_1_r', 'Index1.R'),
-        'jbiprindex2': standard_bones.get('index_2_r', 'Index2.R'),
-        'jbiprindex3': standard_bones.get('index_3_r', 'Index3.R'),
-        'jbiprrrindex1': standard_bones.get('index_1_r', 'Index1.R'),
-        'jbiprrrindex2': standard_bones.get('index_2_r', 'Index2.R'),
-        'jbiprrrindex3': standard_bones.get('index_3_r', 'Index3.R'),
-        
-        # Fingers - Right middle
-        'jbiprmiddle1': standard_bones.get('middle_1_r', 'Middle1.R'),
-        'jbiprmiddle2': standard_bones.get('middle_2_r', 'Middle2.R'),
-        'jbiprmiddle3': standard_bones.get('middle_3_r', 'Middle3.R'),
-        'jbiprrmiddle1': standard_bones.get('middle_1_r', 'Middle1.R'),
-        'jbiprrmiddle2': standard_bones.get('middle_2_r', 'Middle2.R'),
-        'jbiprrmiddle3': standard_bones.get('middle_3_r', 'Middle3.R'),
-        
-        # Fingers - Right ring
-        'jbiprring1': standard_bones.get('ring_1_r', 'Ring1.R'),
-        'jbiprring2': standard_bones.get('ring_2_r', 'Ring2.R'),
-        'jbiprring3': standard_bones.get('ring_3_r', 'Ring3.R'),
-        'jbiprrrring1': standard_bones.get('ring_1_r', 'Ring1.R'),
-        'jbiprrrring2': standard_bones.get('ring_2_r', 'Ring2.R'),
-        'jbiprrrring3': standard_bones.get('ring_3_r', 'Ring3.R'),
-        
-        # Fingers - Right pinky
-        'jbiprpinky1': standard_bones.get('pinkie_1_r', 'Pinky1.R'),
-        'jbiprpinky2': standard_bones.get('pinkie_2_r', 'Pinky2.R'),
-        'jbiprpinky3': standard_bones.get('pinkie_3_r', 'Pinky3.R'),
-        'jbiprrrpinky1': standard_bones.get('pinkie_1_r', 'Pinky1.R'),
-        'jbiprrrpinky2': standard_bones.get('pinkie_2_r', 'Pinky2.R'),
-        'jbiprrrpinky3': standard_bones.get('pinkie_3_r', 'Pinky3.R'),
-        'jbiprlittle1': standard_bones.get('pinkie_1_r', 'Pinky1.R'),
-        'jbiprlittle2': standard_bones.get('pinkie_2_r', 'Pinky2.R'),
-        'jbiprlittle3': standard_bones.get('pinkie_3_r', 'Pinky3.R'),
-    }
 
 
 def find_vrm_bones_in_armature(armature: Object) -> Dict[str, str]:
     """
-    Find VRM bones in armature and return mapping to their actual names
+    Find VRM bones in armature and return mapping to their actual names using dictionary lookup
     """
-    vrm_mapping = get_vrm_to_unity_mapping()
     found_bones = {}
     
     for bone_name in armature.data.bones.keys():
         simplified_name = simplify_bonename(bone_name)
         
-        # Check if this bone matches any VRM pattern
-        for vrm_pattern, unity_name in vrm_mapping.items():
-            if simplified_name == vrm_pattern:
+        # Check if this bone exists in our reverse lookup dictionary
+        if simplified_name in reverse_bone_lookup:
+            standard_bone_key = reverse_bone_lookup[simplified_name]
+            
+            # Get the Unity name from standard_bones
+            if standard_bone_key in standard_bones:
+                unity_name = standard_bones[standard_bone_key]
                 found_bones[bone_name] = unity_name
-                logger.debug(f"Found VRM bone: {bone_name} -> {unity_name}")
-                break
+                logger.debug(f"Found VRM bone via dictionary: {bone_name} -> {unity_name}")
+            else:
+                logger.debug(f"Standard bone key '{standard_bone_key}' not found in standard_bones for bone '{bone_name}'")
         
-        if simplified_name.startswith('jbip') and bone_name not in found_bones:
+        # Fallback for unrecognized VRM bones that start with 'jbip'
+        elif simplified_name.startswith('jbip') and bone_name not in found_bones:
             unity_equivalent = guess_unity_name_from_vrm(simplified_name)
             if unity_equivalent:
                 found_bones[bone_name] = unity_equivalent
@@ -537,7 +400,7 @@ def remove_vrm_root_bone(armature: Object) -> Tuple[bool, str]:
     for child in root_to_remove.children:
         if child != hips_bone:
             children_to_reparent.append(child)
-    )
+    
     hips_bone.parent = None
     
     for child in children_to_reparent:
