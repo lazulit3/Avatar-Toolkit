@@ -255,6 +255,24 @@ bone_names = {
     "right_eye": [
         "eyeright", "righteye", "eyer", "reye", "右目", "ik_右目"
     ],
+    "breast_1_l": [
+        "j_sec_l_bust1", "breast1_l", "leftbreast1", "lbreast1", "bust1_l"
+    ],
+    "breast_2_l": [
+        "j_sec_l_bust2", "breast2_l", "leftbreast2", "lbreast2", "bust2_l"
+    ],
+    "breast_3_l": [
+        "j_sec_l_bust3", "breast3_l", "leftbreast3", "lbreast3", "bust3_l"
+    ],
+    "breast_1_r": [
+        "j_sec_r_bust1", "breast1_r", "rightbreast1", "rbreast1", "bust1_r"
+    ],
+    "breast_2_r": [
+        "j_sec_r_bust2", "breast2_r", "rightbreast2", "rbreast2", "bust2_r"
+    ],
+    "breast_3_r": [
+        "j_sec_r_bust3", "breast3_r", "rightbreast3", "rbreast3", "bust3_r"
+    ]
 }
 
 # Add VRM bone name variations  
@@ -294,6 +312,14 @@ bone_names.update({
     
     # VRM jaw
     'jaw': ['jaw', 'mandible', 'lowerjaw', 'chin', 'あご', 'ik_あご'],
+    
+    # Breast bones
+    'breast_1_l': bone_names['breast_1_l'] + ['jbipcbreast1l', 'jlbreast1'],
+    'breast_2_l': bone_names['breast_2_l'] + ['jbipcbreast2l', 'jlbreast2'],
+    'breast_3_l': bone_names['breast_3_l'] + ['jbipcbreast3l', 'jlbreast3'],
+    'breast_1_r': bone_names['breast_1_r'] + ['jbipcbreast1r', 'jrbreast1'],
+    'breast_2_r': bone_names['breast_2_r'] + ['jbipcbreast2r', 'jrbreast2'],
+    'breast_3_r': bone_names['breast_3_r'] + ['jbipcbreast3r', 'jrbreast3'],
     
     # VRM fingers - Left (including Little finger variations)
     'thumb_0_l': bone_names['thumb_0_l'] + ['jbipllthumb0', 'jlthumb0', 'jbipllthumbmetacarpal', 'jlthumbmetacarpal', 'leftthumbmetacarpal'],
@@ -486,7 +512,15 @@ standard_bones = {
     
     # Eyes
     'left_eye': 'Eye.L',
-    'right_eye': 'Eye.R'
+    'right_eye': 'Eye.R',
+    
+    # Breast bones
+    'breast_1_l': 'Breast1_L',
+    'breast_2_l': 'Breast2_L',
+    'breast_3_l': 'Breast3_L',
+    'breast_1_r': 'Breast1_R',
+    'breast_2_r': 'Breast2_R',
+    'breast_3_r': 'Breast3_R'
 }
 
 bone_hierarchy = [

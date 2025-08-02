@@ -33,6 +33,9 @@ def detect_vrm_armature(armature: Object) -> bool:
         'jbiplring1', 'jbiplring2', 'jbiplring3',
         # Face eye patterns
         'jadjlfaceeye', 'jadjrfaceeye',
+        # Breast patterns
+        'jseclbust1', 'jseclbust2', 'jseclbust3',
+        'jsecrbust1', 'jsecrbust2', 'jsecrbust3',
         'jbipc', 'jbipr', 'jbipl'  
     ]
     
@@ -158,7 +161,15 @@ def guess_unity_name_from_vrm(vrm_simplified: str) -> Optional[str]:
         'jbipllittle3': 'LeftPinky3',
         'jbiprlittle1': 'RightPinky1',
         'jbiprlittle2': 'RightPinky2',
-        'jbiprlittle3': 'RightPinky3'
+        'jbiprlittle3': 'RightPinky3',
+        
+        # Breast bones
+        'jseclbust1': 'Breast1_L',
+        'jseclbust2': 'Breast2_L',
+        'jseclbust3': 'Breast3_L',
+        'jsecrbust1': 'Breast1_R',
+        'jsecrbust2': 'Breast2_R',
+        'jsecrbust3': 'Breast3_R'
     }
     
     return pattern_mappings.get(vrm_simplified)
