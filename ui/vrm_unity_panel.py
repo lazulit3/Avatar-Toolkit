@@ -46,6 +46,7 @@ class AvatarToolKit_PT_VRMUnityPanel(Panel):
             
             toolkit = context.scene.avatar_toolkit
             col.prop(toolkit, 'vrm_remove_colliders', text="Remove Colliders")
+            col.prop(toolkit, 'vrm_remove_root', text="Remove Root Bone")
             col.separator(factor=0.2)
             
             col.operator(
@@ -59,6 +60,7 @@ class AvatarToolKit_PT_VRMUnityPanel(Panel):
             info_col.label(text="Conversion Info:", icon='INFO')
             info_col.label(text="• Renames VRM bones to Unity format")
             info_col.label(text="• Removes collider bones (optional)")
+            info_col.label(text="• Removes root bone, makes Hips root (optional)")
             info_col.label(text="• Maintains bone hierarchy")
             info_col.label(text="• Validates conversion results")
             info_col.label(text="• Preserves all animations")

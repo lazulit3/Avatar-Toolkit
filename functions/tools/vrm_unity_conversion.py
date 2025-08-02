@@ -28,9 +28,11 @@ class AvatarToolkit_OT_ConvertVRMToUnity(Operator):
         
         logger.info(f"Starting VRM to Unity conversion for armature: {armature.name}")
         
-        # Get collider removal setting
+        # Get conversion settings
         remove_colliders = context.scene.avatar_toolkit.vrm_remove_colliders
+        remove_root = context.scene.avatar_toolkit.vrm_remove_root
         logger.info(f"Collider removal setting: {remove_colliders}")
+        logger.info(f"Root bone removal setting: {remove_root}")
         
         # Log all objects with 'collider' in name for debugging
         collider_objects = [obj.name for obj in bpy.data.objects if 'collider' in obj.name.lower()]
@@ -39,7 +41,7 @@ class AvatarToolkit_OT_ConvertVRMToUnity(Operator):
             for obj_name in collider_objects:
                 logger.info(f"  - {obj_name}")
         
-        success, messages, converted_count = convert_vrm_to_unity(armature, remove_colliders)
+        success, messages, converted_count = convert_vrm_to_unity(armature, remove_colliders, remove_root)
         
         if not success:
             logger.warning(f"VRM conversion failed: {messages}")

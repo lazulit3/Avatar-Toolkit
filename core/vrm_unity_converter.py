@@ -15,10 +15,24 @@ def detect_vrm_armature(armature: Object) -> bool:
     
     vrm_patterns = [
         'jbipchips', 'jbipcspine', 'jbipcchest', 'jbipcneck', 'jbipchead',
-        'jbiprlshoulder', 'jbiprrupperarm', 'jbiprrforearm', 'jbiprrhand',
-        'jbipllshoulder', 'jbiplupperarm', 'jbipllforearm', 'jbipllhand',
+        # Right arm patterns (both single and double R)
+        'jbiprlshoulder', 'jbiprshoulder', 'jbiprupperarm', 'jbiprforearm', 'jbiprhand', 'jbiprlowerarm',
+        'jbiprrupperarm', 'jbiprrforearm', 'jbiprrhand',
+        # Left arm patterns  
+        'jbipllshoulder', 'jbiplshoulder', 'jbiplupperarm', 'jbipllforearm', 'jbipllhand', 'jbipllowerarm', 'jbiplhand',
+        # Right leg patterns (both single and double R)
+        'jbiprupperleg', 'jbiprlowerleg', 'jbiprfoot', 'jbiprtoe', 'jbiprtoebase',
         'jbiprrupperleg', 'jbiprrlowerleg', 'jbiprrfoot', 'jbiprrtoe',
-        'jbiplupperleg', 'jbipllowerleg', 'jbipllfoot', 'jbiplltoe',
+        # Left leg patterns
+        'jbiplupperleg', 'jbipllowerleg', 'jbipllfoot', 'jbiplfoot', 'jbiplltoe', 'jbipltoebase',
+        # Finger patterns
+        'jbipllittle1', 'jbiprlittle1',
+        'jbiplthumb1', 'jbiplthumb2', 'jbiplthumb3',
+        'jbiplindex1', 'jbiplindex2', 'jbiplindex3',
+        'jbiplmiddle1', 'jbiplmiddle2', 'jbiplmiddle3',
+        'jbiplring1', 'jbiplring2', 'jbiplring3',
+        # Face eye patterns
+        'jadjlfaceeye', 'jadjrfaceeye',
         'jbipc', 'jbipr', 'jbipl'  
     ]
     
@@ -48,81 +62,132 @@ def get_vrm_to_unity_mapping() -> Dict[str, str]:
         
         # Left arm
         'jbipllshoulder': standard_bones.get('left_shoulder', 'LeftShoulder'),
+        'jbiplshoulder': standard_bones.get('left_shoulder', 'LeftShoulder'),
         'jbiplupperarm': standard_bones['left_arm'],
         'jbipllforearm': standard_bones['left_elbow'],
+        'jbipllowerarm': standard_bones['left_elbow'],
         'jbipllhand': standard_bones['left_wrist'],
+        'jbiplhand': standard_bones['left_wrist'],
         
-        # Right arm
+        # Right arm (both jbipr and jbiprr patterns)
         'jbiprlshoulder': standard_bones.get('right_shoulder', 'RightShoulder'),
+        'jbiprshoulder': standard_bones.get('right_shoulder', 'RightShoulder'),
+        'jbiprrshoulder': standard_bones.get('right_shoulder', 'RightShoulder'),
+        'jbiprupperarm': standard_bones['right_arm'],
         'jbiprrupperarm': standard_bones['right_arm'],
+        'jbiprforearm': standard_bones['right_elbow'],
         'jbiprrforearm': standard_bones['right_elbow'],
+        'jbiprlowerarm': standard_bones['right_elbow'],
+        'jbiprhand': standard_bones['right_wrist'],
         'jbiprrhand': standard_bones['right_wrist'],
         
         # Left leg
         'jbiplupperleg': standard_bones['left_leg'],
         'jbipllowerleg': standard_bones['left_knee'],
         'jbipllfoot': standard_bones['left_ankle'],
+        'jbiplfoot': standard_bones['left_ankle'],
         'jbiplltoe': standard_bones['left_toe'],
+        'jbipltoebase': standard_bones['left_toe'],
         
-        # Right leg
+        # Right leg (both jbipr and jbiprr patterns)
+        'jbiprupperleg': standard_bones['right_leg'],
         'jbiprrupperleg': standard_bones['right_leg'],
+        'jbiprlowerleg': standard_bones['right_knee'],
         'jbiprrlowerleg': standard_bones['right_knee'],
+        'jbiprfoot': standard_bones['right_ankle'],
         'jbiprrfoot': standard_bones['right_ankle'],
+        'jbiprtoe': standard_bones['right_toe'],
         'jbiprrtoe': standard_bones['right_toe'],
+        'jbiprtoebase': standard_bones['right_toe'],
         
         # Eyes
         'jbipcleye': standard_bones.get('left_eye', 'Eye.L'),
         'jbipcreye': standard_bones.get('right_eye', 'Eye.R'),
+        'jadjlfaceeye': standard_bones.get('left_eye', 'Eye.L'),
+        'jadjrfaceeye': standard_bones.get('right_eye', 'Eye.R'),
         
         # Fingers - Left thumb
         'jbipllthumb1': standard_bones.get('thumb_1_l', 'Thumb1.L'),
         'jbipllthumb2': standard_bones.get('thumb_2_l', 'Thumb2.L'),
         'jbipllthumb3': standard_bones.get('thumb_3_l', 'Thumb3.L'),
+        'jbiplthumb1': standard_bones.get('thumb_1_l', 'Thumb1.L'),
+        'jbiplthumb2': standard_bones.get('thumb_2_l', 'Thumb2.L'),
+        'jbiplthumb3': standard_bones.get('thumb_3_l', 'Thumb3.L'),
         
         # Fingers - Left index
         'jbipllindex1': standard_bones.get('index_1_l', 'Index1.L'),
         'jbipllindex2': standard_bones.get('index_2_l', 'Index2.L'),
         'jbipllindex3': standard_bones.get('index_3_l', 'Index3.L'),
+        'jbiplindex1': standard_bones.get('index_1_l', 'Index1.L'),
+        'jbiplindex2': standard_bones.get('index_2_l', 'Index2.L'),
+        'jbiplindex3': standard_bones.get('index_3_l', 'Index3.L'),
         
         # Fingers - Left middle
         'jbipllmiddle1': standard_bones.get('middle_1_l', 'Middle1.L'),
         'jbipllmiddle2': standard_bones.get('middle_2_l', 'Middle2.L'),
         'jbipllmiddle3': standard_bones.get('middle_3_l', 'Middle3.L'),
+        'jbiplmiddle1': standard_bones.get('middle_1_l', 'Middle1.L'),
+        'jbiplmiddle2': standard_bones.get('middle_2_l', 'Middle2.L'),
+        'jbiplmiddle3': standard_bones.get('middle_3_l', 'Middle3.L'),
         
         # Fingers - Left ring
         'jbipllring1': standard_bones.get('ring_1_l', 'Ring1.L'),
         'jbipllring2': standard_bones.get('ring_2_l', 'Ring2.L'),
         'jbipllring3': standard_bones.get('ring_3_l', 'Ring3.L'),
+        'jbiplring1': standard_bones.get('ring_1_l', 'Ring1.L'),
+        'jbiplring2': standard_bones.get('ring_2_l', 'Ring2.L'),
+        'jbiplring3': standard_bones.get('ring_3_l', 'Ring3.L'),
         
         # Fingers - Left pinky
         'jbipllpinky1': standard_bones.get('pinkie_1_l', 'Pinky1.L'),
         'jbipllpinky2': standard_bones.get('pinkie_2_l', 'Pinky2.L'),
         'jbipllpinky3': standard_bones.get('pinkie_3_l', 'Pinky3.L'),
+        'jbipllittle1': standard_bones.get('pinkie_1_l', 'Pinky1.L'),
+        'jbipllittle2': standard_bones.get('pinkie_2_l', 'Pinky2.L'),
+        'jbipllittle3': standard_bones.get('pinkie_3_l', 'Pinky3.L'),
         
-        # Fingers - Right thumb
+        # Fingers - Right thumb (both jbipr and jbiprr patterns)
         'jbiprthumb1': standard_bones.get('thumb_1_r', 'Thumb1.R'),
         'jbiprthumb2': standard_bones.get('thumb_2_r', 'Thumb2.R'),
         'jbiprthumb3': standard_bones.get('thumb_3_r', 'Thumb3.R'),
+        'jbiprrrthumb1': standard_bones.get('thumb_1_r', 'Thumb1.R'),
+        'jbiprrrthumb2': standard_bones.get('thumb_2_r', 'Thumb2.R'),
+        'jbiprrrthumb3': standard_bones.get('thumb_3_r', 'Thumb3.R'),
         
         # Fingers - Right index
         'jbiprindex1': standard_bones.get('index_1_r', 'Index1.R'),
         'jbiprindex2': standard_bones.get('index_2_r', 'Index2.R'),
         'jbiprindex3': standard_bones.get('index_3_r', 'Index3.R'),
+        'jbiprrrindex1': standard_bones.get('index_1_r', 'Index1.R'),
+        'jbiprrrindex2': standard_bones.get('index_2_r', 'Index2.R'),
+        'jbiprrrindex3': standard_bones.get('index_3_r', 'Index3.R'),
         
         # Fingers - Right middle
         'jbiprmiddle1': standard_bones.get('middle_1_r', 'Middle1.R'),
         'jbiprmiddle2': standard_bones.get('middle_2_r', 'Middle2.R'),
         'jbiprmiddle3': standard_bones.get('middle_3_r', 'Middle3.R'),
+        'jbiprrmiddle1': standard_bones.get('middle_1_r', 'Middle1.R'),
+        'jbiprrmiddle2': standard_bones.get('middle_2_r', 'Middle2.R'),
+        'jbiprrmiddle3': standard_bones.get('middle_3_r', 'Middle3.R'),
         
         # Fingers - Right ring
         'jbiprring1': standard_bones.get('ring_1_r', 'Ring1.R'),
         'jbiprring2': standard_bones.get('ring_2_r', 'Ring2.R'),
         'jbiprring3': standard_bones.get('ring_3_r', 'Ring3.R'),
+        'jbiprrrring1': standard_bones.get('ring_1_r', 'Ring1.R'),
+        'jbiprrrring2': standard_bones.get('ring_2_r', 'Ring2.R'),
+        'jbiprrrring3': standard_bones.get('ring_3_r', 'Ring3.R'),
         
         # Fingers - Right pinky
         'jbiprpinky1': standard_bones.get('pinkie_1_r', 'Pinky1.R'),
         'jbiprpinky2': standard_bones.get('pinkie_2_r', 'Pinky2.R'),
         'jbiprpinky3': standard_bones.get('pinkie_3_r', 'Pinky3.R'),
+        'jbiprrrpinky1': standard_bones.get('pinkie_1_r', 'Pinky1.R'),
+        'jbiprrrpinky2': standard_bones.get('pinkie_2_r', 'Pinky2.R'),
+        'jbiprrrpinky3': standard_bones.get('pinkie_3_r', 'Pinky3.R'),
+        'jbiprlittle1': standard_bones.get('pinkie_1_r', 'Pinky1.R'),
+        'jbiprlittle2': standard_bones.get('pinkie_2_r', 'Pinky2.R'),
+        'jbiprlittle3': standard_bones.get('pinkie_3_r', 'Pinky3.R'),
     }
 
 
@@ -167,33 +232,70 @@ def guess_unity_name_from_vrm(vrm_simplified: str) -> Optional[str]:
         
         # Left arm
         'jbipllclavicle': 'LeftShoulder',
-        'jbipllshoulder': 'LeftShoulder', 
+        'jbipllshoulder': 'LeftShoulder',
+        'jbiplshoulder': 'LeftShoulder', 
         'jbiplupperarm': 'LeftUpperArm',
         'jbipllforearm': 'LeftLowerArm',
+        'jbipllowerarm': 'LeftLowerArm',
         'jbipllhand': 'LeftHand',
+        'jbiplhand': 'LeftHand',
         
-        # Right arm  
+        # Right arm (both single and double R patterns)
         'jbiprrclavicle': 'RightShoulder',
         'jbiprlshoulder': 'RightShoulder',
+        'jbiprshoulder': 'RightShoulder',
+        'jbiprupperarm': 'RightUpperArm',
         'jbiprrupperarm': 'RightUpperArm', 
+        'jbiprforearm': 'RightLowerArm',
         'jbiprrforearm': 'RightLowerArm',
+        'jbiprlowerarm': 'RightLowerArm',
+        'jbiprhand': 'RightHand',
         'jbiprrhand': 'RightHand',
         
         # Left leg
         'jbiplupperleg': 'LeftUpperLeg',
         'jbipllowerleg': 'LeftLowerLeg', 
         'jbipllfoot': 'LeftFoot',
+        'jbiplfoot': 'LeftFoot',
         'jbiplltoe': 'LeftToes',
+        'jbipltoebase': 'LeftToes',
         
-        # Right leg
+        # Right leg (both single and double R patterns)
+        'jbiprupperleg': 'RightUpperLeg',
         'jbiprrupperleg': 'RightUpperLeg',
+        'jbiprlowerleg': 'RightLowerLeg',
         'jbiprrlowerleg': 'RightLowerLeg',
+        'jbiprfoot': 'RightFoot',
         'jbiprrfoot': 'RightFoot', 
+        'jbiprtoe': 'RightToes',
         'jbiprrtoe': 'RightToes',
+        'jbiprtoebase': 'RightToes',
         
         # Eyes
         'jbipcleye': 'LeftEye',
-        'jbipcreye': 'RightEye'
+        'jbipcreye': 'RightEye',
+        'jadjlfaceeye': 'LeftEye',
+        'jadjrfaceeye': 'RightEye',
+        
+        # Fingers - Left
+        'jbiplthumb1': 'LeftThumb1',
+        'jbiplthumb2': 'LeftThumb2',
+        'jbiplthumb3': 'LeftThumb3',
+        'jbiplindex1': 'LeftIndex1',
+        'jbiplindex2': 'LeftIndex2',
+        'jbiplindex3': 'LeftIndex3',
+        'jbiplmiddle1': 'LeftMiddle1',
+        'jbiplmiddle2': 'LeftMiddle2',
+        'jbiplmiddle3': 'LeftMiddle3',
+        'jbiplring1': 'LeftRing1',
+        'jbiplring2': 'LeftRing2',
+        'jbiplring3': 'LeftRing3',
+        'jbipllittle1': 'LeftPinky1',
+        'jbipllittle2': 'LeftPinky2', 
+        'jbipllittle3': 'LeftPinky3',
+        'jbiprlittle1': 'RightPinky1',
+        'jbiprlittle2': 'RightPinky2',
+        'jbiprlittle3': 'RightPinky3'
     }
     
     return pattern_mappings.get(vrm_simplified)
@@ -221,10 +323,40 @@ def is_vrm_collider_object(obj_name: str) -> bool:
     return is_vrm
 
 
-def remove_vrm_colliders(armature: Object = None) -> Tuple[int, List[str]]:
+def remove_collection_from_hierarchy(collection_to_remove) -> bool:
+    """
+    Recursively remove a collection from all parent collections in the hierarchy
+    """
+    removed_from_any_parent = False
+    
+    try:
+        # Check scene collection
+        scene_collection = bpy.context.scene.collection
+        if collection_to_remove in scene_collection.children:
+            scene_collection.children.unlink(collection_to_remove)
+            logger.debug(f"    Unlinked '{collection_to_remove.name}' from scene collection")
+            removed_from_any_parent = True
+        
+        # Check all other collections recursively
+        for parent_collection in list(bpy.data.collections):
+            if parent_collection != collection_to_remove and collection_to_remove in parent_collection.children:
+                try:
+                    parent_collection.children.unlink(collection_to_remove)
+                    logger.debug(f"    Unlinked '{collection_to_remove.name}' from parent '{parent_collection.name}'")
+                    removed_from_any_parent = True
+                except Exception as unlink_error:
+                    logger.warning(f"    Failed to unlink '{collection_to_remove.name}' from '{parent_collection.name}': {str(unlink_error)}")
+        
+        return removed_from_any_parent
+        
+    except Exception as e:
+        logger.error(f"Error removing collection '{collection_to_remove.name}' from hierarchy: {str(e)}")
+        return False
+
+
+def remove_vrm_colliders(armature: Object = None) -> Tuple[int, List[str], int]:
     """
     Simple approach: Remove ALL objects with 'collider' in their name and clean up empty collections
-    Returns tuple of (removed_count, removed_object_names)
     """
     objects_to_remove = []
     removed_names = []
@@ -279,34 +411,59 @@ def remove_vrm_colliders(armature: Object = None) -> Tuple[int, List[str]]:
         
         logger.info(f"Successfully removed {removed_count} collider objects")
         
-        # Clean up empty collections
+        # Clean up empty collections (prioritize collider-related collections)
         empty_collections_removed = 0
-        for collection in list(collections_to_check):
+        
+        # Also check all collections in the scene for collider-related names
+        all_collections_to_check = set(collections_to_check)
+        for collection in bpy.data.collections:
+            collection_name_lower = collection.name.lower()
+            if any(pattern in collection_name_lower for pattern in ['collider', 'collision', 'physics', 'dynamic']):
+                all_collections_to_check.add(collection)
+                logger.debug(f"Found collider-related collection to check: {collection.name}")
+        
+        for collection in list(all_collections_to_check):
             try:
-                # Check if collection is now empty and not the master collection
-                if (len(collection.objects) == 0 and 
-                    len(collection.children) == 0 and 
-                    collection.name != "Collection" and
-                    collection.name != "Master Collection"):
+                # Check if collection exists and is empty
+                if collection.name not in bpy.data.collections:
+                    logger.debug(f"Collection {collection.name} already removed")
+                    continue
+                
+                collection_name_lower = collection.name.lower()
+                is_collider_collection = any(pattern in collection_name_lower for pattern in ['collider', 'collision', 'physics', 'dynamic'])
+                is_empty = len(collection.objects) == 0 and len(collection.children) == 0
+                is_protected = collection.name in ["Collection", "Master Collection"]
+                
+                # Remove if empty and (was used by colliders OR has collider-related name)
+                if is_empty and not is_protected and (collection in collections_to_check or is_collider_collection):
+                    logger.info(f"Removing empty {'collider-related ' if is_collider_collection else ''}collection: {collection.name}")
                     
-                    logger.info(f"Removing empty collection: {collection.name}")
+                    # Use helper function to remove from all parent collections
+                    removed_from_parents = remove_collection_from_hierarchy(collection)
                     
-                    if collection in bpy.context.scene.collection.children:
-                        bpy.context.scene.collection.children.unlink(collection)
+                    if not removed_from_parents:
+                        logger.debug(f"  Collection {collection.name} was not found in any parent collections")
                     
-                    bpy.data.collections.remove(collection)
-                    empty_collections_removed += 1
-                    logger.info(f"  Successfully removed collection: {collection.name}")
+                    # Remove the collection data
+                    try:
+                        bpy.data.collections.remove(collection)
+                        empty_collections_removed += 1
+                        logger.info(f"  Successfully removed collection: {collection.name}")
+                    except Exception as remove_error:
+                        logger.warning(f"  Failed to remove collection {collection.name}: {str(remove_error)}")
+                        # Continue with other collections even if this one fails
                     
             except Exception as e:
                 logger.warning(f"Failed to remove empty collection {collection.name}: {str(e)}")
+                import traceback
+                logger.debug(f"Collection removal traceback: {traceback.format_exc()}")
         
         if empty_collections_removed > 0:
             logger.info(f"Cleaned up {empty_collections_removed} empty collections")
         
     except Exception as e:
         logger.error(f"Error during collider removal: {str(e)}")
-        return 0, []
+        return 0, [], 0
     
     finally:
         if original_active and original_active.name in bpy.data.objects:
@@ -318,16 +475,85 @@ def remove_vrm_colliders(armature: Object = None) -> Tuple[int, List[str]]:
             except:
                 pass
     
-    logger.info(f"Collider removal complete. Removed {len(removed_names)} objects")
-    return len(removed_names), removed_names
+    logger.info(f"Collider removal complete. Removed {len(removed_names)} objects and {empty_collections_removed} collections")
+    return len(removed_names), removed_names, empty_collections_removed
 
 
-def convert_vrm_to_unity(armature: Object, remove_colliders: bool = True) -> Tuple[bool, List[str], int]:
+def remove_vrm_root_bone(armature: Object) -> Tuple[bool, str]:
+    """
+    Remove unnecessary VRM root bone and make Hips the root bone
+
+    """
+    if not armature or armature.type != 'ARMATURE':
+        return False, "No valid armature provided"
+    
+    # Look for potential root bones and Hips bone
+    potential_roots = []
+    hips_bone = None
+    
+    for bone in armature.data.edit_bones:
+        bone_name_lower = bone.name.lower()
+        
+        # Check if this could be Hips (various naming conventions)
+        if any(hips_name in bone_name_lower for hips_name in ['hips', 'hip', 'pelvis', 'jbipchips']):
+            hips_bone = bone
+            logger.debug(f"Found Hips bone: {bone.name}")
+        
+        # Check if this could be a root bone
+        if bone.parent is None and len(bone.children) > 0:
+            # Common VRM root bone names
+            if any(root_name in bone_name_lower for root_name in ['root', 'vrm', 'armature', 'rig']):
+                potential_roots.append(bone)
+                logger.debug(f"Found potential root bone: {bone.name}")
+    
+    if not hips_bone:
+        return False, "Could not find Hips bone to promote as root"
+    
+    if not potential_roots:
+        logger.info("No unnecessary root bone found - Hips may already be root")
+        return True, "No root bone removal needed"
+    
+    # Find the root bone that is the parent of Hips
+    root_to_remove = None
+    for root_bone in potential_roots:
+        if hips_bone.parent == root_bone:
+            root_to_remove = root_bone
+            break
+    
+    if not root_to_remove:
+        # Check if Hips is already parentless (already root)
+        if hips_bone.parent is None:
+            logger.info("Hips bone is already the root bone")
+            return True, "Hips is already root - no changes needed"
+        else:
+            logger.warning(f"Hips bone has parent '{hips_bone.parent.name}' but no matching root found")
+            return False, "Could not identify safe root bone to remove"
+    
+    root_name = root_to_remove.name
+    logger.info(f"Removing root bone '{root_name}' and promoting Hips to root")
+    
+    # Reparent all children of the root bone (except Hips) to Hips
+    children_to_reparent = []
+    for child in root_to_remove.children:
+        if child != hips_bone:
+            children_to_reparent.append(child)
+    )
+    hips_bone.parent = None
+    
+    for child in children_to_reparent:
+        child.parent = hips_bone
+        logger.debug(f"Reparented {child.name} from {root_name} to {hips_bone.name}")
+    
+    armature.data.edit_bones.remove(root_to_remove)
+    
+    message = f"Removed root bone '{root_name}' - Hips is now the root bone"
+    logger.info(message)
+    return True, message
+
+
+def convert_vrm_to_unity(armature: Object, remove_colliders: bool = True, remove_root: bool = True) -> Tuple[bool, List[str], int]:
     """
     Convert VRM armature bone names to Unity humanoid format
-    
-    Returns:
-        Tuple of (success, messages, converted_count)
     """
     if not armature or armature.type != 'ARMATURE':
         return False, ["No valid armature selected"], 0
@@ -351,15 +577,18 @@ def convert_vrm_to_unity(armature: Object, remove_colliders: bool = True) -> Tup
     try:
         # First, remove collider objects and bones if requested
         if remove_colliders:
-            collider_count, removed_colliders = remove_vrm_colliders(armature)
-            if collider_count > 0:
-                messages.append(f"Removed {collider_count} VRM collider objects/bones")
+            collider_count, removed_colliders, collections_removed = remove_vrm_colliders(armature)
+            if collider_count > 0 or collections_removed > 0:
+                if collections_removed > 0:
+                    messages.append(f"Removed {collider_count} VRM collider objects and {collections_removed} empty collections")
+                else:
+                    messages.append(f"Removed {collider_count} VRM collider objects")
                 logger.info(f"Removed {collider_count} VRM colliders: {removed_colliders}")
         
         vrm_bones = find_vrm_bones_in_armature(armature)
         
         if not vrm_bones:
-            if remove_colliders and collider_count > 0:
+            if remove_colliders and (collider_count > 0 or collections_removed > 0):
                 messages.append("No VRM bones found to convert (colliders were removed)")
                 return True, messages, 0  
             else:
@@ -367,6 +596,13 @@ def convert_vrm_to_unity(armature: Object, remove_colliders: bool = True) -> Tup
         
         if bpy.context.mode != 'EDIT':
             bpy.ops.object.mode_set(mode='EDIT')
+        
+        # Remove unnecessary root bone if requested
+        if remove_root:
+            root_success, root_message = remove_vrm_root_bone(armature)
+            messages.append(root_message)
+            if not root_success:
+                logger.warning(f"Root bone removal failed: {root_message}")
         
         # Rename bones
         for vrm_bone_name, unity_name in vrm_bones.items():
