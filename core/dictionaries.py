@@ -259,80 +259,85 @@ bone_names = {
 
 # Add VRM bone name variations  
 bone_names.update({
-    'hips': bone_names['hips'] + ['jbipchips', 'jhips', 'vrmhips'],
+    'hips': bone_names['hips'] + ['jbipchips', 'jhips', 'vrmhips', 'leftupperleg', 'rightupperleg'],
     'spine': bone_names['spine'] + ['jbipcspine', 'jspine', 'vrmspine'],
-    'chest': bone_names['chest'] + ['jbipcchest', 'jchest', 'vrmchest'],
-    'upper_chest': bone_names['upper_chest'] + ['jbipcupperchest', 'jupperchest', 'vrmupperchest'],
+    'chest': bone_names['chest'] + ['jbipcchest', 'jchest', 'vrmchest', 'upperchest'],
+    'upper_chest': bone_names['upper_chest'] + ['jbipcupperchest', 'jupperchest', 'vrmupperchest', 'upperchest'],
     'neck': bone_names['neck'] + ['jbipcneck', 'jneck', 'vrmneck'],
-    'head': bone_names['head'] + ['jbipchead', 'jhead', 'vrmhead'],
+    'head': bone_names['head'] + ['jbipchead', 'jhead', 'vrmhead', 'lefteye', 'righteye'],
     
     # VRM arms - both simplified patterns
-    'left_shoulder': bone_names['left_shoulder'] + ['jbipllshoulder', 'jlshoulder', 'jbiplshoulder'],
-    'left_arm': bone_names['left_arm'] + ['jbiplupperarm', 'jlupperarm'],
-    'left_elbow': bone_names['left_elbow'] + ['jbipllforearm', 'jlforearm', 'jbipllowerarm'],
-    'left_wrist': bone_names['left_wrist'] + ['jbipllhand', 'jlhand', 'jbiplhand'],
+    'left_shoulder': bone_names['left_shoulder'] + ['jbipllshoulder', 'jlshoulder', 'jbiplshoulder', 'leftshoulder'],
+    'left_arm': bone_names['left_arm'] + ['jbiplupperarm', 'jlupperarm', 'leftupperarm'],
+    'left_elbow': bone_names['left_elbow'] + ['jbipllforearm', 'jlforearm', 'jbipllowerarm', 'leftlowerarm'],
+    'left_wrist': bone_names['left_wrist'] + ['jbipllhand', 'jlhand', 'jbiplhand', 'lefthand'],
     
-    'right_shoulder': bone_names['right_shoulder'] + ['jbiprlshoulder', 'jrshoulder', 'jbiprshoulder'],
-    'right_arm': bone_names['right_arm'] + ['jbiprrupperarm', 'jrupperarm', 'jbiprupperarm'],
-    'right_elbow': bone_names['right_elbow'] + ['jbiprrforearm', 'jrforearm', 'jbiprforearm', 'jbiprlowerarm'],
-    'right_wrist': bone_names['right_wrist'] + ['jbiprrhand', 'jrhand', 'jbiprhand'],
+    'right_shoulder': bone_names['right_shoulder'] + ['jbiprlshoulder', 'jrshoulder', 'jbiprshoulder', 'rightshoulder'],
+    'right_arm': bone_names['right_arm'] + ['jbiprrupperarm', 'jrupperarm', 'jbiprupperarm', 'rightupperarm'],
+    'right_elbow': bone_names['right_elbow'] + ['jbiprrforearm', 'jrforearm', 'jbiprforearm', 'jbiprlowerarm', 'rightlowerarm'],
+    'right_wrist': bone_names['right_wrist'] + ['jbiprrhand', 'jrhand', 'jbiprhand', 'righthand'],
     
     # VRM legs - both simplified patterns
-    'left_leg': bone_names['left_leg'] + ['jbiplupperleg', 'jlupperleg'],
-    'left_knee': bone_names['left_knee'] + ['jbipllowerleg', 'jllowerleg'],
-    'left_ankle': bone_names['left_ankle'] + ['jbipllfoot', 'jlfoot', 'jbiplfoot'],
-    'left_toe': bone_names['left_toe'] + ['jbiplltoe', 'jltoe', 'jbipltoebase'],
+    'left_leg': bone_names['left_leg'] + ['jbiplupperleg', 'jlupperleg', 'leftupperleg'],
+    'left_knee': bone_names['left_knee'] + ['jbipllowerleg', 'jllowerleg', 'leftlowerleg'],
+    'left_ankle': bone_names['left_ankle'] + ['jbipllfoot', 'jlfoot', 'jbiplfoot', 'leftfoot'],
+    'left_toe': bone_names['left_toe'] + ['jbiplltoe', 'jltoe', 'jbipltoebase', 'lefttoes'],
     
-    'right_leg': bone_names['right_leg'] + ['jbiprrupperleg', 'jrupperleg', 'jbiprupperleg'],
-    'right_knee': bone_names['right_knee'] + ['jbiprrlowerleg', 'jrlowerleg', 'jbiprlowerleg'],
-    'right_ankle': bone_names['right_ankle'] + ['jbiprrfoot', 'jrfoot', 'jbiprfoot'],
-    'right_toe': bone_names['right_toe'] + ['jbiprrtoe', 'jrtoe', 'jbiprtoebase'],
+    'right_leg': bone_names['right_leg'] + ['jbiprrupperleg', 'jrupperleg', 'jbiprupperleg', 'rightupperleg'],
+    'right_knee': bone_names['right_knee'] + ['jbiprrlowerleg', 'jrlowerleg', 'jbiprlowerleg', 'rightlowerleg'],
+    'right_ankle': bone_names['right_ankle'] + ['jbiprrfoot', 'jrfoot', 'jbiprfoot', 'rightfoot'],
+    'right_toe': bone_names['right_toe'] + ['jbiprrtoe', 'jrtoe', 'jbiprtoebase', 'righttoes'],
     
     # VRM eyes
     'left_eye': bone_names['left_eye'] + ['jbipcleye', 'jleye', 'jadjlfaceeye'],
     'right_eye': bone_names['right_eye'] + ['jbipcreye', 'jreye', 'jadjrfaceeye'],
     
+    # VRM jaw
+    'jaw': ['jaw', 'mandible', 'lowerjaw', 'chin', 'あご', 'ik_あご'],
+    
     # VRM fingers - Left (including Little finger variations)
-    'thumb_1_l': bone_names['thumb_1_l'] + ['jbipllthumb1', 'jlthumb1', 'jbiplthumb1'],
-    'thumb_2_l': bone_names['thumb_2_l'] + ['jbipllthumb2', 'jlthumb2', 'jbiplthumb2'],
-    'thumb_3_l': bone_names['thumb_3_l'] + ['jbipllthumb3', 'jlthumb3', 'jbiplthumb3'],
+    'thumb_0_l': bone_names['thumb_0_l'] + ['jbipllthumb0', 'jlthumb0', 'jbipllthumbmetacarpal', 'jlthumbmetacarpal', 'leftthumbmetacarpal'],
+    'thumb_1_l': bone_names['thumb_1_l'] + ['jbipllthumb1', 'jlthumb1', 'jbiplthumb1', 'leftthumbproximal'],
+    'thumb_2_l': bone_names['thumb_2_l'] + ['jbipllthumb2', 'jlthumb2', 'jbiplthumb2', 'leftthumbintermediate'],
+    'thumb_3_l': bone_names['thumb_3_l'] + ['jbipllthumb3', 'jlthumb3', 'jbiplthumb3', 'leftthumbdistal'],
     
-    'index_1_l': bone_names['index_1_l'] + ['jbipllindex1', 'jlindex1', 'jbiplindex1'],
-    'index_2_l': bone_names['index_2_l'] + ['jbipllindex2', 'jlindex2', 'jbiplindex2'],
-    'index_3_l': bone_names['index_3_l'] + ['jbipllindex3', 'jlindex3', 'jbiplindex3'],
+    'index_1_l': bone_names['index_1_l'] + ['jbipllindex1', 'jlindex1', 'jbiplindex1', 'leftindexproximal'],
+    'index_2_l': bone_names['index_2_l'] + ['jbipllindex2', 'jlindex2', 'jbiplindex2', 'leftindexintermediate'],
+    'index_3_l': bone_names['index_3_l'] + ['jbipllindex3', 'jlindex3', 'jbiplindex3', 'leftindexdistal'],
     
-    'middle_1_l': bone_names['middle_1_l'] + ['jbipllmiddle1', 'jlmiddle1', 'jbiplmiddle1'],
-    'middle_2_l': bone_names['middle_2_l'] + ['jbipllmiddle2', 'jlmiddle2', 'jbiplmiddle2'],
-    'middle_3_l': bone_names['middle_3_l'] + ['jbipllmiddle3', 'jlmiddle3', 'jbiplmiddle3'],
+    'middle_1_l': bone_names['middle_1_l'] + ['jbipllmiddle1', 'jlmiddle1', 'jbiplmiddle1', 'leftmiddleproximal'],
+    'middle_2_l': bone_names['middle_2_l'] + ['jbipllmiddle2', 'jlmiddle2', 'jbiplmiddle2', 'leftmiddleintermediate'],
+    'middle_3_l': bone_names['middle_3_l'] + ['jbipllmiddle3', 'jlmiddle3', 'jbiplmiddle3', 'leftmiddledistal'],
     
-    'ring_1_l': bone_names['ring_1_l'] + ['jbipllring1', 'jlring1', 'jbiplring1'],
-    'ring_2_l': bone_names['ring_2_l'] + ['jbipllring2', 'jlring2', 'jbiplring2'],
-    'ring_3_l': bone_names['ring_3_l'] + ['jbipllring3', 'jlring3', 'jbiplring3'],
+    'ring_1_l': bone_names['ring_1_l'] + ['jbipllring1', 'jlring1', 'jbiplring1', 'leftringproximal'],
+    'ring_2_l': bone_names['ring_2_l'] + ['jbipllring2', 'jlring2', 'jbiplring2', 'leftringintermediate'],
+    'ring_3_l': bone_names['ring_3_l'] + ['jbipllring3', 'jlring3', 'jbiplring3', 'leftringdistal'],
     
-    'pinkie_1_l': bone_names['pinkie_1_l'] + ['jbipllpinky1', 'jlpinky1', 'jbipllittle1', 'jbipllpinkie1'],
-    'pinkie_2_l': bone_names['pinkie_2_l'] + ['jbipllpinky2', 'jlpinky2', 'jbipllittle2', 'jbipllpinkie2'],
-    'pinkie_3_l': bone_names['pinkie_3_l'] + ['jbipllpinky3', 'jlpinky3', 'jbipllittle3', 'jbipllpinkie3'],
+    'pinkie_1_l': bone_names['pinkie_1_l'] + ['jbipllpinky1', 'jlpinky1', 'jbipllittle1', 'jbipllpinkie1', 'leftlittleproximal'],
+    'pinkie_2_l': bone_names['pinkie_2_l'] + ['jbipllpinky2', 'jlpinky2', 'jbipllittle2', 'jbipllpinkie2', 'leftlittleintermediate'],
+    'pinkie_3_l': bone_names['pinkie_3_l'] + ['jbipllpinky3', 'jlpinky3', 'jbipllittle3', 'jbipllpinkie3', 'leftlittledistal'],
     
     # VRM fingers - Right (including Little finger variations)
-    'thumb_1_r': bone_names['thumb_1_r'] + ['jbiprthumb1', 'jrthumb1', 'jbiprrrthumb1'],
-    'thumb_2_r': bone_names['thumb_2_r'] + ['jbiprthumb2', 'jrthumb2', 'jbiprrrthumb2'],
-    'thumb_3_r': bone_names['thumb_3_r'] + ['jbiprthumb3', 'jrthumb3', 'jbiprrrthumb3'],
+    'thumb_0_r': bone_names['thumb_0_r'] + ['jbiprthumb0', 'jrthumb0', 'jbiprthumbmetacarpal', 'jrthumbmetacarpal', 'rightthumbmetacarpal'],
+    'thumb_1_r': bone_names['thumb_1_r'] + ['jbiprthumb1', 'jrthumb1', 'jbiprrrthumb1', 'rightthumbproximal'],
+    'thumb_2_r': bone_names['thumb_2_r'] + ['jbiprthumb2', 'jrthumb2', 'jbiprrrthumb2', 'rightthumbintermediate'],
+    'thumb_3_r': bone_names['thumb_3_r'] + ['jbiprthumb3', 'jrthumb3', 'jbiprrrthumb3', 'rightthumbdistal'],
     
-    'index_1_r': bone_names['index_1_r'] + ['jbiprindex1', 'jrindex1', 'jbiprrrindex1'],
-    'index_2_r': bone_names['index_2_r'] + ['jbiprindex2', 'jrindex2', 'jbiprrrindex2'],
-    'index_3_r': bone_names['index_3_r'] + ['jbiprindex3', 'jrindex3', 'jbiprrrindex3'],
+    'index_1_r': bone_names['index_1_r'] + ['jbiprindex1', 'jrindex1', 'jbiprrrindex1', 'rightindexproximal'],
+    'index_2_r': bone_names['index_2_r'] + ['jbiprindex2', 'jrindex2', 'jbiprrrindex2', 'rightindexintermediate'],
+    'index_3_r': bone_names['index_3_r'] + ['jbiprindex3', 'jrindex3', 'jbiprrrindex3', 'rightindexdistal'],
     
-    'middle_1_r': bone_names['middle_1_r'] + ['jbiprmiddle1', 'jrmiddle1', 'jbiprrmiddle1'],
-    'middle_2_r': bone_names['middle_2_r'] + ['jbiprmiddle2', 'jrmiddle2', 'jbiprrmiddle2'],
-    'middle_3_r': bone_names['middle_3_r'] + ['jbiprmiddle3', 'jrmiddle3', 'jbiprrmiddle3'],
+    'middle_1_r': bone_names['middle_1_r'] + ['jbiprmiddle1', 'jrmiddle1', 'jbiprrmiddle1', 'rightmiddleproximal'],
+    'middle_2_r': bone_names['middle_2_r'] + ['jbiprmiddle2', 'jrmiddle2', 'jbiprrmiddle2', 'rightmiddleintermediate'],
+    'middle_3_r': bone_names['middle_3_r'] + ['jbiprmiddle3', 'jrmiddle3', 'jbiprrmiddle3', 'rightmiddledistal'],
     
-    'ring_1_r': bone_names['ring_1_r'] + ['jbiprring1', 'jrring1', 'jbiprrrring1'],
-    'ring_2_r': bone_names['ring_2_r'] + ['jbiprring2', 'jrring2', 'jbiprrrring2'],
-    'ring_3_r': bone_names['ring_3_r'] + ['jbiprring3', 'jrring3', 'jbiprrrring3'],
+    'ring_1_r': bone_names['ring_1_r'] + ['jbiprring1', 'jrring1', 'jbiprrrring1', 'rightringproximal'],
+    'ring_2_r': bone_names['ring_2_r'] + ['jbiprring2', 'jrring2', 'jbiprrrring2', 'rightringintermediate'],
+    'ring_3_r': bone_names['ring_3_r'] + ['jbiprring3', 'jrring3', 'jbiprrrring3', 'rightringdistal'],
     
-    'pinkie_1_r': bone_names['pinkie_1_r'] + ['jbiprpinky1', 'jrpinky1', 'jbiprlittle1', 'jbiprrrpinky1'],
-    'pinkie_2_r': bone_names['pinkie_2_r'] + ['jbiprpinky2', 'jrpinky2', 'jbiprlittle2', 'jbiprrrpinky2'],
-    'pinkie_3_r': bone_names['pinkie_3_r'] + ['jbiprpinky3', 'jrpinky3', 'jbiprlittle3', 'jbiprrrpinky3']
+    'pinkie_1_r': bone_names['pinkie_1_r'] + ['jbiprpinky1', 'jrpinky1', 'jbiprlittle1', 'jbiprrrpinky1', 'rightlittleproximal'],
+    'pinkie_2_r': bone_names['pinkie_2_r'] + ['jbiprpinky2', 'jrpinky2', 'jbiprlittle2', 'jbiprrrpinky2', 'rightlittleintermediate'],
+    'pinkie_3_r': bone_names['pinkie_3_r'] + ['jbiprpinky3', 'jrpinky3', 'jbiprlittle3', 'jbiprrrpinky3', 'rightlittledistal']
 })
 
 # array taken from cats
