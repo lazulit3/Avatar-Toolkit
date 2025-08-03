@@ -4,6 +4,7 @@ from bpy.types import Object, Bone
 from .common import get_active_armature
 from .dictionaries import simplify_bonename, standard_bones, bone_hierarchy, reverse_bone_lookup
 from .logging_setup import logger
+from .translations import t
 
 
 def detect_vrm_armature(armature: Object) -> bool:
