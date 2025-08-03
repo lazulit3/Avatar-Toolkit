@@ -512,7 +512,7 @@ standard_bones = {
     
     # Eyes
     'left_eye': 'Eye_L',
-    'right_eye': 'Eye_R'
+    'right_eye': 'Eye_R',
     
     # Breast bones
     'breast_1_l': 'Breast1_L',
