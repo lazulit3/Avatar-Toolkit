@@ -452,7 +452,7 @@ standard_bones = {
     'hips': 'Hips',
     'spine': 'Spine',
     'chest': 'Chest',
-    'upper_chest': 'Chest.Up',
+    'upper_chest': 'UpperChest',
     'neck': 'Neck',
     'head': 'Head',
     
@@ -526,20 +526,20 @@ standard_bones = {
 bone_hierarchy = [
     ('Hips', 'Spine'),
     ('Spine', 'Chest'),
-    ('Chest', 'Chest.Up'),
-    ('Chest.Up', 'Neck'),
+    ('Chest', 'UpperChest'),
+    ('UpperChest', 'Neck'),
     ('Neck', 'Head'),
     ('Head', 'Eye_L'),
     ('Head', 'Eye_R'),
     
     # Left Arm Chain
-    ('Chest.Up', 'Shoulder_L'),
+    ('UpperChest', 'Shoulder_L'),
     ('Shoulder_L', 'UpperArm_L'),
     ('UpperArm_L', 'LowerArm_L'),
     ('LowerArm_L', 'Hand_L'),
     
     # Right Arm Chain
-    ('Chest.Up', 'Shoulder_R'),
+    ('UpperChest', 'Shoulder_R'),
     ('Shoulder_R', 'UpperArm_R'),
     ('UpperArm_R', 'LowerArm_R'),
     ('LowerArm_R', 'Hand_R'),
@@ -616,10 +616,10 @@ acceptable_bone_hierarchy = [
     ('Head', 'RightEye'),
     
     # Old standard bone hierarchy patterns
-    ('Chest.Up', 'UpperArm.L'),
+    ('UpperChest', 'UpperArm.L'),
     ('UpperArm.L', 'LowerArm.L'),
     ('LowerArm.L', 'Hand.L'),
-    ('Chest.Up', 'UpperArm.R'),
+    ('UpperChest', 'UpperArm.R'),
     ('UpperArm.R', 'LowerArm.R'),
     ('LowerArm.R', 'Hand.R'),
     ('Hips', 'UpperLeg.L'),
@@ -632,11 +632,11 @@ acceptable_bone_hierarchy = [
     ('Foot.R', 'Toes.R'),
     
     # New standard bone hierarchy patterns (with shoulders)
-    ('Chest.Up', 'Shoulder_L'),
+    ('UpperChest', 'Shoulder_L'),
     ('Shoulder_L', 'UpperArm_L'),
     ('UpperArm_L', 'LowerArm_L'),
     ('LowerArm_L', 'Hand_L'),
-    ('Chest.Up', 'Shoulder_R'),
+    ('UpperChest', 'Shoulder_R'),
     ('Shoulder_R', 'UpperArm_R'),
     ('UpperArm_R', 'LowerArm_R'),
     ('LowerArm_R', 'Hand_R'),
