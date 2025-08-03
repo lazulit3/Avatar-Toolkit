@@ -211,9 +211,163 @@ def validate_bone_hierarchy(bones: Dict[str, Bone], parent_name: str, child_name
         return False
     return bones[child_name].parent == bones[parent_name]
 
+def extract_bone_side_info(bone_name: str) -> Tuple[str, str]:
+    """
+    Extract base bone name and side indicator from a bone name.
+    Returns (base_name, side) where side is 'L', 'R', or ''
+    """
+    normalized = simplify_bonename(bone_name)
+    original = bone_name
+    
+    # Common left/right patterns to check
+    left_patterns = [
+        'left', 'l', 'lft', 'lt',
+        '.l', '_l', '-l', ' l',
+        '左', 'ひだり'
+    ]
+    
+    right_patterns = [
+        'right', 'r', 'rgt', 'rt', 
+        '.r', '_r', '-r', ' r',
+        '右', 'みぎ'
+    ]
+    
+    # Check for left patterns
+    for pattern in left_patterns:
+        pattern_norm = simplify_bonename(pattern)
+        if normalized.startswith(pattern_norm):
+            base = normalized[len(pattern_norm):]
+            if base:  # Make sure there's something left
+                return base, 'L'
+        elif normalized.endswith(pattern_norm):
+            base = normalized[:-len(pattern_norm)]
+            if base:
+                return base, 'L'
+        elif pattern_norm in normalized:
+            # Handle cases like ArmLeft
+            parts = normalized.split(pattern_norm)
+            if len(parts) == 2:
+                base = parts[0] + parts[1]
+                if base:
+                    return base, 'L'
+    
+    # Check for right patterns
+    for pattern in right_patterns:
+        pattern_norm = simplify_bonename(pattern)
+        if normalized.startswith(pattern_norm):
+            base = normalized[len(pattern_norm):]
+            if base:
+                return base, 'R'
+        elif normalized.endswith(pattern_norm):
+            base = normalized[:-len(pattern_norm)]
+            if base:
+                return base, 'R'
+        elif pattern_norm in normalized:
+            parts = normalized.split(pattern_norm)
+            if len(parts) == 2:
+                base = parts[0] + parts[1]
+                if base:
+                    return base, 'R'
+    
+    return normalized, ''
+
+def find_symmetric_bone_pairs(bones: Dict[str, Bone]) -> Dict[str, Tuple[List[str], List[str]]]:
+    """
+    Automatically find symmetric bone pairs in the armature.
+    Returns dict mapping base_name to (left_bones, right_bones)
+    """
+    bone_groups = {}
+    
+    for bone_name in bones.keys():
+        base, side = extract_bone_side_info(bone_name)
+        
+        if side:
+            if base not in bone_groups:
+                bone_groups[base] = {'L': [], 'R': []}
+            bone_groups[base][side].append(bone_name)
+    
+    symmetric_pairs = {}
+    for base, sides in bone_groups.items():
+        if sides['L'] and sides['R']:
+            symmetric_pairs[base] = (sides['L'], sides['R'])
+    
+    return symmetric_pairs
+
+def validate_armature_symmetry(armature: Object) -> Tuple[bool, List[str]]:
+    """
+    Comprehensive symmetry validation that provides detailed feedback
+    """
+    if not armature or armature.type != 'ARMATURE':
+        return False, ["Invalid armature"]
+    
+    bones = {bone.name: bone for bone in armature.data.bones}
+    symmetric_pairs = find_symmetric_bone_pairs(bones)
+    
+    messages = []
+    is_symmetric = True
+    
+    if symmetric_pairs:
+        messages.append("Found symmetric bone pairs:")
+        for base, (left_bones, right_bones) in symmetric_pairs.items():
+            left_count = len(left_bones)
+            right_count = len(right_bones)
+            
+            if left_count == right_count:
+                messages.append(f"  ✓ {base}: {left_count} bones on each side")
+                for l_bone, r_bone in zip(sorted(left_bones), sorted(right_bones)):
+                    messages.append(f"    {l_bone} ↔ {r_bone}")
+            else:
+                is_symmetric = False
+                messages.append(f"  ✗ {base}: {left_count} left, {right_count} right bones")
+                messages.append(f"    Left: {', '.join(sorted(left_bones))}")
+                messages.append(f"    Right: {', '.join(sorted(right_bones))}")
+    else:
+        messages.append("No symmetric bone pairs detected")
+        is_symmetric = False
+    
+    return is_symmetric, messages
+
 def validate_symmetry(bones: Dict[str, Bone], base: str, left: str, right: str) -> bool:
     """Validate if matching left and right bones exist for a given base bone name"""
-    # Extract left and right bone names from both hierarchies
+    # First try the new intelligent detection
+    symmetric_pairs = find_symmetric_bone_pairs(bones)
+    
+    # Look for bones that match the requested base type
+    matching_left_bones = []
+    matching_right_bones = []
+    
+    # Check each detected symmetric pair
+    for pair_base, (left_bones, right_bones) in symmetric_pairs.items():
+        if base.lower() in pair_base.lower() or pair_base.lower() in base.lower():
+            matching_left_bones.extend(left_bones)
+            matching_right_bones.extend(right_bones)
+    
+    if matching_left_bones or matching_right_bones:
+        left_bases = {}
+        right_bases = {}
+        
+        for bone_name in matching_left_bones:
+            bone_base, side = extract_bone_side_info(bone_name)
+            if bone_base not in left_bases:
+                left_bases[bone_base] = []
+            left_bases[bone_base].append(bone_name)
+        
+        for bone_name in matching_right_bones:
+            bone_base, side = extract_bone_side_info(bone_name)
+            if bone_base not in right_bases:
+                right_bases[bone_base] = []
+            right_bases[bone_base].append(bone_name)
+        
+        all_bases = set(left_bases.keys()) | set(right_bases.keys())
+        for bone_base in all_bases:
+            left_count = len(left_bases.get(bone_base, []))
+            right_count = len(right_bases.get(bone_base, []))
+            if left_count != right_count:
+                return False
+        
+        return len(all_bases) > 0
+    
+    # Fallback to original dictionary-based method
     left_bone_names = set()
     right_bone_names = set()
     

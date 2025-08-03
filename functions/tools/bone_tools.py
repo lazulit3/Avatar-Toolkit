@@ -186,7 +186,6 @@ class AvatarToolKit_OT_RemoveZeroWeightBones(Operator):
         if not armature:
             return {'CANCELLED'}
 
-        # Store initial transforms
         bpy.ops.object.mode_set(mode='EDIT')
         initial_transforms: Dict[str, Dict[str, Any]] = {}
         data_breaking = store_breaking_settings_armature(armature)
@@ -200,56 +199,61 @@ class AvatarToolKit_OT_RemoveZeroWeightBones(Operator):
                 'parent': bone.parent.name if bone.parent else None
             }
 
-        # Get weighted bones
+        # Get bones with any weight
         weighted_bones: List[str] = []
         meshes = get_all_meshes(context)
-        zero_weight_bones: List[str] = []
-        
         for mesh in meshes:
-            mesh_data: Mesh = mesh.data
-            for vertex in mesh_data.vertices:
+            for vertex in mesh.data.vertices:
                 for group in vertex.groups:
                     if group.weight > context.scene.avatar_toolkit.merge_weights_threshold:
-                        weighted_bones.append(mesh.vertex_groups[group.group].name)
+                        vg = mesh.vertex_groups[group.group]
+                        if vg.name not in weighted_bones:
+                            weighted_bones.append(vg.name)
 
-        # Process bone removal
-        bpy.ops.object.mode_set(mode='EDIT')
-        armature_data: Armature = armature.data
+        armature_data = armature.data
         removed_count = 0
+        zero_weight_bones: List[str] = []
 
-        for bone in armature_data.edit_bones[:]:  # Create a copy of the list
-            if (bone.name not in weighted_bones and 
-                not self.should_preserve_bone(bone.name, context)):
-                
-                if context.scene.avatar_toolkit.list_only_mode:
-                    zero_weight_bones.append(bone.name)
-                    continue
+        def is_zero_weight_chain(bone, weighted_bones, preserve_check_fn):
+            if bone.name in weighted_bones or preserve_check_fn(bone.name, context):
+                return False
+            return all(is_zero_weight_chain(child, weighted_bones, preserve_check_fn) for child in bone.children)
 
-                # Store children data
-                children = bone.children
-                children_data = {child.name: initial_transforms[child.name] for child in children}
+        for bone in armature_data.edit_bones[:]:
+            if bone.name in weighted_bones or self.should_preserve_bone(bone.name, context):
+                continue
 
-                # Reparent children
-                for child in children:
+            if not is_zero_weight_chain(bone, weighted_bones, self.should_preserve_bone):
+                continue
+
+            if context.scene.avatar_toolkit.list_only_mode:
+                zero_weight_bones.append(bone.name)
+                continue
+
+            # Traverse and collect the full empty chain
+            stack = [bone]
+            chain = []
+
+            while stack:
+                b = stack.pop()
+                chain.append(b)
+                stack.extend(b.children)
+
+            for b in reversed(chain):  # Remove children before parents
+                for child in b.children:
                     child.use_connect = False
-                    if bone.parent:
-                        child.parent = bone.parent
-
-                # Remove bone
-                armature_data.edit_bones.remove(bone)
-                removed_count += 1
-
-                # Restore children positions
-                for child_name, data in children_data.items():
-                    if child_name in armature_data.edit_bones:
-                        child = armature_data.edit_bones[child_name]
-                        restore_bone_transforms(child, data)
+                    if b.parent:
+                        child.parent = b.parent
+                if b.name in armature_data.edit_bones:
+                    armature_data.edit_bones.remove(b)
+                    removed_count += 1
 
         bpy.ops.object.mode_set(mode='OBJECT')
-        
+
         if context.scene.avatar_toolkit.list_only_mode:
             self.populate_bone_list(context, zero_weight_bones)
             return {'FINISHED'}
+
         restore_breaking_settings_armature(armature, data_breaking)
         self.report({'INFO'}, t("Tools.clean_weights_success", count=removed_count))
         return {'FINISHED'}
