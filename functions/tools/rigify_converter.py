@@ -2,7 +2,7 @@ import traceback
 import bpy
 from typing import Dict, List, Set, Optional, Tuple, Any
 from bpy.types import Operator, Context, Object, PoseBone, EditBone, Bone, Constraint
-from ...core.common import get_active_armature
+from ...core.common import get_active_armature, transfer_vertex_weights, get_all_meshes
 from ...core.logging_setup import logger
 from ...core.translations import t
 from ...core.dictionaries import rigify_unity_names, rigify_basic_unity_names, rigify_unnecessary_bones
@@ -69,19 +69,50 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
         
         # Set armature as active object before mode switch
         bpy.context.view_layer.objects.active = armature
+        
+        # Get all meshes for weight transfer
+        meshes = get_all_meshes(bpy.context)
+        
         bpy.ops.object.mode_set(mode='EDIT')
         
         bones_to_remove: List[str] = []
         for bone in armature.data.edit_bones:
-            if any(pattern in bone.name.lower() for pattern in rigify_unnecessary_bones):
+            bone_name_lower = bone.name.lower()
+            if any(bone_name_lower.startswith(pattern) or bone_name_lower == pattern 
+                   for pattern in rigify_unnecessary_bones):
                 bones_to_remove.append(bone.name)
-                
+        
+        # Check for neck bones that need merging
+        merge_neck_bones = 'spine.004' in armature.data.edit_bones and 'spine.005' in armature.data.edit_bones
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
+        # Transfer weights from bones being removed
+        for bone_name in bones_to_remove:
+            if bone_name in armature.data.bones:
+                logger.debug(f"Transferring weights from bone: {bone_name}")
+                for mesh in meshes:
+                    if bone_name in mesh.vertex_groups:
+                        # Remove the vertex group since we don't need the weights
+                        mesh.vertex_groups.remove(mesh.vertex_groups[bone_name])
+        
+        # Transfer weights for neck bone merging
+        if merge_neck_bones:
+            logger.debug("Transferring weights from spine.005 to spine.004")
+            for mesh in meshes:
+                if 'spine.005' in mesh.vertex_groups:
+                    transfer_vertex_weights(mesh, 'spine.005', 'spine.004')
+        
+        bpy.ops.object.mode_set(mode='EDIT')
+        
+        # Remove unnecessary bones
         for bone_name in bones_to_remove:
             if bone_name in armature.data.edit_bones:
                 logger.debug(f"Removing bone: {bone_name}")
                 armature.data.edit_bones.remove(armature.data.edit_bones[bone_name])
    
-        if 'spine.004' in armature.data.edit_bones and 'spine.005' in armature.data.edit_bones:
+        # Merge neck bones
+        if merge_neck_bones:
             logger.debug("Merging neck bones")
             neck_start = armature.data.edit_bones['spine.004']
             neck_end = armature.data.edit_bones['spine.005']
@@ -89,6 +120,7 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
             armature.data.edit_bones.remove(neck_end)
             neck_start.name = "Neck"
             
+        # Rename head bone
         if 'spine.006' in armature.data.edit_bones:
             logger.debug("Renaming head bone")
             head_bone = armature.data.edit_bones['spine.006']
@@ -136,6 +168,22 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
         for bone_name in remove_bones_in_chain:
             if bone_name in armature.data.bones:
                 armature.data.bones[bone_name].use_deform = False
+
+        # Get all meshes for weight transfer
+        meshes = get_all_meshes(bpy.context)
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        for bone_name in remove_bones_in_chain:
+            if bone_name in armature.data.bones:
+                parent_name = armature.data.bones[bone_name].parent.name if armature.data.bones[bone_name].parent else None
+                if parent_name:
+                    logger.debug(f"Transferring weights from {bone_name} to {parent_name}")
+                    for mesh in meshes:
+                        if bone_name in mesh.vertex_groups and parent_name in mesh.vertex_groups:
+                            transfer_vertex_weights(mesh, bone_name, parent_name)
+                        elif bone_name in mesh.vertex_groups:
+                            # Remove weights if no parent to merge to
+                            mesh.vertex_groups.remove(mesh.vertex_groups[bone_name])
 
         bpy.ops.object.mode_set(mode='EDIT')
         for bone_name in remove_bones_in_chain:
@@ -189,6 +237,17 @@ class AvatarToolkit_OT_ConvertRigifyToUnity(Operator):
             ("DEF-thigh_twist.L", "DEF-thigh.L"),
             ("DEF-thigh_twist.R", "DEF-thigh.R")
         ]
+
+        # Get all meshes for weight transfer
+        meshes = get_all_meshes(bpy.context)
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        for twist_bone, parent_bone in twist_bones:
+            if twist_bone in armature.data.bones and parent_bone in armature.data.bones:
+                logger.debug(f"Transferring weights from {twist_bone} to {parent_bone}")
+                for mesh in meshes:
+                    if twist_bone in mesh.vertex_groups:
+                        transfer_vertex_weights(mesh, twist_bone, parent_bone)
 
         bpy.ops.object.mode_set(mode='EDIT')
         for twist_bone, parent_bone in twist_bones:
