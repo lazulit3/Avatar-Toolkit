@@ -285,12 +285,12 @@ bone_names.update({
     'head': bone_names['head'] + ['jbipchead', 'jhead', 'vrmhead', 'lefteye', 'righteye'],
     
     # VRM arms - both simplified patterns
-    'left_shoulder': bone_names['left_shoulder'] + ['jbipllshoulder', 'jlshoulder', 'jbiplshoulder', 'leftshoulder'],
+    'left_shoulder': bone_names['left_shoulder'] + ['jbipllshoulder', 'jlshoulder', 'jbiplshoulder', 'leftshoulder', 'jbipllclavicle'],
     'left_arm': bone_names['left_arm'] + ['jbiplupperarm', 'jlupperarm', 'leftupperarm'],
     'left_elbow': bone_names['left_elbow'] + ['jbipllforearm', 'jlforearm', 'jbipllowerarm', 'leftlowerarm'],
     'left_wrist': bone_names['left_wrist'] + ['jbipllhand', 'jlhand', 'jbiplhand', 'lefthand'],
     
-    'right_shoulder': bone_names['right_shoulder'] + ['jbiprlshoulder', 'jrshoulder', 'jbiprshoulder', 'rightshoulder'],
+    'right_shoulder': bone_names['right_shoulder'] + ['jbiprlshoulder', 'jrshoulder', 'jbiprshoulder', 'rightshoulder', 'jbiprrclavicle'],
     'right_arm': bone_names['right_arm'] + ['jbiprrupperarm', 'jrupperarm', 'jbiprupperarm', 'rightupperarm'],
     'right_elbow': bone_names['right_elbow'] + ['jbiprrforearm', 'jrforearm', 'jbiprforearm', 'jbiprlowerarm', 'rightlowerarm'],
     'right_wrist': bone_names['right_wrist'] + ['jbiprrhand', 'jrhand', 'jbiprhand', 'righthand'],
@@ -314,12 +314,12 @@ bone_names.update({
     'jaw': ['jaw', 'mandible', 'lowerjaw', 'chin', 'あご', 'ik_あご'],
     
     # Breast bones
-    'breast_1_l': bone_names['breast_1_l'] + ['jbipcbreast1l', 'jlbreast1'],
-    'breast_2_l': bone_names['breast_2_l'] + ['jbipcbreast2l', 'jlbreast2'],
-    'breast_3_l': bone_names['breast_3_l'] + ['jbipcbreast3l', 'jlbreast3'],
-    'breast_1_r': bone_names['breast_1_r'] + ['jbipcbreast1r', 'jrbreast1'],
-    'breast_2_r': bone_names['breast_2_r'] + ['jbipcbreast2r', 'jrbreast2'],
-    'breast_3_r': bone_names['breast_3_r'] + ['jbipcbreast3r', 'jrbreast3'],
+    'breast_1_l': bone_names['breast_1_l'] + ['jbipcbreast1l', 'jlbreast1', 'jseclbust1'],
+    'breast_2_l': bone_names['breast_2_l'] + ['jbipcbreast2l', 'jlbreast2', 'jseclbust2'],
+    'breast_3_l': bone_names['breast_3_l'] + ['jbipcbreast3l', 'jlbreast3', 'jseclbust3'],
+    'breast_1_r': bone_names['breast_1_r'] + ['jbipcbreast1r', 'jrbreast1', 'jsecrbust1'],
+    'breast_2_r': bone_names['breast_2_r'] + ['jbipcbreast2r', 'jrbreast2', 'jsecrbust2'],
+    'breast_3_r': bone_names['breast_3_r'] + ['jbipcbreast3r', 'jrbreast3', 'jsecrbust3'],
     
     # VRM fingers - Left (including Little finger variations)
     'thumb_0_l': bone_names['thumb_0_l'] + ['jbipllthumb0', 'jlthumb0', 'jbipllthumbmetacarpal', 'jlthumbmetacarpal', 'leftthumbmetacarpal'],

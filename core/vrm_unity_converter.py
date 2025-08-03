@@ -85,94 +85,15 @@ def find_vrm_bones_in_armature(armature: Object) -> Dict[str, str]:
 
 def guess_unity_name_from_vrm(vrm_simplified: str) -> Optional[str]:
     """
-    Attempt to guess Unity bone name from VRM simplified name
+    Attempt to guess Unity bone name from VRM simplified name using dictionary lookup
     """
-    # Map common VRM patterns to Unity equivalents
-    pattern_mappings = {
-        'jbipcupperchest': 'UpperChest',
-        'jbipcchest': 'Chest', 
-        'jbipcspine': 'Spine',
-        'jbipchips': 'Hips',
-        'jbipcneck': 'Neck',
-        'jbipchead': 'Head',
+    if vrm_simplified in reverse_bone_lookup:
+        standard_bone_key = reverse_bone_lookup[vrm_simplified]
         
-        # Left arm
-        'jbipllclavicle': 'LeftShoulder',
-        'jbipllshoulder': 'LeftShoulder',
-        'jbiplshoulder': 'LeftShoulder', 
-        'jbiplupperarm': 'LeftUpperArm',
-        'jbipllforearm': 'LeftLowerArm',
-        'jbipllowerarm': 'LeftLowerArm',
-        'jbipllhand': 'LeftHand',
-        'jbiplhand': 'LeftHand',
-        
-        # Right arm (both single and double R patterns)
-        'jbiprrclavicle': 'RightShoulder',
-        'jbiprlshoulder': 'RightShoulder',
-        'jbiprshoulder': 'RightShoulder',
-        'jbiprupperarm': 'RightUpperArm',
-        'jbiprrupperarm': 'RightUpperArm', 
-        'jbiprforearm': 'RightLowerArm',
-        'jbiprrforearm': 'RightLowerArm',
-        'jbiprlowerarm': 'RightLowerArm',
-        'jbiprhand': 'RightHand',
-        'jbiprrhand': 'RightHand',
-        
-        # Left leg
-        'jbiplupperleg': 'LeftUpperLeg',
-        'jbipllowerleg': 'LeftLowerLeg', 
-        'jbipllfoot': 'LeftFoot',
-        'jbiplfoot': 'LeftFoot',
-        'jbiplltoe': 'LeftToes',
-        'jbipltoebase': 'LeftToes',
-        
-        # Right leg (both single and double R patterns)
-        'jbiprupperleg': 'RightUpperLeg',
-        'jbiprrupperleg': 'RightUpperLeg',
-        'jbiprlowerleg': 'RightLowerLeg',
-        'jbiprrlowerleg': 'RightLowerLeg',
-        'jbiprfoot': 'RightFoot',
-        'jbiprrfoot': 'RightFoot', 
-        'jbiprtoe': 'RightToes',
-        'jbiprrtoe': 'RightToes',
-        'jbiprtoebase': 'RightToes',
-        
-        # Eyes
-        'jbipcleye': 'LeftEye',
-        'jbipcreye': 'RightEye',
-        'jadjlfaceeye': 'LeftEye',
-        'jadjrfaceeye': 'RightEye',
-        
-        # Fingers - Left
-        'jbiplthumb1': 'LeftThumb1',
-        'jbiplthumb2': 'LeftThumb2',
-        'jbiplthumb3': 'LeftThumb3',
-        'jbiplindex1': 'LeftIndex1',
-        'jbiplindex2': 'LeftIndex2',
-        'jbiplindex3': 'LeftIndex3',
-        'jbiplmiddle1': 'LeftMiddle1',
-        'jbiplmiddle2': 'LeftMiddle2',
-        'jbiplmiddle3': 'LeftMiddle3',
-        'jbiplring1': 'LeftRing1',
-        'jbiplring2': 'LeftRing2',
-        'jbiplring3': 'LeftRing3',
-        'jbipllittle1': 'LeftPinky1',
-        'jbipllittle2': 'LeftPinky2', 
-        'jbipllittle3': 'LeftPinky3',
-        'jbiprlittle1': 'RightPinky1',
-        'jbiprlittle2': 'RightPinky2',
-        'jbiprlittle3': 'RightPinky3',
-        
-        # Breast bones
-        'jseclbust1': 'Breast1_L',
-        'jseclbust2': 'Breast2_L',
-        'jseclbust3': 'Breast3_L',
-        'jsecrbust1': 'Breast1_R',
-        'jsecrbust2': 'Breast2_R',
-        'jsecrbust3': 'Breast3_R'
-    }
+        if standard_bone_key in standard_bones:
+            return standard_bones[standard_bone_key]
     
-    return pattern_mappings.get(vrm_simplified)
+    return None
 
 
 def is_vrm_collider_object(obj_name: str) -> bool:
