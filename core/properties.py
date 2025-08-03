@@ -608,6 +608,19 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         update=update_log_level
     )
 
+    # VRM Conversion Properties
+    vrm_remove_colliders: BoolProperty(
+        name="Remove Colliders",
+        description="Remove VRM collider bones during conversion",
+        default=True
+    )
+    
+    vrm_remove_root: BoolProperty(
+        name="Remove Root Bone",
+        description="Remove unnecessary VRM root bone and make Hips the root bone",
+        default=True
+    )
+
 def register() -> None:
     """Register the Avatar Toolkit property group"""
     logger.info("Registering Avatar Toolkit properties")
