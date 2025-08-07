@@ -197,6 +197,7 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         items=get_armature_list,
         name=t("QuickAccess.select_armature"),
         description=t("QuickAccess.select_armature"),
+        update=lambda self, context: update_active_armature(self, context)
     )
 
     language: EnumProperty(
@@ -610,16 +611,148 @@ class AvatarToolkitSceneProperties(PropertyGroup):
 
     # VRM Conversion Properties
     vrm_remove_colliders: BoolProperty(
-        name="Remove Colliders",
-        description="Remove VRM collider bones during conversion",
+        name=t("VRM.remove_colliders"),
+        description=t("VRM.remove_colliders_desc"),
         default=True
     )
     
     vrm_remove_root: BoolProperty(
-        name="Remove Root Bone",
-        description="Remove unnecessary VRM root bone and make Hips the root bone",
+        name=t("VRM.remove_root"),
+        description=t("VRM.remove_root_desc"),
         default=True
     )
+
+    # Translation System Properties
+    translation_service: EnumProperty(
+        name=t("Translation.service"),
+        description=t("Translation.service_desc"),
+        items=[
+            ('mymemory', t("Translation.service.mymemory"), t("Translation.service.mymemory_desc")),
+            ('libretranslate', t("Translation.service.libretranslate"), t("Translation.service.libretranslate_desc")),
+            ('deepl', t("Translation.service.deepl"), t("Translation.service.deepl_desc"))
+        ],
+        default=get_preference("translation_service", "mymemory"),
+        update=lambda self, context: update_translation_service(self, context)
+    )
+    
+    translation_mode: EnumProperty(
+        name=t("Translation.mode"),
+        description=t("Translation.mode_desc"),
+        items=[
+            ('hybrid', t("Translation.mode.hybrid"), t("Translation.mode.hybrid_desc")),
+            ('dictionary_only', t("Translation.mode.dictionary_only"), t("Translation.mode.dictionary_only_desc")),
+            ('api_only', t("Translation.mode.api_only"), t("Translation.mode.api_only_desc"))
+        ],
+        default=get_preference("translation_mode", "hybrid"),
+        update=lambda self, context: update_translation_mode(self, context)
+    )
+    
+    translation_expand: BoolProperty(
+        name="Translation Settings Expanded",
+        default=False
+    )
+    
+    
+    translation_target_language: EnumProperty(
+        name=t("Translation.target_language"),
+        description=t("Translation.target_language_desc"),
+        items=[
+            ('en', 'English', 'Translate to English'),
+            ('ja', 'Japanese', 'Translate to Japanese'),
+            ('ko', 'Korean', 'Translate to Korean'),
+            ('zh', 'Chinese', 'Translate to Chinese'),
+            ('es', 'Spanish', 'Translate to Spanish'),
+            ('fr', 'French', 'Translate to French'),
+            ('de', 'German', 'Translate to German')
+        ],
+        default='en'
+    )
+    
+    translation_source_language: EnumProperty(
+        name=t("Translation.source_language"),
+        description=t("Translation.source_language_desc"),
+        items=[
+            ('auto', 'Auto-detect', 'Automatically detect source language'),
+            ('ja', 'Japanese', 'Source is Japanese'),
+            ('en', 'English', 'Source is English'),
+            ('ko', 'Korean', 'Source is Korean'),
+            ('zh', 'Chinese', 'Source is Chinese')
+        ],
+        default='ja'
+    )
+
+
+def update_translation_service(self: PropertyGroup, context: Context) -> None:
+    """Update translation service preference"""
+    logger.info(f"Updating translation service to: {self.translation_service}")
+    save_preference("translation_service", self.translation_service)
+    
+    # Clear module-level translation caches when service changes
+    try:
+        from ..ui.translation_panel import _ui_cache
+        _ui_cache['deepl_config'].clear()
+        _ui_cache['libretranslate_config'].clear()
+        _ui_cache['translation_status'].clear()
+        if 'batch_info' in _ui_cache:
+            del _ui_cache['batch_info']  # Clear batch info cache when service changes
+    except ImportError:
+        pass  # UI module might not be loaded yet
+    
+    # Set the primary service
+    try:
+        from .translation_manager import get_avatar_translation_manager
+        manager = get_avatar_translation_manager()
+        manager.service_manager.set_primary_service(self.translation_service)
+    except Exception as e:
+        logger.error(f"Failed to update translation service: {e}")
+
+
+def update_translation_mode(self: PropertyGroup, context: Context) -> None:
+    """Update translation mode preference"""
+    logger.info(f"Updating translation mode to: {self.translation_mode}")
+    save_preference("translation_mode", self.translation_mode)
+    
+    # Clear module-level translation status cache when mode changes
+    try:
+        from ..ui.translation_panel import _ui_cache
+        _ui_cache['translation_status'].clear()
+        if 'batch_info' in _ui_cache:
+            del _ui_cache['batch_info']  # Clear batch info cache when mode changes
+    except ImportError:
+        pass  # UI module might not be loaded yet
+    
+    try:
+        from .translation_manager import get_avatar_translation_manager, TranslationMode
+        manager = get_avatar_translation_manager()
+        manager.set_translation_mode(TranslationMode(self.translation_mode))
+    except Exception as e:
+        logger.error(f"Failed to update translation mode: {e}")
+
+
+def update_active_armature(self: PropertyGroup, context: Context) -> None:
+    """Update the active armature when selection changes"""
+    if self.active_armature:
+        logger.info(f"Active armature set to: {self.active_armature}")
+        # Deselect all objects first
+        bpy.ops.object.select_all(action='DESELECT')
+        # Select and make active the chosen armature
+        self.active_armature.select_set(True)
+        context.view_layer.objects.active = self.active_armature
+        logger.info(f"Selected and activated armature: {self.active_armature.name}")
+        
+        # Clear armature caches when armature changes to ensure fresh validation
+        try:
+            from ..ui.quick_access_panel import clear_armature_caches
+            clear_armature_caches()
+        except ImportError:
+            pass  # UI module might not be loaded yet
+    else:
+        logger.info("No armature selected")
+
+
+
+
+
 
 def register() -> None:
     """Register the Avatar Toolkit property group"""
