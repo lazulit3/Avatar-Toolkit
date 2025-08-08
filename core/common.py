@@ -140,6 +140,12 @@ def get_all_meshes(context: Context) -> List[Object]:
         return [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj.parent == armature]
     return []
 
+def get_meshes_for_armature(armature: Object) -> List[Object]:
+    """Get all mesh objects parented to a specific armature"""
+    if armature and armature.type == 'ARMATURE':
+        return [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj.parent == armature]
+    return []
+
 def validate_mesh_for_pose(mesh_obj: Object) -> Tuple[bool, str]:
     """Validate mesh object for pose operations"""
     if not mesh_obj.data:

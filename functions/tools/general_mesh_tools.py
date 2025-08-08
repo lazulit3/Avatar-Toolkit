@@ -119,8 +119,10 @@ class AvatarToolkit_OT_ExplodeMesh(Operator):
     
     @classmethod
     def poll(cls, context: Context) -> bool:
-
-        return context.view_layer.objects.active.type == "MESH" and len(context.view_layer.objects.selected) == 1
+        active_obj = context.view_layer.objects.active
+        return (active_obj is not None and 
+                active_obj.type == "MESH" and 
+                len(context.view_layer.objects.selected) == 1)
     
     
 

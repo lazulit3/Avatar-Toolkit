@@ -8,6 +8,7 @@ from ...core.translations import t
 import traceback
 from ...core.common import (
     get_all_meshes,
+    get_meshes_for_armature,
     fix_zero_length_bones,
     remove_unused_vertex_groups,
     clear_unused_data_blocks,
@@ -28,10 +29,32 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context: Context) -> bool:
-        return len(get_all_meshes(context)) > 1
+        # Check if we have valid armature selections for merging
+        base_armature_name: str = context.scene.avatar_toolkit.merge_armature_into
+        merge_armature_name: str = context.scene.avatar_toolkit.merge_armature
+        
+        if not base_armature_name or not merge_armature_name:
+            return False
+            
+        base_armature: Optional[Object] = bpy.data.objects.get(base_armature_name)
+        merge_armature: Optional[Object] = bpy.data.objects.get(merge_armature_name)
+        
+        return (base_armature is not None and 
+                merge_armature is not None and 
+                base_armature.type == 'ARMATURE' and 
+                merge_armature.type == 'ARMATURE' and
+                base_armature != merge_armature)
 
     def execute(self, context: Context) -> Set[str]:
         try:
+            # Store original mode to restore later
+            original_mode: str = context.mode
+            logger.debug(f"Original mode: {original_mode}")
+            
+            # Switch to object mode if not already
+            if context.mode != 'OBJECT':
+                bpy.ops.object.mode_set(mode='OBJECT')
+            
             wm = context.window_manager
             wm.progress_begin(0, 100)
 
@@ -85,6 +108,18 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
                 merge_armature_obj = bpy.data.objects[merge_armature_name_stored]
                 restore_breaking_settings_armature(merge_armature_obj, data_breaking_merge)
             
+            # Restore original mode if it wasn't OBJECT
+            try:
+                if original_mode == 'EDIT_ARMATURE':
+                    bpy.ops.object.mode_set(mode='EDIT')
+                elif original_mode == 'POSE':
+                    bpy.ops.object.mode_set(mode='POSE')
+                elif original_mode != 'OBJECT':
+                    logger.debug(f"Restoring to original mode: {original_mode}")
+                    # For other modes, stay in object mode as it's safest
+            except Exception:
+                logger.warning(f"Could not restore original mode: {original_mode}")
+            
             self.report({'INFO'}, t('MergeArmature.success'))
             
             return {'FINISHED'}
@@ -92,6 +127,17 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
         except Exception as e:
             logger.error(f"Error merging armatures: {str(e)}\n{traceback.format_exc()}")
             self.report({'ERROR'}, traceback.format_exc())
+            
+            # Try to restore original mode even on error
+            try:
+                if 'original_mode' in locals() and original_mode != 'OBJECT':
+                    if original_mode == 'EDIT_ARMATURE':
+                        bpy.ops.object.mode_set(mode='EDIT')
+                    elif original_mode == 'POSE':
+                        bpy.ops.object.mode_set(mode='POSE')
+            except Exception:
+                logger.warning("Could not restore mode after error")
+                
             return {'CANCELLED'}
 
 def delete_rigidbodies_and_joints(armature: Object) -> None:
