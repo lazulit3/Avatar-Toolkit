@@ -67,6 +67,74 @@ def get_mesh_objects(self, context):
         return [('NONE', t("Visemes.no_meshes"), '')]
     return meshes
 
+def auto_populate_merge_armatures(context: Context) -> None:
+    """Auto-populate merge armature fields when there are 2+ armatures"""
+    armatures = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE']
+    
+    if len(armatures) >= 2:
+        toolkit = context.scene.avatar_toolkit
+        
+        if not toolkit.merge_armature_into and not toolkit.merge_armature:
+            toolkit.merge_armature_into = armatures[0].name
+            toolkit.merge_armature = armatures[1].name
+            logger.debug(f"Auto-populated merge armatures: {armatures[0].name} <- {armatures[1].name}")
+
+        elif toolkit.merge_armature_into and not toolkit.merge_armature:
+            for armature in armatures:
+                if armature.name != toolkit.merge_armature_into:
+                    toolkit.merge_armature = armature.name
+                    logger.debug(f"Auto-populated merge_armature: {armature.name}")
+                    break
+
+        elif not toolkit.merge_armature_into and toolkit.merge_armature:
+            for armature in armatures:
+                if armature.name != toolkit.merge_armature:
+                    toolkit.merge_armature_into = armature.name
+                    logger.debug(f"Auto-populated merge_armature_into: {armature.name}")
+                    break
+
+def update_merge_armature_into(self: PropertyGroup, context: Context) -> None:
+    """Update function for merge_armature_into property"""
+    auto_populate_merge_armatures(context)
+
+def update_merge_armature(self: PropertyGroup, context: Context) -> None:
+    """Update function for merge_armature property"""
+    auto_populate_merge_armatures(context)
+
+@bpy.app.handlers.persistent
+def depsgraph_update_handler(scene: Scene, depsgraph) -> None:
+    """Handler to auto-populate merge armatures when objects change"""
+    # Check for any armature-related updates
+    armature_updated = False
+    for update in depsgraph.updates:
+        if hasattr(update, 'id') and update.id and hasattr(update.id, 'type'):
+            if update.id.type == 'ARMATURE':
+                armature_updated = True
+                break
+    
+    if armature_updated:
+        # Use a timer to defer the update to avoid context issues
+        bpy.app.timers.register(lambda: auto_populate_safe(), first_interval=0.1)
+
+def auto_populate_safe() -> None:
+    """Safe auto-populate function that can be called from timer"""
+    try:
+        if bpy.context and hasattr(bpy.context, 'scene') and hasattr(bpy.context.scene, 'avatar_toolkit'):
+            auto_populate_merge_armatures(bpy.context)
+    except (AttributeError, ReferenceError):
+        pass
+    return None  # Don't repeat the timer
+
+@bpy.app.handlers.persistent
+def undo_post_handler(scene: Scene) -> None:
+    """Handler for undo operations that might add/remove armatures"""
+    bpy.app.timers.register(lambda: auto_populate_safe(), first_interval=0.1)
+
+@bpy.app.handlers.persistent  
+def redo_post_handler(scene: Scene) -> None:
+    """Handler for redo operations that might add/remove armatures"""
+    bpy.app.timers.register(lambda: auto_populate_safe(), first_interval=0.1)
+
 class AvatarToolkitSceneProperties(PropertyGroup):
     """Property group containing Avatar Toolkit scene-level settings and properties"""
 
@@ -197,6 +265,7 @@ class AvatarToolkitSceneProperties(PropertyGroup):
         items=get_armature_list,
         name=t("QuickAccess.select_armature"),
         description=t("QuickAccess.select_armature"),
+        update=lambda self, context: update_active_armature(self, context)
     )
 
     language: EnumProperty(
@@ -465,13 +534,15 @@ class AvatarToolkitSceneProperties(PropertyGroup):
     merge_armature_into: StringProperty(
         name=t('MergeArmature.into'),
         description=t('MergeArmature.into_desc'),
-        default=""
+        default="",
+        update=update_merge_armature_into
     )
 
     merge_armature: StringProperty(
         name=t('MergeArmature.from'),
         description=t('MergeArmature.from_desc'),
-        default=""
+        default="",
+        update=update_merge_armature
     )
 
     attach_mesh: StringProperty(
@@ -610,16 +681,148 @@ class AvatarToolkitSceneProperties(PropertyGroup):
 
     # VRM Conversion Properties
     vrm_remove_colliders: BoolProperty(
-        name="Remove Colliders",
-        description="Remove VRM collider bones during conversion",
+        name=t("VRM.remove_colliders"),
+        description=t("VRM.remove_colliders_desc"),
         default=True
     )
     
     vrm_remove_root: BoolProperty(
-        name="Remove Root Bone",
-        description="Remove unnecessary VRM root bone and make Hips the root bone",
+        name=t("VRM.remove_root"),
+        description=t("VRM.remove_root_desc"),
         default=True
     )
+
+    # Translation System Properties
+    translation_service: EnumProperty(
+        name=t("Translation.service"),
+        description=t("Translation.service_desc"),
+        items=[
+            ('mymemory', t("Translation.service.mymemory"), t("Translation.service.mymemory_desc")),
+            ('libretranslate', t("Translation.service.libretranslate"), t("Translation.service.libretranslate_desc")),
+            ('deepl', t("Translation.service.deepl"), t("Translation.service.deepl_desc"))
+        ],
+        default=get_preference("translation_service", "mymemory"),
+        update=lambda self, context: update_translation_service(self, context)
+    )
+    
+    translation_mode: EnumProperty(
+        name=t("Translation.mode"),
+        description=t("Translation.mode_desc"),
+        items=[
+            ('hybrid', t("Translation.mode.hybrid"), t("Translation.mode.hybrid_desc")),
+            ('dictionary_only', t("Translation.mode.dictionary_only"), t("Translation.mode.dictionary_only_desc")),
+            ('api_only', t("Translation.mode.api_only"), t("Translation.mode.api_only_desc"))
+        ],
+        default=get_preference("translation_mode", "hybrid"),
+        update=lambda self, context: update_translation_mode(self, context)
+    )
+    
+    translation_expand: BoolProperty(
+        name="Translation Settings Expanded",
+        default=False
+    )
+    
+    
+    translation_target_language: EnumProperty(
+        name=t("Translation.target_language"),
+        description=t("Translation.target_language_desc"),
+        items=[
+            ('en', 'English', 'Translate to English'),
+            ('ja', 'Japanese', 'Translate to Japanese'),
+            ('ko', 'Korean', 'Translate to Korean'),
+            ('zh', 'Chinese', 'Translate to Chinese'),
+            ('es', 'Spanish', 'Translate to Spanish'),
+            ('fr', 'French', 'Translate to French'),
+            ('de', 'German', 'Translate to German')
+        ],
+        default='en'
+    )
+    
+    translation_source_language: EnumProperty(
+        name=t("Translation.source_language"),
+        description=t("Translation.source_language_desc"),
+        items=[
+            ('auto', 'Auto-detect', 'Automatically detect source language'),
+            ('ja', 'Japanese', 'Source is Japanese'),
+            ('en', 'English', 'Source is English'),
+            ('ko', 'Korean', 'Source is Korean'),
+            ('zh', 'Chinese', 'Source is Chinese')
+        ],
+        default='ja'
+    )
+
+
+def update_translation_service(self: PropertyGroup, context: Context) -> None:
+    """Update translation service preference"""
+    logger.info(f"Updating translation service to: {self.translation_service}")
+    save_preference("translation_service", self.translation_service)
+    
+    # Clear module-level translation caches when service changes
+    try:
+        from ..ui.translation_panel import _ui_cache
+        _ui_cache['deepl_config'].clear()
+        _ui_cache['libretranslate_config'].clear()
+        _ui_cache['translation_status'].clear()
+        if 'batch_info' in _ui_cache:
+            del _ui_cache['batch_info']  # Clear batch info cache when service changes
+    except ImportError:
+        pass  # UI module might not be loaded yet
+    
+    # Set the primary service
+    try:
+        from .translation_manager import get_avatar_translation_manager
+        manager = get_avatar_translation_manager()
+        manager.service_manager.set_primary_service(self.translation_service)
+    except Exception as e:
+        logger.error(f"Failed to update translation service: {e}")
+
+
+def update_translation_mode(self: PropertyGroup, context: Context) -> None:
+    """Update translation mode preference"""
+    logger.info(f"Updating translation mode to: {self.translation_mode}")
+    save_preference("translation_mode", self.translation_mode)
+    
+    # Clear module-level translation status cache when mode changes
+    try:
+        from ..ui.translation_panel import _ui_cache
+        _ui_cache['translation_status'].clear()
+        if 'batch_info' in _ui_cache:
+            del _ui_cache['batch_info']  # Clear batch info cache when mode changes
+    except ImportError:
+        pass  # UI module might not be loaded yet
+    
+    try:
+        from .translation_manager import get_avatar_translation_manager, TranslationMode
+        manager = get_avatar_translation_manager()
+        manager.set_translation_mode(TranslationMode(self.translation_mode))
+    except Exception as e:
+        logger.error(f"Failed to update translation mode: {e}")
+
+
+def update_active_armature(self: PropertyGroup, context: Context) -> None:
+    """Update the active armature when selection changes"""
+    if self.active_armature:
+        logger.info(f"Active armature set to: {self.active_armature}")
+        # Deselect all objects first
+        bpy.ops.object.select_all(action='DESELECT')
+        # Select and make active the chosen armature
+        self.active_armature.select_set(True)
+        context.view_layer.objects.active = self.active_armature
+        logger.info(f"Selected and activated armature: {self.active_armature.name}")
+        
+        # Clear armature caches when armature changes to ensure fresh validation
+        try:
+            from ..ui.quick_access_panel import clear_armature_caches
+            clear_armature_caches()
+        except ImportError:
+            pass  # UI module might not be loaded yet
+    else:
+        logger.info("No armature selected")
+
+
+
+
+
 
 def register() -> None:
     """Register the Avatar Toolkit property group"""
@@ -627,12 +830,29 @@ def register() -> None:
     
     # Only register the property, not the classes (auto_load will handle that)
     bpy.types.Scene.avatar_toolkit = PointerProperty(type=AvatarToolkitSceneProperties)
+    
+    # Register handlers for auto-populating merge armatures
+    bpy.app.handlers.depsgraph_update_post.append(depsgraph_update_handler)
+    bpy.app.handlers.undo_post.append(undo_post_handler)
+    bpy.app.handlers.redo_post.append(redo_post_handler)
+    
+    # Initial auto-populate
+    bpy.app.timers.register(lambda: auto_populate_safe(), first_interval=1.0)
+    
     logger.debug("Properties registered successfully")
 
 
 def unregister() -> None:
     """Unregister the Avatar Toolkit property group"""
     logger.info("Unregistering Avatar Toolkit properties")
+    
+    # Remove handlers
+    if depsgraph_update_handler in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.remove(depsgraph_update_handler)
+    if undo_post_handler in bpy.app.handlers.undo_post:
+        bpy.app.handlers.undo_post.remove(undo_post_handler)
+    if redo_post_handler in bpy.app.handlers.redo_post:
+        bpy.app.handlers.redo_post.remove(redo_post_handler)
     
     # Remove the property
     if hasattr(bpy.types.Scene, "avatar_toolkit"):
