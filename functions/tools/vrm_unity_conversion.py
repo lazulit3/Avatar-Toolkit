@@ -10,8 +10,8 @@ from ...core.armature_validation import validate_armature
 class AvatarToolkit_OT_ConvertVRMToUnity(Operator):
     """Convert VRM armature bone names to Unity humanoid format"""
     bl_idname = "avatar_toolkit.convert_vrm_to_unity"
-    bl_label = "Convert VRM to Unity"
-    bl_description = "Convert VRM armature bone names to Unity humanoid naming convention"
+    bl_label = t("VRM.convert_to_unity.label")
+    bl_description = t("VRM.convert_to_unity.desc")
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -23,7 +23,7 @@ class AvatarToolkit_OT_ConvertVRMToUnity(Operator):
         armature = get_active_armature(context)
         if not armature:
             logger.warning("No active armature found for VRM conversion")
-            self.report({'ERROR'}, "No active armature selected")
+            self.report({'ERROR'}, t("VRM.no_armature_selected"))
             return {'CANCELLED'}
         
         logger.info(f"Starting VRM to Unity conversion for armature: {armature.name}")
@@ -59,10 +59,10 @@ class AvatarToolkit_OT_ConvertVRMToUnity(Operator):
             
             if is_valid:
                 logger.info("Unity hierarchy validation passed")
-                self.report({'INFO'}, "Unity hierarchy validation passed")
+                self.report({'INFO'}, t("VRM.validation.hierarchy_passed"))
             else:
                 logger.warning("Unity hierarchy validation found issues")
-                self.report({'WARNING'}, "Conversion completed but hierarchy validation found issues:")
+                self.report({'WARNING'}, t("VRM.validation.hierarchy_issues"))
                 for msg in validation_messages:
                     self.report({'WARNING'}, msg)
             
@@ -70,7 +70,7 @@ class AvatarToolkit_OT_ConvertVRMToUnity(Operator):
                 armature_valid, armature_messages, _ = validate_armature(armature)
                 if armature_valid:
                     logger.info("Full armature validation passed")
-                    self.report({'INFO'}, "Armature passes standard validation")
+                    self.report({'INFO'}, t("VRM.validation.armature_passed"))
                 else:
                     logger.info("Full armature validation found minor issues")
                     # Don't report these as errors since the conversion was successful
@@ -83,6 +83,6 @@ class AvatarToolkit_OT_ConvertVRMToUnity(Operator):
                 
         except Exception as e:
             logger.error(f"Error during hierarchy validation: {str(e)}")
-            self.report({'WARNING'}, f"Conversion completed but validation failed: {str(e)}")
+            self.report({'WARNING'}, t("VRM.validation.failed", error=str(e)))
         
         return {'FINISHED'}

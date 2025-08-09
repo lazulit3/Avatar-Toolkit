@@ -308,6 +308,7 @@
     "Visemes.success": "口形素が正常に作成されました",
     "Visemes.mesh_select": "メッシュを選択",
     "Visemes.mesh_select_desc": "口形素を作成するメッシュを選択",
+    "Visemes.no_meshes": "メッシュが見つかりません",
 
     "EyeTracking.label": "アイトラッキング",
     "EyeTracking.setup": "アイトラッキング設定",
@@ -500,6 +501,8 @@
     "TextureAtlas.save_file_instructions": "ファイル > 名前を付けて保存... を使用するか、下のボタンをクリックしてください：",
     "TextureAtlas.save_file_button": "Blenderファイルを保存",
     "TextureAtlas.save_file_required": "ファイルの保存が必要です",
+    "TextureAtlas.search_materials": "マテリアルを検索",
+    "TextureAtlas.search_materials_desc": "名前でマテリアルをフィルタリング",
 
     "Settings.label": "設定",
     "Settings.language": "言語",
@@ -539,6 +542,39 @@
     "Language.changed.success": "言語が正常に変更されました！",
     "Language.changed.restart": "一部のUI要素はBlenderの再起動が必要な場合があります",
 
+    "VRM.panel.label": "VRMからUnityへ",
+    "VRM.converter.title": "VRMコンバーター",
+    "VRM.no_armature_selected": "アーマチュアが選択されていません",
+    "VRM.select_armature_to_convert": "変換するアーマチュアを選択してください",
+    "VRM.armature_name": "アーマチュア: {name}",
+    "VRM.armature_detected": "VRMアーマチュアが検出されました",
+    "VRM.no_vrm_bones_detected": "VRMボーンが検出されませんでした",
+    "VRM.remove_colliders": "コライダーを削除",
+    "VRM.remove_root_bone": "ルートボーンを削除",
+    "VRM.convert_to_unity_format": "Unity形式に変換",
+    "VRM.convert_to_unity.label": "VRMをUnityに変換",
+    "VRM.convert_to_unity.desc": "VRMアーマチュアのボーン名をUnityヒューマノイド命名規則に変換",
+    "VRM.conversion_info.title": "変換情報:",
+    "VRM.conversion_info.renames_bones": "• VRMボーンをUnity形式にリネーム",
+    "VRM.conversion_info.removes_colliders": "• コライダーボーンを削除（オプション）",
+    "VRM.conversion_info.removes_root": "• ルートボーンを削除し、Hipsをルートにする（オプション）",
+    "VRM.conversion_info.maintains_hierarchy": "• ボーン階層を維持",
+    "VRM.conversion_info.validates_results": "• 変換結果を検証",
+    "VRM.conversion_info.preserves_animations": "• すべてのアニメーションを保持",
+    "VRM.detection_failed.title": "VRM検出失敗:",
+    "VRM.detection_failed.not_vrm_format": "• 選択されたアーマチュアはVRM形式ではありません",
+    "VRM.detection_failed.bones_start_with": "• VRMボーンは'J_Bip_C_'で始まります",
+    "VRM.detection_failed.need_five_bones": "• 少なくとも5つのVRMボーンが検出される必要があります",
+    "VRM.detection_failed.check_bone_names": "• アーマチュアのボーン名を確認してください",
+    "VRM.validation.hierarchy_passed": "Unity階層検証に合格しました",
+    "VRM.validation.hierarchy_issues": "変換は完了しましたが、階層検証で問題が見つかりました:",
+    "VRM.validation.armature_passed": "アーマチュアは標準検証に合格しました",
+    "VRM.validation.failed": "変換は完了しましたが、検証に失敗しました: {error}",
+    "VRM.remove_colliders": "コライダーを削除",
+    "VRM.remove_colliders_desc": "変換中にVRMコライダーボーンを削除",
+    "VRM.remove_root": "ルートボーンを削除", 
+    "VRM.remove_root_desc": "不要なVRMルートボーンを削除し、ヒップをルートボーンにする",
+    
     "Translation.label": "翻訳",
     "Translation.service": "翻訳サービス",
     "Translation.service_desc": "使用する翻訳サービスを選択",
@@ -596,15 +632,6 @@
     "Translation.server_url": "サーバーURL", 
     "Translation.server_url_desc": "LibreTranslateサーバーURL（例：https://your-server.com）",
     "Translation.api_key": "APIキー",
-    "Translation.api_key_desc": "LibreTranslateサーバー用のAPIキー（一部のサーバーでは任意）",
-    
-    "VRM.remove_colliders": "コライダーを削除",
-    "VRM.remove_colliders_desc": "変換中にVRMコライダーボーンを削除",
-    "VRM.remove_root": "ルートボーンを削除", 
-    "VRM.remove_root_desc": "不要なVRMルートボーンを削除し、ヒップをルートボーンにする",
-    
-    "Visemes.no_meshes": "メッシュが見つかりません",
-    "TextureAtlas.search_materials": "マテリアルを検索",
-    "TextureAtlas.search_materials_desc": "名前でマテリアルをフィルタリング"
+    "Translation.api_key_desc": "LibreTranslateサーバー用のAPIキー（一部のサーバーでは任意）"
   }
 }

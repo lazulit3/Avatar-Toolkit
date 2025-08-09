@@ -308,6 +308,7 @@
     "Visemes.success": "비셈 생성 성공",
     "Visemes.mesh_select": "메시 선택",
     "Visemes.mesh_select_desc": "비셈을 생성할 메시 선택",
+    "Visemes.no_meshes": "메시를 찾을 수 없음",
 
     "EyeTracking.label": "시선 추적",
     "EyeTracking.setup": "시선 추적 설정",
@@ -500,6 +501,8 @@
     "TextureAtlas.save_file_instructions": "파일 > 다른 이름으로 저장... 을 사용하거나 아래 버튼을 클릭하세요:",
     "TextureAtlas.save_file_button": "Blender 파일 저장",
     "TextureAtlas.save_file_required": "파일 저장 필요",
+    "TextureAtlas.search_materials": "재질 검색",
+    "TextureAtlas.search_materials_desc": "이름으로 재질 필터링",
 
     "Settings.label": "설정",
     "Settings.language": "언어",
@@ -538,6 +541,39 @@
     "Language.changed.title": "언어 변경됨",
     "Language.changed.success": "언어가 성공적으로 변경되었습니다!",
     "Language.changed.restart": "일부 UI 요소는 블렌더를 다시 시작해야 할 수 있습니다",
+
+    "VRM.panel.label": "VRM에서 Unity로",
+    "VRM.converter.title": "VRM 변환기",
+    "VRM.no_armature_selected": "선택된 아마추어 없음",
+    "VRM.select_armature_to_convert": "변환할 아마추어를 선택하세요",
+    "VRM.armature_name": "아마추어: {name}",
+    "VRM.armature_detected": "VRM 아마추어 감지됨",
+    "VRM.no_vrm_bones_detected": "VRM 본이 감지되지 않음",
+    "VRM.remove_colliders": "콜라이더 제거",
+    "VRM.remove_root_bone": "루트 본 제거",
+    "VRM.convert_to_unity_format": "Unity 형식으로 변환",
+    "VRM.convert_to_unity.label": "VRM을 Unity로 변환",
+    "VRM.convert_to_unity.desc": "VRM 아마추어 본 이름을 Unity 휴머노이드 명명 규칙으로 변환",
+    "VRM.conversion_info.title": "변환 정보:",
+    "VRM.conversion_info.renames_bones": "• VRM 본을 Unity 형식으로 이름 변경",
+    "VRM.conversion_info.removes_colliders": "• 콜라이더 본 제거 (선택사항)",
+    "VRM.conversion_info.removes_root": "• 루트 본 제거, Hips를 루트로 설정 (선택사항)",
+    "VRM.conversion_info.maintains_hierarchy": "• 본 계층 구조 유지",
+    "VRM.conversion_info.validates_results": "• 변환 결과 검증",
+    "VRM.conversion_info.preserves_animations": "• 모든 애니메이션 보존",
+    "VRM.detection_failed.title": "VRM 감지 실패:",
+    "VRM.detection_failed.not_vrm_format": "• 선택된 아마추어가 VRM 형식이 아님",
+    "VRM.detection_failed.bones_start_with": "• VRM 본은 'J_Bip_C_'로 시작함",
+    "VRM.detection_failed.need_five_bones": "• 최소 5개의 VRM 본이 감지되어야 함",
+    "VRM.detection_failed.check_bone_names": "• 아마추어 본 이름을 확인하세요",
+    "VRM.validation.hierarchy_passed": "Unity 계층 구조 검증 통과",
+    "VRM.validation.hierarchy_issues": "변환은 완료되었지만 계층 구조 검증에서 문제를 발견했습니다:",
+    "VRM.validation.armature_passed": "아마추어가 표준 검증을 통과했습니다",
+    "VRM.validation.failed": "변환은 완료되었지만 검증에 실패했습니다: {error}",
+    "VRM.remove_colliders": "콜라이더 제거",
+    "VRM.remove_colliders_desc": "변환 중 VRM 콜라이더 본 제거",
+    "VRM.remove_root": "루트 본 제거", 
+    "VRM.remove_root_desc": "불필요한 VRM 루트 본을 제거하고 힙을 루트 본으로 설정",
 
     "Translation.label": "번역",
     "Translation.service": "번역 서비스",
@@ -596,15 +632,6 @@
     "Translation.server_url": "서버 URL", 
     "Translation.server_url_desc": "LibreTranslate 서버 URL (예: https://your-server.com)",
     "Translation.api_key": "API 키",
-    "Translation.api_key_desc": "LibreTranslate 서버용 API 키 (일부 서버는 선택사항)",
-    
-    "VRM.remove_colliders": "콜라이더 제거",
-    "VRM.remove_colliders_desc": "변환 중 VRM 콜라이더 본 제거",
-    "VRM.remove_root": "루트 본 제거", 
-    "VRM.remove_root_desc": "불필요한 VRM 루트 본을 제거하고 힙을 루트 본으로 설정",
-    
-    "Visemes.no_meshes": "메시를 찾을 수 없음",
-    "TextureAtlas.search_materials": "재질 검색",
-    "TextureAtlas.search_materials_desc": "이름으로 재질 필터링"
+    "Translation.api_key_desc": "LibreTranslate 서버용 API 키 (일부 서버는 선택사항)"
   }
 }
