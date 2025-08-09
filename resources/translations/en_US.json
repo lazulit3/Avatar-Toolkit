@@ -586,7 +586,7 @@
     "VRM.validation.hierarchy_passed": "Unity hierarchy validation passed",
     "VRM.validation.hierarchy_issues": "Conversion completed but hierarchy validation found issues:",
     "VRM.validation.armature_passed": "Armature passes standard validation",
-    "VRM.validation.failed": "Conversion completed but validation failed: {error}"
+    "VRM.validation.failed": "Conversion completed but validation failed: {error}",
     "VRM.remove_colliders": "Remove Colliders",
     "VRM.remove_colliders_desc": "Remove VRM collider bones during conversion",
     "VRM.remove_root": "Remove Root Bone", 
