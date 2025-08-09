@@ -67,6 +67,74 @@ def get_mesh_objects(self, context):
         return [('NONE', t("Visemes.no_meshes"), '')]
     return meshes
 
+def auto_populate_merge_armatures(context: Context) -> None:
+    """Auto-populate merge armature fields when there are 2+ armatures"""
+    armatures = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE']
+    
+    if len(armatures) >= 2:
+        toolkit = context.scene.avatar_toolkit
+        
+        if not toolkit.merge_armature_into and not toolkit.merge_armature:
+            toolkit.merge_armature_into = armatures[0].name
+            toolkit.merge_armature = armatures[1].name
+            logger.debug(f"Auto-populated merge armatures: {armatures[0].name} <- {armatures[1].name}")
+
+        elif toolkit.merge_armature_into and not toolkit.merge_armature:
+            for armature in armatures:
+                if armature.name != toolkit.merge_armature_into:
+                    toolkit.merge_armature = armature.name
+                    logger.debug(f"Auto-populated merge_armature: {armature.name}")
+                    break
+
+        elif not toolkit.merge_armature_into and toolkit.merge_armature:
+            for armature in armatures:
+                if armature.name != toolkit.merge_armature:
+                    toolkit.merge_armature_into = armature.name
+                    logger.debug(f"Auto-populated merge_armature_into: {armature.name}")
+                    break
+
+def update_merge_armature_into(self: PropertyGroup, context: Context) -> None:
+    """Update function for merge_armature_into property"""
+    auto_populate_merge_armatures(context)
+
+def update_merge_armature(self: PropertyGroup, context: Context) -> None:
+    """Update function for merge_armature property"""
+    auto_populate_merge_armatures(context)
+
+@bpy.app.handlers.persistent
+def depsgraph_update_handler(scene: Scene, depsgraph) -> None:
+    """Handler to auto-populate merge armatures when objects change"""
+    # Check for any armature-related updates
+    armature_updated = False
+    for update in depsgraph.updates:
+        if hasattr(update, 'id') and update.id and hasattr(update.id, 'type'):
+            if update.id.type == 'ARMATURE':
+                armature_updated = True
+                break
+    
+    if armature_updated:
+        # Use a timer to defer the update to avoid context issues
+        bpy.app.timers.register(lambda: auto_populate_safe(), first_interval=0.1)
+
+def auto_populate_safe() -> None:
+    """Safe auto-populate function that can be called from timer"""
+    try:
+        if bpy.context and hasattr(bpy.context, 'scene') and hasattr(bpy.context.scene, 'avatar_toolkit'):
+            auto_populate_merge_armatures(bpy.context)
+    except (AttributeError, ReferenceError):
+        pass
+    return None  # Don't repeat the timer
+
+@bpy.app.handlers.persistent
+def undo_post_handler(scene: Scene) -> None:
+    """Handler for undo operations that might add/remove armatures"""
+    bpy.app.timers.register(lambda: auto_populate_safe(), first_interval=0.1)
+
+@bpy.app.handlers.persistent  
+def redo_post_handler(scene: Scene) -> None:
+    """Handler for redo operations that might add/remove armatures"""
+    bpy.app.timers.register(lambda: auto_populate_safe(), first_interval=0.1)
+
 class AvatarToolkitSceneProperties(PropertyGroup):
     """Property group containing Avatar Toolkit scene-level settings and properties"""
 
@@ -465,13 +533,15 @@ class AvatarToolkitSceneProperties(PropertyGroup):
     merge_armature_into: StringProperty(
         name=t('MergeArmature.into'),
         description=t('MergeArmature.into_desc'),
-        default=""
+        default="",
+        update=update_merge_armature_into
     )
 
     merge_armature: StringProperty(
         name=t('MergeArmature.from'),
         description=t('MergeArmature.from_desc'),
-        default=""
+        default="",
+        update=update_merge_armature
     )
 
     attach_mesh: StringProperty(
@@ -614,12 +684,29 @@ def register() -> None:
     
     # Only register the property, not the classes (auto_load will handle that)
     bpy.types.Scene.avatar_toolkit = PointerProperty(type=AvatarToolkitSceneProperties)
+    
+    # Register handlers for auto-populating merge armatures
+    bpy.app.handlers.depsgraph_update_post.append(depsgraph_update_handler)
+    bpy.app.handlers.undo_post.append(undo_post_handler)
+    bpy.app.handlers.redo_post.append(redo_post_handler)
+    
+    # Initial auto-populate
+    bpy.app.timers.register(lambda: auto_populate_safe(), first_interval=1.0)
+    
     logger.debug("Properties registered successfully")
 
 
 def unregister() -> None:
     """Unregister the Avatar Toolkit property group"""
     logger.info("Unregistering Avatar Toolkit properties")
+    
+    # Remove handlers
+    if depsgraph_update_handler in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.remove(depsgraph_update_handler)
+    if undo_post_handler in bpy.app.handlers.undo_post:
+        bpy.app.handlers.undo_post.remove(undo_post_handler)
+    if redo_post_handler in bpy.app.handlers.redo_post:
+        bpy.app.handlers.redo_post.remove(redo_post_handler)
     
     # Remove the property
     if hasattr(bpy.types.Scene, "avatar_toolkit"):

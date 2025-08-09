@@ -55,12 +55,6 @@ class AvatarToolkit_OT_StandardizeArmature(Operator):
         
         logger.info(f"Starting armature standardization for {armature.name}")
         
-        is_valid, _, _ = validate_armature(armature)
-        if is_valid:
-            logger.info("Armature already meets standards, no changes needed")
-            self.report({'INFO'}, t("Tools.standardize_already_valid"))
-            return {'FINISHED'}
-        
         original_mode: str = context.mode
         logger.debug(f"Original mode: {original_mode}")
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -90,7 +84,7 @@ class AvatarToolkit_OT_StandardizeArmature(Operator):
                     logger.info(f"Fixed {fixed_scale} scale issues")
             
             bpy.ops.object.mode_set(mode='OBJECT')
-            is_valid, messages, _ = validate_armature(armature)
+            is_valid, messages, _ = validate_armature(armature, override_mode='STRICT')
             
             if is_valid:
                 logger.info("Armature successfully standardized")

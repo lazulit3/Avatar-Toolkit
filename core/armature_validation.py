@@ -15,12 +15,12 @@ from ..core.dictionaries import (
 )
 from ..core.logging_setup import logger
 
-def validate_armature(armature: Object, detailed_messages: bool = False) -> Union[Tuple[bool, List[str], bool], Tuple[bool, List[str], bool, List[str], List[str], List[str]]]:
+def validate_armature(armature: Object, detailed_messages: bool = False, override_mode: Optional[str] = None) -> Union[Tuple[bool, List[str], bool], Tuple[bool, List[str], bool, List[str], List[str], List[str]]]:
     """
     Validates armature and returns validation results
     """
     logger.debug(f"Validating armature: {armature.name if armature else 'None'}")
-    validation_mode = bpy.context.scene.avatar_toolkit.validation_mode
+    validation_mode = override_mode if override_mode else bpy.context.scene.avatar_toolkit.validation_mode
     messages: List[str] = []
     hierarchy_messages: List[str] = []
     non_standard_messages: List[str] = []
