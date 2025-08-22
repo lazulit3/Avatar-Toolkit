@@ -102,11 +102,8 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             wm.progress_update(100)
             wm.progress_end()
 
+            # Restore settings only for the base armature since merge_armature is removed during join
             restore_breaking_settings_armature(base_armature, data_breaking_base)
-            
-            if merge_armature_name_stored in bpy.data.objects:
-                merge_armature_obj = bpy.data.objects[merge_armature_name_stored]
-                restore_breaking_settings_armature(merge_armature_obj, data_breaking_merge)
             
             # Restore original mode if it wasn't OBJECT
             try:
@@ -126,7 +123,7 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
 
         except Exception as e:
             logger.error(f"Error merging armatures: {str(e)}\n{traceback.format_exc()}")
-            self.report({'ERROR'}, traceback.format_exc())
+            self.report({'ERROR'}, f"Error merging armatures: {str(e)}")
             
             # Try to restore original mode even on error
             try:
