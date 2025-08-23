@@ -122,8 +122,9 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             return {'FINISHED'}
 
         except Exception as e:
-            logger.error(f"Error merging armatures: {str(e)}\n{traceback.format_exc()}")
-            self.report({'ERROR'}, f"Error merging armatures: {str(e)}")
+            errormessage: str = traceback.format_exc()
+            logger.error(f"Error merging armatures: {str(e)}\n{errormessage}")
+            self.report({'ERROR'}, f"Error merging armatures: {errormessage}")
             
             # Try to restore original mode even on error
             try:
