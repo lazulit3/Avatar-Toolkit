@@ -10,16 +10,17 @@ from ..core.dictionaries import (
     bone_hierarchy,
     finger_hierarchy,
     acceptable_bone_hierarchy,
-    acceptable_bone_names
+    acceptable_bone_names,
+    simplify_bonename
 )
 from ..core.logging_setup import logger
 
-def validate_armature(armature: Object, detailed_messages: bool = False) -> Union[Tuple[bool, List[str], bool], Tuple[bool, List[str], bool, List[str], List[str], List[str]]]:
+def validate_armature(armature: Object, detailed_messages: bool = False, override_mode: Optional[str] = None) -> Union[Tuple[bool, List[str], bool], Tuple[bool, List[str], bool, List[str], List[str], List[str]]]:
     """
     Validates armature and returns validation results
     """
     logger.debug(f"Validating armature: {armature.name if armature else 'None'}")
-    validation_mode = bpy.context.scene.avatar_toolkit.validation_mode
+    validation_mode = override_mode if override_mode else bpy.context.scene.avatar_toolkit.validation_mode
     messages: List[str] = []
     hierarchy_messages: List[str] = []
     non_standard_messages: List[str] = []
@@ -104,17 +105,41 @@ def validate_armature(armature: Object, detailed_messages: bool = False) -> Unio
         
         # Non-standard bones check
         non_standard_bones = []
-        required_patterns = [
-            'Hips', 'Spine', 'Chest', 'Neck', 'Head',
-            'Upper', 'Lower', 'Hand', 'Foot', 'Toe',
-            'Thumb', 'Index', 'Middle', 'Ring', 'Pinky',
-            'Eye'
+        
+        # Bones to ignore
+        ignore_patterns = [
+            'tail', 'skirt', 'dress', 'hair', 'ribbon', 'bow', 'hat', 'cap',
+            'butt', 'breast', 'boob', 'chest_', 'belly', 'stomach',
+            'wing', 'fin', 'horn', 'ear_', 'accessory', 'extra',
+            'cloth', 'fabric', 'cape', 'coat', 'jacket', 'shirt',
+            'pants', 'shoe', 'boot', 'sock', 'glove', 'mitten',
+            'belt', 'strap', 'buckle', 'button', 'zipper',
+            'jewel', 'gem', 'ring', 'necklace', 'earring',
+            'flower', 'leaf', 'feather', 'fur', 'scale',
+            'bangs', 'sideburn', 'bell', 'leash', 'ears', 'chain',
+            'headband', 'necklace', 'necktie', 'strapNeck', 'ring',
+            'pin', 'hair',
+
         ]
         
+        # Create normalized lookup sets for faster comparison
+        normalized_standard_bones = {simplify_bonename(name) for name in standard_bones.values()}
+        normalized_acceptable_bones = set()
+        for names in acceptable_bone_names.values():
+            normalized_acceptable_bones.update(simplify_bonename(name) for name in names)
+        
         for bone_name in found_bones:
-            if any(pattern in bone_name for pattern in required_patterns):
-                is_standard = bone_name in standard_bones.values()
-                is_acceptable_bone = any(bone_name in names for names in acceptable_bone_names.values())
+            # Normalize bone name for comparison
+            normalized_bone_name = simplify_bonename(bone_name)
+            
+            # Check if bone should be ignored (accessory bone)
+            is_ignored = any(pattern in normalized_bone_name for pattern in ignore_patterns)
+            
+            if not is_ignored:
+                # Check if bone is in standard or acceptable lists
+                is_standard = normalized_bone_name in normalized_standard_bones
+                is_acceptable_bone = normalized_bone_name in normalized_acceptable_bones
+                
                 if not (is_standard or is_acceptable_bone):
                     non_standard_bones.append(bone_name)
         
@@ -186,31 +211,188 @@ def validate_bone_hierarchy(bones: Dict[str, Bone], parent_name: str, child_name
         return False
     return bones[child_name].parent == bones[parent_name]
 
+def extract_bone_side_info(bone_name: str) -> Tuple[str, str]:
+    """
+    Extract base bone name and side indicator from a bone name.
+    Returns (base_name, side) where side is 'L', 'R', or ''
+    """
+    normalized = simplify_bonename(bone_name)
+    original = bone_name
+    
+    # Common left/right patterns to check
+    left_patterns = [
+        'left', 'l', 'lft', 'lt',
+        '.l', '_l', '-l', ' l',
+        '左', 'ひだり'
+    ]
+    
+    right_patterns = [
+        'right', 'r', 'rgt', 'rt', 
+        '.r', '_r', '-r', ' r',
+        '右', 'みぎ'
+    ]
+    
+    # Check for left patterns
+    for pattern in left_patterns:
+        pattern_norm = simplify_bonename(pattern)
+        if normalized.startswith(pattern_norm):
+            base = normalized[len(pattern_norm):]
+            if base:  # Make sure there's something left
+                return base, 'L'
+        elif normalized.endswith(pattern_norm):
+            base = normalized[:-len(pattern_norm)]
+            if base:
+                return base, 'L'
+        elif pattern_norm in normalized:
+            # Handle cases like ArmLeft
+            parts = normalized.split(pattern_norm)
+            if len(parts) == 2:
+                base = parts[0] + parts[1]
+                if base:
+                    return base, 'L'
+    
+    # Check for right patterns
+    for pattern in right_patterns:
+        pattern_norm = simplify_bonename(pattern)
+        if normalized.startswith(pattern_norm):
+            base = normalized[len(pattern_norm):]
+            if base:
+                return base, 'R'
+        elif normalized.endswith(pattern_norm):
+            base = normalized[:-len(pattern_norm)]
+            if base:
+                return base, 'R'
+        elif pattern_norm in normalized:
+            parts = normalized.split(pattern_norm)
+            if len(parts) == 2:
+                base = parts[0] + parts[1]
+                if base:
+                    return base, 'R'
+    
+    return normalized, ''
+
+def find_symmetric_bone_pairs(bones: Dict[str, Bone]) -> Dict[str, Tuple[List[str], List[str]]]:
+    """
+    Automatically find symmetric bone pairs in the armature.
+    Returns dict mapping base_name to (left_bones, right_bones)
+    """
+    bone_groups = {}
+    
+    for bone_name in bones.keys():
+        base, side = extract_bone_side_info(bone_name)
+        
+        if side:
+            if base not in bone_groups:
+                bone_groups[base] = {'L': [], 'R': []}
+            bone_groups[base][side].append(bone_name)
+    
+    symmetric_pairs = {}
+    for base, sides in bone_groups.items():
+        if sides['L'] and sides['R']:
+            symmetric_pairs[base] = (sides['L'], sides['R'])
+    
+    return symmetric_pairs
+
+def validate_armature_symmetry(armature: Object) -> Tuple[bool, List[str]]:
+    """
+    Comprehensive symmetry validation that provides detailed feedback
+    """
+    if not armature or armature.type != 'ARMATURE':
+        return False, ["Invalid armature"]
+    
+    bones = {bone.name: bone for bone in armature.data.bones}
+    symmetric_pairs = find_symmetric_bone_pairs(bones)
+    
+    messages = []
+    is_symmetric = True
+    
+    if symmetric_pairs:
+        messages.append("Found symmetric bone pairs:")
+        for base, (left_bones, right_bones) in symmetric_pairs.items():
+            left_count = len(left_bones)
+            right_count = len(right_bones)
+            
+            if left_count == right_count:
+                messages.append(f"  ✓ {base}: {left_count} bones on each side")
+                for l_bone, r_bone in zip(sorted(left_bones), sorted(right_bones)):
+                    messages.append(f"    {l_bone} ↔ {r_bone}")
+            else:
+                is_symmetric = False
+                messages.append(f"  ✗ {base}: {left_count} left, {right_count} right bones")
+                messages.append(f"    Left: {', '.join(sorted(left_bones))}")
+                messages.append(f"    Right: {', '.join(sorted(right_bones))}")
+    else:
+        messages.append("No symmetric bone pairs detected")
+        is_symmetric = False
+    
+    return is_symmetric, messages
+
 def validate_symmetry(bones: Dict[str, Bone], base: str, left: str, right: str) -> bool:
     """Validate if matching left and right bones exist for a given base bone name"""
-    # Extract left and right bone names from both hierarchies
+    # First try the new intelligent detection
+    symmetric_pairs = find_symmetric_bone_pairs(bones)
+    
+    # Look for bones that match the requested base type
+    matching_left_bones = []
+    matching_right_bones = []
+    
+    # Check each detected symmetric pair
+    for pair_base, (left_bones, right_bones) in symmetric_pairs.items():
+        if base.lower() in pair_base.lower() or pair_base.lower() in base.lower():
+            matching_left_bones.extend(left_bones)
+            matching_right_bones.extend(right_bones)
+    
+    if matching_left_bones or matching_right_bones:
+        left_bases = {}
+        right_bases = {}
+        
+        for bone_name in matching_left_bones:
+            bone_base, side = extract_bone_side_info(bone_name)
+            if bone_base not in left_bases:
+                left_bases[bone_base] = []
+            left_bases[bone_base].append(bone_name)
+        
+        for bone_name in matching_right_bones:
+            bone_base, side = extract_bone_side_info(bone_name)
+            if bone_base not in right_bases:
+                right_bases[bone_base] = []
+            right_bases[bone_base].append(bone_name)
+        
+        all_bases = set(left_bases.keys()) | set(right_bases.keys())
+        for bone_base in all_bases:
+            left_count = len(left_bases.get(bone_base, []))
+            right_count = len(right_bases.get(bone_base, []))
+            if left_count != right_count:
+                return False
+        
+        return len(all_bases) > 0
+    
+    # Fallback to original dictionary-based method
     left_bone_names = set()
     right_bone_names = set()
+    
+    # Normalize bone names in the bones dict for comparison
+    normalized_bones = {simplify_bonename(name): name for name in bones.keys()}
     
     # Add standard bones
     for key, value in standard_bones.items():
         if base in key.lower():
             if '_l' in key.lower():
-                left_bone_names.add(value)
+                left_bone_names.add(simplify_bonename(value))
             elif '_r' in key.lower():
-                right_bone_names.add(value)
+                right_bone_names.add(simplify_bonename(value))
                 
     # Add acceptable bones
     for key, names in acceptable_bone_names.items():
         if base in key.lower():
             if '_l' in key.lower():
-                left_bone_names.update(names)
+                left_bone_names.update(simplify_bonename(name) for name in names)
             elif '_r' in key.lower():
-                right_bone_names.update(names)
+                right_bone_names.update(simplify_bonename(name) for name in names)
     
     # Check if at least one pair exists and matches
-    left_exists = any(name in bones for name in left_bone_names)
-    right_exists = any(name in bones for name in right_bone_names)
+    left_exists = any(name in normalized_bones for name in left_bone_names)
+    right_exists = any(name in normalized_bones for name in right_bone_names)
     
     return left_exists == right_exists
 
@@ -224,22 +406,34 @@ def validate_finger_chain(bones: Dict[str, Bone], chain: Tuple[str, ...]) -> boo
 def check_acceptable_standards(bones: Dict[str, Bone]) -> bool:
     """Check if armature matches acceptable non-standard hierarchy"""
     logger.debug("Checking for acceptable standards")
+    
+    # Create normalized lookup for existing bones
+    normalized_bones = {simplify_bonename(name): name for name in bones.keys()}
+    
     # Check if bones exist in acceptable list
     for bone_category, acceptable_names in acceptable_bone_names.items():
         found = False
         for name in acceptable_names:
-            if name in bones:
+            normalized_name = simplify_bonename(name)
+            if normalized_name in normalized_bones:
                 found = True
                 break
         if not found:
             logger.debug(f"Missing acceptable bone for category: {bone_category}")
             return False
     
-    # Validate acceptable hierarchy
+    # Validate acceptable hierarchy using normalized names
     for parent, child in acceptable_bone_hierarchy:
-        if parent in bones and child in bones:
-            if not validate_bone_hierarchy(bones, parent, child):
-                logger.debug(f"Invalid acceptable hierarchy: {parent} -> {child}")
+        parent_normalized = simplify_bonename(parent)
+        child_normalized = simplify_bonename(child)
+        
+        # Find actual bone names from normalized names
+        actual_parent = normalized_bones.get(parent_normalized)
+        actual_child = normalized_bones.get(child_normalized)
+        
+        if actual_parent and actual_child:
+            if not validate_bone_hierarchy(bones, actual_parent, actual_child):
+                logger.debug(f"Invalid acceptable hierarchy: {actual_parent} -> {actual_child}")
                 return False
                 
     logger.debug("Armature meets acceptable standards")

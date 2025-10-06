@@ -140,6 +140,12 @@ def get_all_meshes(context: Context) -> List[Object]:
         return [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj.parent == armature]
     return []
 
+def get_meshes_for_armature(armature: Object) -> List[Object]:
+    """Get all mesh objects parented to a specific armature"""
+    if armature and armature.type == 'ARMATURE':
+        return [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj.parent == armature]
+    return []
+
 def validate_mesh_for_pose(mesh_obj: Object) -> Tuple[bool, str]:
     """Validate mesh object for pose operations"""
     if not mesh_obj.data:
@@ -655,6 +661,9 @@ def store_breaking_settings_armature(armature: bpy.types.Object) -> ArmatureData
     return data
 
 def restore_breaking_settings_armature(armature: bpy.types.Object, data: ArmatureData) -> None:
+    # Check if armature object is still valid (not removed)
+    if not armature or armature.name not in bpy.data.objects:
+        return
     armature_data: bpy.types.Armature = armature.data
     armature_data.use_mirror_x, armature.pose.use_mirror_x = data
 

@@ -3,13 +3,13 @@
 schema_version = "1.0.0"
 
 id = "avatar_toolkit"
-version = "0.3.0"
+version = "0.4.0"
 name = "Avatar Toolkit"
 tagline = "A modern tool for importing and optimizing models for VRChat, Resonite, and other similar games."
 maintainer = "Team NekoNeo"
 type = "add-on"
 
-blender_version_min = "4.4.0"
+blender_version_min = "4.5.0"
 
 license = [
   "SPDX:GPL-3.0-or-later",

@@ -255,30 +255,115 @@ bone_names = {
     "right_eye": [
         "eyeright", "righteye", "eyer", "reye", "右目", "ik_右目"
     ],
+    "breast_1_l": [
+        "j_sec_l_bust1", "breast1_l", "leftbreast1", "lbreast1", "bust1_l"
+    ],
+    "breast_2_l": [
+        "j_sec_l_bust2", "breast2_l", "leftbreast2", "lbreast2", "bust2_l"
+    ],
+    "breast_3_l": [
+        "j_sec_l_bust3", "breast3_l", "leftbreast3", "lbreast3", "bust3_l"
+    ],
+    "breast_1_r": [
+        "j_sec_r_bust1", "breast1_r", "rightbreast1", "rbreast1", "bust1_r"
+    ],
+    "breast_2_r": [
+        "j_sec_r_bust2", "breast2_r", "rightbreast2", "rbreast2", "bust2_r"
+    ],
+    "breast_3_r": [
+        "j_sec_r_bust3", "breast3_r", "rightbreast3", "rbreast3", "bust3_r"
+    ]
 }
 
-# Add VRM bone name variations
+# Add VRM bone name variations  
 bone_names.update({
-    'hips': bone_names['hips'] + ['jbipchips', 'jhips', 'vrmhips'],
+    'hips': bone_names['hips'] + ['jbipchips', 'jhips', 'vrmhips', 'leftupperleg', 'rightupperleg'],
     'spine': bone_names['spine'] + ['jbipcspine', 'jspine', 'vrmspine'],
-    'chest': bone_names['chest'] + ['jbipcchest', 'jchest', 'vrmchest'],
-    'upper_chest': bone_names['upper_chest'] + ['jbipcupperchest', 'jupperchest', 'vrmupperchest'],
+    'chest': bone_names['chest'] + ['jbipcchest', 'jchest', 'vrmchest', 'upperchest'],
+    'upper_chest': bone_names['upper_chest'] + ['jbipcupperchest', 'jupperchest', 'vrmupperchest', 'upperchest'],
     'neck': bone_names['neck'] + ['jbipcneck', 'jneck', 'vrmneck'],
-    'head': bone_names['head'] + ['jbipchead', 'jhead', 'vrmhead'],
+    'head': bone_names['head'] + ['jbipchead', 'jhead', 'vrmhead', 'lefteye', 'righteye'],
     
-    # VRM specific finger naming
-    'thumb_0_l': bone_names['thumb_0_l'] + ['thumbmetacarpall', 'jthumb1l'],
-    'index_0_l': bone_names['index_0_l'] + ['indexmetacarpall', 'jindex1l'],
-    'middle_0_l': bone_names['middle_0_l'] + ['middlemetacarpall', 'jmiddle1l'],
-    'ring_0_l': bone_names['ring_0_l'] + ['ringmetacarpall', 'jring1l'],
-    'pinkie_0_l': bone_names['pinkie_0_l'] + ['littlemetacarpall', 'jlittle1l'],
+    # VRM arms - both simplified patterns
+    'left_shoulder': bone_names['left_shoulder'] + ['jbipllshoulder', 'jlshoulder', 'jbiplshoulder', 'leftshoulder', 'jbipllclavicle'],
+    'left_arm': bone_names['left_arm'] + ['jbiplupperarm', 'jlupperarm', 'leftupperarm'],
+    'left_elbow': bone_names['left_elbow'] + ['jbipllforearm', 'jlforearm', 'jbipllowerarm', 'leftlowerarm'],
+    'left_wrist': bone_names['left_wrist'] + ['jbipllhand', 'jlhand', 'jbiplhand', 'lefthand'],
     
-    # Mirror for right side
-    'thumb_0_r': bone_names['thumb_0_r'] + ['thumbmetacarpalr', 'jthumb1r'],
-    'index_0_r': bone_names['index_0_r'] + ['indexmetacarpalr', 'jindex1r'],
-    'middle_0_r': bone_names['middle_0_r'] + ['middlemetacarpalr', 'jmiddle1r'],
-    'ring_0_r': bone_names['ring_0_r'] + ['ringmetacarpalr', 'jring1r'],
-    'pinkie_0_r': bone_names['pinkie_0_r'] + ['littlemetacarpalr', 'jlittle1r']
+    'right_shoulder': bone_names['right_shoulder'] + ['jbiprlshoulder', 'jrshoulder', 'jbiprshoulder', 'rightshoulder', 'jbiprrclavicle'],
+    'right_arm': bone_names['right_arm'] + ['jbiprrupperarm', 'jrupperarm', 'jbiprupperarm', 'rightupperarm'],
+    'right_elbow': bone_names['right_elbow'] + ['jbiprrforearm', 'jrforearm', 'jbiprforearm', 'jbiprlowerarm', 'rightlowerarm'],
+    'right_wrist': bone_names['right_wrist'] + ['jbiprrhand', 'jrhand', 'jbiprhand', 'righthand'],
+    
+    # VRM legs - both simplified patterns
+    'left_leg': bone_names['left_leg'] + ['jbiplupperleg', 'jlupperleg', 'leftupperleg'],
+    'left_knee': bone_names['left_knee'] + ['jbipllowerleg', 'jllowerleg', 'leftlowerleg'],
+    'left_ankle': bone_names['left_ankle'] + ['jbipllfoot', 'jlfoot', 'jbiplfoot', 'leftfoot'],
+    'left_toe': bone_names['left_toe'] + ['jbiplltoe', 'jltoe', 'jbipltoebase', 'lefttoes'],
+    
+    'right_leg': bone_names['right_leg'] + ['jbiprrupperleg', 'jrupperleg', 'jbiprupperleg', 'rightupperleg'],
+    'right_knee': bone_names['right_knee'] + ['jbiprrlowerleg', 'jrlowerleg', 'jbiprlowerleg', 'rightlowerleg'],
+    'right_ankle': bone_names['right_ankle'] + ['jbiprrfoot', 'jrfoot', 'jbiprfoot', 'rightfoot'],
+    'right_toe': bone_names['right_toe'] + ['jbiprrtoe', 'jrtoe', 'jbiprtoebase', 'righttoes'],
+    
+    # VRM eyes
+    'left_eye': bone_names['left_eye'] + ['jbipcleye', 'jleye', 'jadjlfaceeye'],
+    'right_eye': bone_names['right_eye'] + ['jbipcreye', 'jreye', 'jadjrfaceeye'],
+    
+    # VRM jaw
+    'jaw': ['jaw', 'mandible', 'lowerjaw', 'chin', 'あご', 'ik_あご'],
+    
+    # Breast bones
+    'breast_1_l': bone_names['breast_1_l'] + ['jbipcbreast1l', 'jlbreast1', 'jseclbust1'],
+    'breast_2_l': bone_names['breast_2_l'] + ['jbipcbreast2l', 'jlbreast2', 'jseclbust2'],
+    'breast_3_l': bone_names['breast_3_l'] + ['jbipcbreast3l', 'jlbreast3', 'jseclbust3'],
+    'breast_1_r': bone_names['breast_1_r'] + ['jbipcbreast1r', 'jrbreast1', 'jsecrbust1'],
+    'breast_2_r': bone_names['breast_2_r'] + ['jbipcbreast2r', 'jrbreast2', 'jsecrbust2'],
+    'breast_3_r': bone_names['breast_3_r'] + ['jbipcbreast3r', 'jrbreast3', 'jsecrbust3'],
+    
+    # VRM fingers - Left (including Little finger variations)
+    'thumb_0_l': bone_names['thumb_0_l'] + ['jbipllthumb0', 'jlthumb0', 'jbipllthumbmetacarpal', 'jlthumbmetacarpal', 'leftthumbmetacarpal'],
+    'thumb_1_l': bone_names['thumb_1_l'] + ['jbipllthumb1', 'jlthumb1', 'jbiplthumb1', 'leftthumbproximal'],
+    'thumb_2_l': bone_names['thumb_2_l'] + ['jbipllthumb2', 'jlthumb2', 'jbiplthumb2', 'leftthumbintermediate'],
+    'thumb_3_l': bone_names['thumb_3_l'] + ['jbipllthumb3', 'jlthumb3', 'jbiplthumb3', 'leftthumbdistal'],
+    
+    'index_1_l': bone_names['index_1_l'] + ['jbipllindex1', 'jlindex1', 'jbiplindex1', 'leftindexproximal'],
+    'index_2_l': bone_names['index_2_l'] + ['jbipllindex2', 'jlindex2', 'jbiplindex2', 'leftindexintermediate'],
+    'index_3_l': bone_names['index_3_l'] + ['jbipllindex3', 'jlindex3', 'jbiplindex3', 'leftindexdistal'],
+    
+    'middle_1_l': bone_names['middle_1_l'] + ['jbipllmiddle1', 'jlmiddle1', 'jbiplmiddle1', 'leftmiddleproximal'],
+    'middle_2_l': bone_names['middle_2_l'] + ['jbipllmiddle2', 'jlmiddle2', 'jbiplmiddle2', 'leftmiddleintermediate'],
+    'middle_3_l': bone_names['middle_3_l'] + ['jbipllmiddle3', 'jlmiddle3', 'jbiplmiddle3', 'leftmiddledistal'],
+    
+    'ring_1_l': bone_names['ring_1_l'] + ['jbipllring1', 'jlring1', 'jbiplring1', 'leftringproximal'],
+    'ring_2_l': bone_names['ring_2_l'] + ['jbipllring2', 'jlring2', 'jbiplring2', 'leftringintermediate'],
+    'ring_3_l': bone_names['ring_3_l'] + ['jbipllring3', 'jlring3', 'jbiplring3', 'leftringdistal'],
+    
+    'pinkie_1_l': bone_names['pinkie_1_l'] + ['jbipllpinky1', 'jlpinky1', 'jbipllittle1', 'jbipllpinkie1', 'leftlittleproximal'],
+    'pinkie_2_l': bone_names['pinkie_2_l'] + ['jbipllpinky2', 'jlpinky2', 'jbipllittle2', 'jbipllpinkie2', 'leftlittleintermediate'],
+    'pinkie_3_l': bone_names['pinkie_3_l'] + ['jbipllpinky3', 'jlpinky3', 'jbipllittle3', 'jbipllpinkie3', 'leftlittledistal'],
+    
+    # VRM fingers - Right (including Little finger variations)
+    'thumb_0_r': bone_names['thumb_0_r'] + ['jbiprthumb0', 'jrthumb0', 'jbiprthumbmetacarpal', 'jrthumbmetacarpal', 'rightthumbmetacarpal'],
+    'thumb_1_r': bone_names['thumb_1_r'] + ['jbiprthumb1', 'jrthumb1', 'jbiprrrthumb1', 'rightthumbproximal'],
+    'thumb_2_r': bone_names['thumb_2_r'] + ['jbiprthumb2', 'jrthumb2', 'jbiprrrthumb2', 'rightthumbintermediate'],
+    'thumb_3_r': bone_names['thumb_3_r'] + ['jbiprthumb3', 'jrthumb3', 'jbiprrrthumb3', 'rightthumbdistal'],
+    
+    'index_1_r': bone_names['index_1_r'] + ['jbiprindex1', 'jrindex1', 'jbiprrrindex1', 'rightindexproximal'],
+    'index_2_r': bone_names['index_2_r'] + ['jbiprindex2', 'jrindex2', 'jbiprrrindex2', 'rightindexintermediate'],
+    'index_3_r': bone_names['index_3_r'] + ['jbiprindex3', 'jrindex3', 'jbiprrrindex3', 'rightindexdistal'],
+    
+    'middle_1_r': bone_names['middle_1_r'] + ['jbiprmiddle1', 'jrmiddle1', 'jbiprrmiddle1', 'rightmiddleproximal'],
+    'middle_2_r': bone_names['middle_2_r'] + ['jbiprmiddle2', 'jrmiddle2', 'jbiprrmiddle2', 'rightmiddleintermediate'],
+    'middle_3_r': bone_names['middle_3_r'] + ['jbiprmiddle3', 'jrmiddle3', 'jbiprrmiddle3', 'rightmiddledistal'],
+    
+    'ring_1_r': bone_names['ring_1_r'] + ['jbiprring1', 'jrring1', 'jbiprrrring1', 'rightringproximal'],
+    'ring_2_r': bone_names['ring_2_r'] + ['jbiprring2', 'jrring2', 'jbiprrrring2', 'rightringintermediate'],
+    'ring_3_r': bone_names['ring_3_r'] + ['jbiprring3', 'jrring3', 'jbiprrrring3', 'rightringdistal'],
+    
+    'pinkie_1_r': bone_names['pinkie_1_r'] + ['jbiprpinky1', 'jrpinky1', 'jbiprlittle1', 'jbiprrrpinky1', 'rightlittleproximal'],
+    'pinkie_2_r': bone_names['pinkie_2_r'] + ['jbiprpinky2', 'jrpinky2', 'jbiprlittle2', 'jbiprrrpinky2', 'rightlittleintermediate'],
+    'pinkie_3_r': bone_names['pinkie_3_r'] + ['jbiprpinky3', 'jrpinky3', 'jbiprlittle3', 'jbiprrrpinky3', 'rightlittledistal']
 })
 
 # array taken from cats
@@ -367,113 +452,125 @@ standard_bones = {
     'hips': 'Hips',
     'spine': 'Spine',
     'chest': 'Chest',
-    'upper_chest': 'Chest.Up',
+    'upper_chest': 'UpperChest',
     'neck': 'Neck',
     'head': 'Head',
     
     # Arms
-    'left_arm': 'UpperArm.L',
-    'left_elbow': 'LowerArm.L',
-    'left_wrist': 'Hand.L',
-    'right_arm': 'UpperArm.R',
-    'right_elbow': 'LowerArm.R',
-    'right_wrist': 'Hand.R',
+    'left_shoulder': 'Shoulder_L',
+    'left_arm': 'UpperArm_L',
+    'left_elbow': 'LowerArm_L',
+    'left_wrist': 'Hand_L',
+    'right_shoulder': 'Shoulder_R',
+    'right_arm': 'UpperArm_R',
+    'right_elbow': 'LowerArm_R',
+    'right_wrist': 'Hand_R',
     
     # Legs
-    'left_leg': 'UpperLeg.L',
-    'left_knee': 'LowerLeg.L',
-    'left_ankle': 'Foot.L',
-    'left_toe': 'Toes.L',
-    'right_leg': 'UpperLeg.R',
-    'right_knee': 'LowerLeg.R',
-    'right_ankle': 'Foot.R',
-    'right_toe': 'Toes.R',
+    'left_leg': 'UpperLeg_L',
+    'left_knee': 'LowerLeg_L',
+    'left_ankle': 'Foot_L',
+    'left_toe': 'Toe_L',
+    'right_leg': 'UpperLeg_R',
+    'right_knee': 'LowerLeg_R',
+    'right_ankle': 'Foot_R',
+    'right_toe': 'Toe_R',
     
     # Fingers Left
-    'thumb_1_l': 'Thumb1.L',
-    'thumb_2_l': 'Thumb2.L',
-    'thumb_3_l': 'Thumb3.L',
-    'index_1_l': 'Index1.L',
-    'index_2_l': 'Index2.L',
-    'index_3_l': 'Index3.L',
-    'middle_1_l': 'Middle1.L',
-    'middle_2_l': 'Middle2.L',
-    'middle_3_l': 'Middle3.L',
-    'ring_1_l': 'Ring1.L',
-    'ring_2_l': 'Ring2.L',
-    'ring_3_l': 'Ring3.L',
-    'pinkie_1_l': 'Pinky1.L',
-    'pinkie_2_l': 'Pinky2.L',
-    'pinkie_3_l': 'Pinky3.L',
+    'thumb_1_l': 'Thumb_L',
+    'thumb_2_l': 'Thumb_L.001',
+    'thumb_3_l': 'Thumb_L.002',
+    'index_1_l': 'Index_L',
+    'index_2_l': 'Index_L.001',
+    'index_3_l': 'Index_L.002',
+    'middle_1_l': 'Middle_L',
+    'middle_2_l': 'Middle_L.001',
+    'middle_3_l': 'Middle_L.002',
+    'ring_1_l': 'Ring_L',
+    'ring_2_l': 'Ring_L.001',
+    'ring_3_l': 'Ring_L.002',
+    'pinkie_1_l': 'Pinky_L',
+    'pinkie_2_l': 'Pinky_L.001',
+    'pinkie_3_l': 'Pinky_L.002',
     
     # Fingers Right
-    'thumb_1_r': 'Thumb1.R',
-    'thumb_2_r': 'Thumb2.R',
-    'thumb_3_r': 'Thumb3.R',
-    'index_1_r': 'Index1.R',
-    'index_2_r': 'Index2.R',
-    'index_3_r': 'Index3.R',
-    'middle_1_r': 'Middle1.R',
-    'middle_2_r': 'Middle2.R',
-    'middle_3_r': 'Middle3.R',
-    'ring_1_r': 'Ring1.R',
-    'ring_2_r': 'Ring2.R',
-    'ring_3_r': 'Ring3.R',
-    'pinkie_1_r': 'Pinky1.R',
-    'pinkie_2_r': 'Pinky2.R',
-    'pinkie_3_r': 'Pinky3.R',
+    'thumb_1_r': 'Thumb_R',
+    'thumb_2_r': 'Thumb_R.001',
+    'thumb_3_r': 'Thumb_R.002',
+    'index_1_r': 'Index_R',
+    'index_2_r': 'Index_R.001',
+    'index_3_r': 'Index_R.002',
+    'middle_1_r': 'Middle_R',
+    'middle_2_r': 'Middle_R.001',
+    'middle_3_r': 'Middle_R.002',
+    'ring_1_r': 'Ring_R',
+    'ring_2_r': 'Ring_R.001',
+    'ring_3_r': 'Ring_R.002',
+    'pinkie_1_r': 'Pinky_R',
+    'pinkie_2_r': 'Pinky_R.001',
+    'pinkie_3_r': 'Pinky_R.002',
     
     # Eyes
-    'left_eye': 'Eye.L',
-    'right_eye': 'Eye.R'
+    'left_eye': 'Eye_L',
+    'right_eye': 'Eye_R',
+    
+    # Breast bones
+    'breast_1_l': 'Breast1_L',
+    'breast_2_l': 'Breast2_L',
+    'breast_3_l': 'Breast3_L',
+    'breast_1_r': 'Breast1_R',
+    'breast_2_r': 'Breast2_R',
+    'breast_3_r': 'Breast3_R'
 }
 
 bone_hierarchy = [
     ('Hips', 'Spine'),
     ('Spine', 'Chest'),
-    ('Chest', 'Chest.Up'),
-    ('Chest.Up', 'Neck'),
+    ('Chest', 'UpperChest'),
+    ('UpperChest', 'Neck'),
     ('Neck', 'Head'),
-    ('Head', 'Eye.L'),
-    ('Head', 'Eye.R'),
+    ('Head', 'Eye_L'),
+    ('Head', 'Eye_R'),
     
     # Left Arm Chain
-    ('Chest.Up', 'UpperArm.L'),
-    ('UpperArm.L', 'LowerArm.L'),
-    ('LowerArm.L', 'Hand.L'),
+    ('UpperChest', 'Shoulder_L'),
+    ('Shoulder_L', 'UpperArm_L'),
+    ('UpperArm_L', 'LowerArm_L'),
+    ('LowerArm_L', 'Hand_L'),
     
     # Right Arm Chain
-    ('Chest.Up', 'UpperArm.R'),
-    ('UpperArm.R', 'LowerArm.R'),
-    ('LowerArm.R', 'Hand.R'),
+    ('UpperChest', 'Shoulder_R'),
+    ('Shoulder_R', 'UpperArm_R'),
+    ('UpperArm_R', 'LowerArm_R'),
+    ('LowerArm_R', 'Hand_R'),
     
     # Left Leg Chain
-    ('Hips', 'UpperLeg.L'),
-    ('UpperLeg.L', 'LowerLeg.L'),
-    ('LowerLeg.L', 'Foot.L'),
-    ('Foot.L', 'Toes.L'),
+    ('Hips', 'UpperLeg_L'),
+    ('UpperLeg_L', 'LowerLeg_L'),
+    ('LowerLeg_L', 'Foot_L'),
+    ('Foot_L', 'Toe_L'),
     
     # Right Leg Chain
-    ('Hips', 'UpperLeg.R'),
-    ('UpperLeg.R', 'LowerLeg.R'),
-    ('LowerLeg.R', 'Foot.R'),
-    ('Foot.R', 'Toes.R')
+    ('Hips', 'UpperLeg_R'),
+    ('UpperLeg_R', 'LowerLeg_R'),
+    ('LowerLeg_R', 'Foot_R'),
+    ('Foot_R', 'Toe_R')
 ]
 
 finger_hierarchy = {
     'left': [
-        ('Hand.L', 'Thumb1.L', 'Thumb2.L', 'Thumb3.L'),
-        ('Hand.L', 'Index1.L', 'Index2.L', 'Index3.L'),
-        ('Hand.L', 'Middle1.L', 'Middle2.L', 'Middle3.L'),
-        ('Hand.L', 'Ring1.L', 'Ring2.L', 'Ring3.L'),
-        ('Hand.L', 'Pinky1.L', 'Pinky2.L', 'Pinky3.L')
+        ('Hand_L', 'Thumb_L', 'Thumb_L.001', 'Thumb_L.002'),
+        ('Hand_L', 'Index_L', 'Index_L.001', 'Index_L.002'),
+        ('Hand_L', 'Middle_L', 'Middle_L.001', 'Middle_L.002'),
+        ('Hand_L', 'Ring_L', 'Ring_L.001', 'Ring_L.002'),
+        ('Hand_L', 'Pinky_L', 'Pinky_L.001', 'Pinky_L.002')
     ],
     'right': [
-        ('Hand.R', 'Thumb1.R', 'Thumb2.R', 'Thumb3.R'),
-        ('Hand.R', 'Index1.R', 'Index2.R', 'Index3.R'),
-        ('Hand.R', 'Middle1.R', 'Middle2.R', 'Middle3.R'),
-        ('Hand.R', 'Ring1.R', 'Ring2.R', 'Ring3.R'),
-        ('Hand.R', 'Pinky1.R', 'Pinky2.R', 'Pinky3.R')
+        ('Hand_R', 'Thumb_R', 'Thumb_R.001', 'Thumb_R.002'),
+        ('Hand_R', 'Index_R', 'Index_R.001', 'Index_R.002'),
+        ('Hand_R', 'Middle_R', 'Middle_R.001', 'Middle_R.002'),
+        ('Hand_R', 'Ring_R', 'Ring_R.001', 'Ring_R.002'),
+        ('Hand_R', 'Pinky_R', 'Pinky_R.001', 'Pinky_R.002')
     ]
 }
 
@@ -506,6 +603,8 @@ acceptable_bone_hierarchy = [
     ('Head', 'Eye_R'),
     ('Head', 'LeftEye'),
     ('Head', 'RightEye'),
+    ('Head', 'Eye.L'),
+    ('Head', 'Eye.R'),
         
     # Unity humanoid naming
     ('Hips', 'Spine'),
@@ -516,6 +615,40 @@ acceptable_bone_hierarchy = [
     ('Head', 'LeftEye'),
     ('Head', 'RightEye'),
     
+    # Old standard bone hierarchy patterns
+    ('UpperChest', 'UpperArm.L'),
+    ('UpperArm.L', 'LowerArm.L'),
+    ('LowerArm.L', 'Hand.L'),
+    ('UpperChest', 'UpperArm.R'),
+    ('UpperArm.R', 'LowerArm.R'),
+    ('LowerArm.R', 'Hand.R'),
+    ('Hips', 'UpperLeg.L'),
+    ('UpperLeg.L', 'LowerLeg.L'),
+    ('LowerLeg.L', 'Foot.L'),
+    ('Foot.L', 'Toes.L'),
+    ('Hips', 'UpperLeg.R'),
+    ('UpperLeg.R', 'LowerLeg.R'),
+    ('LowerLeg.R', 'Foot.R'),
+    ('Foot.R', 'Toes.R'),
+    
+    # New standard bone hierarchy patterns (with shoulders)
+    ('UpperChest', 'Shoulder_L'),
+    ('Shoulder_L', 'UpperArm_L'),
+    ('UpperArm_L', 'LowerArm_L'),
+    ('LowerArm_L', 'Hand_L'),
+    ('UpperChest', 'Shoulder_R'),
+    ('Shoulder_R', 'UpperArm_R'),
+    ('UpperArm_R', 'LowerArm_R'),
+    ('LowerArm_R', 'Hand_R'),
+    ('Hips', 'UpperLeg_L'),
+    ('UpperLeg_L', 'LowerLeg_L'),
+    ('LowerLeg_L', 'Foot_L'),
+    ('Foot_L', 'Toe_L'),
+    ('Hips', 'UpperLeg_R'),
+    ('UpperLeg_R', 'LowerLeg_R'),
+    ('LowerLeg_R', 'Foot_R'),
+    ('Foot_R', 'Toe_R'),
+    
 ]
 
 acceptable_bone_names = {
@@ -523,59 +656,75 @@ acceptable_bone_names = {
     'chest': ['Chest', 'spine1', 'Spine1', 'spine_01', 'SPINE1', 'Spine01'],
     'neck': ['Neck', 'neck_01', 'Neck01'],
     'head': ['Head', 'head_01', 'Head01'],
-    'eye_l': ['Eye_L', 'LeftEye', 'lefteye', 'eye_left', 'EyeLeft'],
-    'eye_r': ['Eye_R', 'RightEye', 'righteye', 'eye_right', 'EyeRight'],
+    'eye_l': ['Eye_L', 'LeftEye', 'lefteye', 'eye_left', 'EyeLeft', 'Eye.L'],
+    'eye_r': ['Eye_R', 'RightEye', 'righteye', 'eye_right', 'EyeRight', 'Eye.R'],
     
-    'shoulder_r': ['Shoulder.R', 'clavicle_r', 'ClavicleRight', 'RightShoulder'],
-    'arm_r': ['Arm.R', 'upperarm_r', 'UpperArmRight', 'RightArm'],
-    'elbow_r': ['Elbow.R', 'lowerarm_r', 'ForearmRight', 'RightForeArm'],
-    'wrist_r': ['Wrist.R', 'hand_r', 'HandRight', 'RightHand'],
-    'leg_r': ['Leg.R', 'thigh_r', 'ThighRight', 'RightLeg', 'RightUpLeg'],
-    'knee_r': ['Knee.R', 'calf_r', 'CalfRight', 'RightShin', 'RightLowerLeg'],
-    'foot_r': ['Foot.R', 'foot_r', 'FootRight', 'RightFoot'],
-    'toes_r': ['Toes.R', 'ball_r', 'ToeRight', 'RightToeBase'],
+    'shoulder_r': ['Shoulder.R', 'clavicle_r', 'ClavicleRight', 'RightShoulder', 'Shoulder_R'],
+    'arm_r': ['Arm.R', 'upperarm_r', 'UpperArmRight', 'RightArm', 'UpperArm.R', 'UpperArm_R'],
+    'elbow_r': ['Elbow.R', 'lowerarm_r', 'ForearmRight', 'RightForeArm', 'LowerArm.R', 'LowerArm_R'],
+    'wrist_r': ['Wrist.R', 'hand_r', 'HandRight', 'RightHand', 'Hand.R', 'Hand_R'],
+    'leg_r': ['Leg.R', 'thigh_r', 'ThighRight', 'RightLeg', 'RightUpLeg', 'UpperLeg.R', 'UpperLeg_R'],
+    'knee_r': ['Knee.R', 'calf_r', 'CalfRight', 'RightShin', 'RightLowerLeg', 'LowerLeg.R', 'LowerLeg_R'],
+    'foot_r': ['Foot.R', 'foot_r', 'FootRight', 'RightFoot', 'Foot_R'],
+    'toes_r': ['Toes.R', 'ball_r', 'ToeRight', 'RightToeBase', 'Toe_R'],
     
-    'shoulder_l': ['Shoulder.L', 'clavicle_l', 'ClavicleLeft', 'LeftShoulder'],
-    'arm_l': ['Arm.L', 'upperarm_l', 'UpperArmLeft', 'LeftArm'],
-    'elbow_l': ['Elbow.L', 'lowerarm_l', 'ForearmLeft', 'LeftForeArm'],
-    'wrist_l': ['Wrist.L', 'hand_l', 'HandLeft', 'LeftHand'],
-    'leg_l': ['Leg.L', 'thigh_l', 'ThighLeft', 'LeftLeg', 'LeftUpLeg'],
-    'knee_l': ['Knee.L', 'calf_l', 'CalfLeft', 'LeftShin', 'LeftLowerLeg'],
-    'foot_l': ['Foot.L', 'foot_l', 'FootLeft', 'LeftFoot'],
-    'toes_l': ['Toes.L', 'ball_l', 'ToeLeft', 'LeftToeBase'],
+    'shoulder_l': ['Shoulder.L', 'clavicle_l', 'ClavicleLeft', 'LeftShoulder', 'Shoulder_L'],
+    'arm_l': ['Arm.L', 'upperarm_l', 'UpperArmLeft', 'LeftArm', 'UpperArm.L', 'UpperArm_L'],
+    'elbow_l': ['Elbow.L', 'lowerarm_l', 'ForearmLeft', 'LeftForeArm', 'LowerArm.L', 'LowerArm_L'],
+    'wrist_l': ['Wrist.L', 'hand_l', 'HandLeft', 'LeftHand', 'Hand.L', 'Hand_L'],
+    'leg_l': ['Leg.L', 'thigh_l', 'ThighLeft', 'LeftLeg', 'LeftUpLeg', 'UpperLeg.L', 'UpperLeg_L'],
+    'knee_l': ['Knee.L', 'calf_l', 'CalfLeft', 'LeftShin', 'LeftLowerLeg', 'LowerLeg.L', 'LowerLeg_L'],
+    'foot_l': ['Foot.L', 'foot_l', 'FootLeft', 'LeftFoot', 'Foot_L'],
+    'toes_l': ['Toes.L', 'ball_l', 'ToeLeft', 'LeftToeBase', 'Toe_L'],
     
     # Add finger bones for left hand
-    'thumb_0_l': ['Thumb0_L'],
-    'thumb_1_l': ['Thumb1_L'],
-    'thumb_2_l': ['Thumb2_L'],
-    'index_1_l': ['IndexFinger1_L'],
-    'index_2_l': ['IndexFinger2_L'],
-    'index_3_l': ['IndexFinger3_L'],
-    'middle_1_l': ['MiddleFinger1_L'],
-    'middle_2_l': ['MiddleFinger2_L'],
-    'middle_3_l': ['MiddleFinger3_L'],
-    'ring_1_l': ['RingFinger1_L'],
-    'ring_2_l': ['RingFinger2_L'],
-    'ring_3_l': ['RingFinger3_L'],
+    'thumb_0_l': ['Thumb0_L', 'Thumb0.L'],
+    'thumb_1_l': ['Thumb1_L', 'Thumb1.L', 'Thumb_L'],
+    'thumb_2_l': ['Thumb2_L', 'Thumb2.L', 'Thumb_L.001'],
+    'thumb_3_l': ['Thumb3_L', 'Thumb3.L', 'Thumb_L.002'],
+    'index_1_l': ['IndexFinger1_L', 'IndexFinger1.L', 'Index1.L', 'Index_L'],
+    'index_2_l': ['IndexFinger2_L', 'IndexFinger2.L', 'Index2.L', 'Index_L.001'],
+    'index_3_l': ['IndexFinger3_L', 'IndexFinger3.L', 'Index3.L', 'Index_L.002'],
+    'middle_1_l': ['MiddleFinger1_L', 'MiddleFinger1.L', 'Middle1.L', 'Middle_L'],
+    'middle_2_l': ['MiddleFinger2_L', 'MiddleFinger2.L', 'Middle2.L', 'Middle_L.001'],
+    'middle_3_l': ['MiddleFinger3_L', 'MiddleFinger3.L', 'Middle3.L', 'Middle_L.002'],
+    'ring_1_l': ['RingFinger1_L', 'RingFinger1.L', 'Ring1.L', 'Ring_L'],
+    'ring_2_l': ['RingFinger2_L', 'RingFinger2.L', 'Ring2.L', 'Ring_L.001'],
+    'ring_3_l': ['RingFinger3_L', 'RingFinger3.L', 'Ring3.L', 'Ring_L.002'],
+    'pinky_1_l': ['Pinky1_L', 'Pinky1.L', 'Pinky_L'],
+    'pinky_2_l': ['Pinky2_L', 'Pinky2.L', 'Pinky_L.001'],
+    'pinky_3_l': ['Pinky3_L', 'Pinky3.L', 'Pinky_L.002'],
     
     # Add finger bones for right hand
-    'thumb_0_r': ['Thumb0_R', 'ThumbO_R'],
-    'thumb_1_r': ['Thumb1_R'],
-    'thumb_2_r': ['Thumb2_R'],
-    'index_1_r': ['IndexFinger1_R'],
-    'index_2_r': ['IndexFinger2_R'],
-    'index_3_r': ['IndexFinger3_R'],
-    'middle_1_r': ['MiddleFinger1_R'],
-    'middle_2_r': ['MiddleFinger2_R'],
-    'middle_3_r': ['MiddleFinger3_R'],
-    'ring_1_r': ['RingFinger1_R'],
-    'ring_2_r': ['RingFinger2_R'],
-    'ring_3_r': ['RingFinger3_R'],
+    'thumb_0_r': ['Thumb0_R', 'Thumb0.R', 'ThumbO_R'],
+    'thumb_1_r': ['Thumb1_R', 'Thumb1.R', 'Thumb_R'],
+    'thumb_2_r': ['Thumb2_R', 'Thumb2.R', 'Thumb_R.001'],
+    'thumb_3_r': ['Thumb3_R', 'Thumb3.R', 'Thumb_R.002'],
+    'index_1_r': ['IndexFinger1_R', 'IndexFinger1.R', 'Index1.R', 'Index_R'],
+    'index_2_r': ['IndexFinger2_R', 'IndexFinger2.R', 'Index2.R', 'Index_R.001'],
+    'index_3_r': ['IndexFinger3_R', 'IndexFinger3.R', 'Index3.R', 'Index_R.002'],
+    'middle_1_r': ['MiddleFinger1_R', 'MiddleFinger1.R', 'Middle1.R', 'Middle_R'],
+    'middle_2_r': ['MiddleFinger2_R', 'MiddleFinger2.R', 'Middle2.R', 'Middle_R.001'],
+    'middle_3_r': ['MiddleFinger3_R', 'MiddleFinger3.R', 'Middle3.R', 'Middle_R.002'],
+    'ring_1_r': ['RingFinger1_R', 'RingFinger1.R', 'Ring1.R', 'Ring_R'],
+    'ring_2_r': ['RingFinger2_R', 'RingFinger2.R', 'Ring2.R', 'Ring_R.001'],
+    'ring_3_r': ['RingFinger3_R', 'RingFinger3.R', 'Ring3.R', 'Ring_R.002'],
+    'pinky_1_r': ['Pinky1_R', 'Pinky1.R', 'Pinky_R'],
+    'pinky_2_r': ['Pinky2_R', 'Pinky2.R', 'Pinky_R.001'],
+    'pinky_3_r': ['Pinky3_R', 'Pinky3.R', 'Pinky_R.002'],
     
-    'breast_upper_1_l': ['BreastUpper1_L'],
-    'breast_upper_2_l': ['BreastUpper2_L'],
-    'breast_upper_1_r': ['BreastUpper1_R'],
-    'breast_upper_2_r': ['BreastUpper2_R'],
+    'breast_upper_1_l': ['BreastUpper1_L', 'BreastUpper1.L'],
+    'breast_upper_2_l': ['BreastUpper2_L', 'BreastUpper2.L'],
+    'breast_upper_1_r': ['BreastUpper1_R', 'BreastUpper1.R'],
+    'breast_upper_2_r': ['BreastUpper2_R', 'BreastUpper2.R'],
+
+    # Little finger bones
+    'little_finger_1_l': ['LittleFinger1_L', 'LittleFinger1.L'],
+    'little_finger_2_l': ['LittleFinger2_L', 'LittleFinger2.L'],
+    'little_finger_3_l': ['LittleFinger3_L', 'LittleFinger3.L'],
+    'little_finger_1_r': ['LittleFinger1_R', 'LittleFinger1.R'],
+    'little_finger_2_r': ['LittleFinger2_R', 'LittleFinger2.R'],
+    'little_finger_3_r': ['LittleFinger3_R', 'LittleFinger3.R'],
 
     'ear_upper_l': ['UpperEar.L', 'Upper Ear.L', 'Upper Ear_L'],
     'ear_upper_r': ['UpperEar.R', 'Upper Ear.R', 'Upper Ear_R'],
@@ -695,17 +844,17 @@ non_standard_mappings = {
     'left_arm': [
         'mixamorig:LeftArm', 'mixamorig_LeftArm',
         'ORG-upper_arm.L', 'upper_arm.L',
-        'lShldrBend', 'lShldrTwist', 'lArm'
+        'lShldrBend', 'lShldrTwist', 'lArm', 'UpperArm.L'
     ],
     'left_elbow': [
         'mixamorig:LeftForeArm', 'mixamorig_LeftForeArm',
         'ORG-forearm.L', 'forearm.L',
-        'lForearmBend', 'lElbow', 'lForeArm'
+        'lForearmBend', 'lElbow', 'lForeArm', 'LowerArm.L'
     ],
     'left_wrist': [
         'mixamorig:LeftHand', 'mixamorig_LeftHand',
         'ORG-hand.L', 'hand.L',
-        'lHand', 'lWrist'
+        'lHand', 'lWrist', 'Hand.L'
     ],
     
     'right_shoulder': [
@@ -716,59 +865,59 @@ non_standard_mappings = {
     'right_arm': [
         'mixamorig:RightArm', 'mixamorig_RightArm',
         'ORG-upper_arm.R', 'upper_arm.R',
-        'rShldrBend', 'rShldrTwist', 'rArm'
+        'rShldrBend', 'rShldrTwist', 'rArm', 'UpperArm.R'
     ],
     'right_elbow': [
         'mixamorig:RightForeArm', 'mixamorig_RightForeArm',
         'ORG-forearm.R', 'forearm.R',
-        'rForearmBend', 'rElbow', 'rForeArm'
+        'rForearmBend', 'rElbow', 'rForeArm', 'LowerArm.R'
     ],
     'right_wrist': [
         'mixamorig:RightHand', 'mixamorig_RightHand',
         'ORG-hand.R', 'hand.R',
-        'rHand', 'rWrist'
+        'rHand', 'rWrist', 'Hand.R'
     ],
     
     'left_leg': [
         'mixamorig:LeftUpLeg', 'mixamorig_LeftUpLeg',
         'ORG-thigh.L', 'thigh.L',
-        'lThighBend', 'lThigh'
+        'lThighBend', 'lThigh', 'UpperLeg.L'
     ],
     'left_knee': [
         'mixamorig:LeftLeg', 'mixamorig_LeftLeg',
         'ORG-shin.L', 'shin.L',
-        'lShin', 'lKnee', 'lLeg'
+        'lShin', 'lKnee', 'lLeg', 'LowerLeg.L'
     ],
     'left_ankle': [
         'mixamorig:LeftFoot', 'mixamorig_LeftFoot',
         'ORG-foot.L', 'foot.L',
-        'lFoot', 'lAnkle'
+        'lFoot', 'lAnkle', 'Foot.L'
     ],
     'left_toe': [
         'mixamorig:LeftToeBase', 'mixamorig_LeftToeBase',
         'ORG-toe.L', 'toe.L',
-        'lToe'
+        'lToe', 'Toes.L'
     ],
     
     'right_leg': [
         'mixamorig:RightUpLeg', 'mixamorig_RightUpLeg',
         'ORG-thigh.R', 'thigh.R',
-        'rThighBend', 'rThigh'
+        'rThighBend', 'rThigh', 'UpperLeg.R'
     ],
     'right_knee': [
         'mixamorig:RightLeg', 'mixamorig_RightLeg',
         'ORG-shin.R', 'shin.R',
-        'rShin', 'rKnee', 'rLeg'
+        'rShin', 'rKnee', 'rLeg', 'LowerLeg.R'
     ],
     'right_ankle': [
         'mixamorig:RightFoot', 'mixamorig_RightFoot',
         'ORG-foot.R', 'foot.R',
-        'rFoot', 'rAnkle'
+        'rFoot', 'rAnkle', 'Foot.R'
     ],
     'right_toe': [
         'mixamorig:RightToeBase', 'mixamorig_RightToeBase',
         'ORG-toe.R', 'toe.R',
-        'rToe'
+        'rToe', 'Toes.R'
     ],
     
     'thumb_1_l': [
@@ -934,12 +1083,12 @@ non_standard_mappings = {
     'left_eye': [
         'mixamorig:LeftEye', 'mixamorig_LeftEye',
         'ORG-eye.L', 'eye.L',
-        'lEye'
+        'lEye', 'Eye.L'
     ],
     'right_eye': [
         'mixamorig:RightEye', 'mixamorig_RightEye',
         'ORG-eye.R', 'eye.R',
-        'rEye'
+        'rEye', 'Eye.R'
     ]
 }
 
