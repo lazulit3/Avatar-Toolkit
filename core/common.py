@@ -656,7 +656,9 @@ class ArmatureData(Tuple[bool,bool]):
 
 def store_breaking_settings_armature(armature: bpy.types.Object) -> ArmatureData:
     armature_data: bpy.types.Armature = armature.data
-    return (armature_data.use_mirror_x, armature.pose.use_mirror_x)
+    data: ArmatureData = (armature_data.use_mirror_x, armature.pose.use_mirror_x)
+    armature_data.use_mirror_x, armature.pose.use_mirror_x = (False, False)
+    return data
 
 def restore_breaking_settings_armature(armature: bpy.types.Object, data: ArmatureData) -> None:
     # Check if armature object is still valid (not removed)
