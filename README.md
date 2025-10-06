@@ -32,8 +32,8 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/lega
 ## Requirements
 
 1) Blender Version
-- Blender 4.4 or newer is required
-- Blender 4.4 is the current recommended version
+- Blender 4.5 or newer is required
+- Blender 4.5 is the current recommended version
 
 
 2) Python Requirements
@@ -42,7 +42,7 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/lega
 
 3) Recommended Setup
 - Download Blender directly from https://blender.org
-- Use Blender 4.4 for the best experience
+- Use Blender 4.5 for the best experience
 
 #### Additional Plugins Requirements.
 Currently None.

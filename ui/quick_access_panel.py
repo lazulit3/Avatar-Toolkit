@@ -17,6 +17,17 @@ from ..core.common import (
     get_armature_list,
     get_armature_stats
 )
+
+# Module-level cache for UI performance (avoids Blender scene property write restrictions)
+_validation_cache = {}
+_stats_cache = {}
+
+def clear_armature_caches():
+    """Clear all armature-related caches - called when armature changes"""
+    global _validation_cache, _stats_cache
+    _validation_cache.clear()
+    _stats_cache.clear()
+
 from ..functions.pose_mode import (
     AvatarToolkit_OT_StartPoseMode,
     AvatarToolkit_OT_StopPoseMode,
@@ -84,10 +95,16 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         # Armature Selection
         col.prop(context.scene.avatar_toolkit, "active_armature", text="")
         
-        # Armature Validation
+        # Armature Validation (cached to improve performance)
         active_armature: Optional[Object] = get_active_armature(context)
         if active_armature:
-            is_valid, messages, is_acceptable, hierarchy_messages, scale_messages, non_standard_messages = validate_armature(active_armature, detailed_messages=True)
+            # Cache validation results to avoid expensive recalculations on every draw
+            cache_key = f"validation_{active_armature.name}_{active_armature.data.name}_{len(active_armature.data.bones)}"
+            
+            if cache_key not in _validation_cache:
+                _validation_cache[cache_key] = validate_armature(active_armature, detailed_messages=True)
+            
+            is_valid, messages, is_acceptable, hierarchy_messages, scale_messages, non_standard_messages = _validation_cache[cache_key]
             
             # Check if this is a PMX model
             is_pmx_model = False
@@ -235,7 +252,14 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                 row = info_box.row()
                 split = row.split(factor=0.6)
                 split.label(text=t("QuickAccess.valid_armature"), icon='CHECKMARK')
-                stats = get_armature_stats(active_armature)
+                
+                # Cache armature stats to avoid expensive recalculations
+                stats_cache_key = f"stats_{active_armature.name}_{active_armature.data.name}_{len(active_armature.data.bones)}"
+                
+                if stats_cache_key not in _stats_cache:
+                    _stats_cache[stats_cache_key] = get_armature_stats(active_armature)
+                
+                stats = _stats_cache[stats_cache_key]
                 split.label(text=t("QuickAccess.bones_count", count=stats['bone_count']))
                 
                 if stats['has_pose']:
