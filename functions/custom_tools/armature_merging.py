@@ -77,7 +77,6 @@ class AvatarToolkit_OT_MergeArmature(bpy.types.Operator):
             wm.progress_end()
 
             restore_breaking_settings_armature(base_armature, data_breaking_base)
-            restore_breaking_settings_armature(merge_armature, data_breaking_merge)
             
             self.report({'INFO'}, t('MergeArmature.success'))
             
