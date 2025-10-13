@@ -788,7 +788,8 @@ non_standard_mappings = {
     'left_leg': [
         'mixamorig:LeftUpLeg', 'mixamorig_LeftUpLeg',
         'ORG-thigh.L', 'thigh.L',
-        'lThighBend', 'lThigh', 'UpperLeg.L'
+        'lThighBend', 'lThigh', 'UpperLeg.L',
+        'LeftUpperLeg'
     ],
     'left_knee': [
         'mixamorig:LeftLeg', 'mixamorig_LeftLeg',
@@ -803,13 +804,14 @@ non_standard_mappings = {
     'left_toe': [
         'mixamorig:LeftToeBase', 'mixamorig_LeftToeBase',
         'ORG-toe.L', 'toe.L',
-        'lToe', 'Toes.L'
+        'lToe', 'Toes.L', 'LeftToeBase'
     ],
     
     'right_leg': [
         'mixamorig:RightUpLeg', 'mixamorig_RightUpLeg',
         'ORG-thigh.R', 'thigh.R',
-        'rThighBend', 'rThigh', 'UpperLeg.R'
+        'rThighBend', 'rThigh', 'UpperLeg.R',
+        'RightUpperLeg'
     ],
     'right_knee': [
         'mixamorig:RightLeg', 'mixamorig_RightLeg',
@@ -824,7 +826,7 @@ non_standard_mappings = {
     'right_toe': [
         'mixamorig:RightToeBase', 'mixamorig_RightToeBase',
         'ORG-toe.R', 'toe.R',
-        'rToe', 'Toes.R'
+        'rToe', 'Toes.R', 'RightToeBase'
     ],
     
     'thumb_1_l': [
