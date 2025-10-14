@@ -1,4 +1,5 @@
 # Avatar Toolkit
+We are aware the wiki is down and are working on a new one, please don't report this.
 
 ## Avatar Toolkit is in Alpha, There will be issues, please ensure you report them!. If using a Alpha plugin isn't your fancy you can find Cats Blender Plugin [HERE](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-)!
 #### Avatar Toolkit is in Alpha and will contain issues, please ensure you report them!
@@ -21,20 +22,19 @@ Need a more stable toolset while Avatar Toolkit is in Alpha? Then please use Ble
 ### Support us:
 If you like what we do and want to help support the development of cats you can do it on our pally.gg [here](https://pally.gg/p/teamneoneko) all money is split automatically between all developers and any support is appreciated.
 
-## Blender version support policies.
+## Blender version support policies. 
 
 You can find them on the wiki here [HERE](https://avatartoolkit.xyz/legacywiki.html?version=0.2.1#what-is-avatar-toolkits-version-support-policy)
 
-## Features
+## Features 
 
 See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/legacywiki.html)
 
 ## Requirements
 
 1) Blender Version
-- Blender 4.4 or newer is required
-- Blender 4.4 is the current recommended version
-
+- Blender 4.4 or newer is required (From Alpha 4, 4.5 is required).
+- Blender 4.5 is the current recommended version
 
 2) Python Requirements
 - If using a custom Python installation with Blender, ensure NumPy is installed
@@ -42,7 +42,17 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/lega
 
 3) Recommended Setup
 - Download Blender directly from https://blender.org
-- Use Blender 4.4 for the best experience
+- Use Blender 4.5 for the best experience
+
+#### Unfortunately, due to the increased number of people complaining to me (yes, we get DMs about this) that AT or CATS is broken when it's not, we are going to have to be a bit more strict about which Blender releases we will provide support for.
+
+#### We only support the following Blender releases:
+- Steam release
+- The Blender website releases (there are downloads for Linux, Mac, and Windows)
+
+#### We do not support the following what so ever and we will not give help if your running the following.
+- We do not support the Windows Store due to it causing issues, and we also don't support the Snap Store for Linux.
+- We do not support package manager releases on Linux. This is because package managers are normally run by the distro, and a lot of the time the distro will build Blender themselves and make their own changes which are not sanctioned by Blender (for example, bundling a newer version of Python which tends to break plugins). If you report a bug from anything apart from the Blender versions we support, you will be told we can't help you from now on.
 
 #### Additional Plugins Requirements.
 Currently None.
