@@ -33,7 +33,7 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/lega
 ## Requirements
 
 1) Blender Version
-- Blender 4.4 or newer is required (From Alpha 4, 4.5 is required).
+- Blender 4.5 or newer is required
 - Blender 4.5 is the current recommended version
 
 2) Python Requirements
