@@ -28,7 +28,15 @@ def scale_images_to_largest(images: List[Image]) -> tuple[int, int]:
     x: int = 0
     y: int = 0
     
-    valid_images = [img for img in images if img and img.has_data]
+    valid_images = []
+    for img in images:
+        if img:
+            try:
+                if img.has_data:
+                    valid_images.append(img)
+            except ReferenceError:
+                # Image has been removed from Blender's memory
+                pass
     
     if not valid_images:
         return 0, 0
@@ -66,50 +74,56 @@ def get_material_images_from_scene(context: Context) -> list[MaterialImageList]:
                             new_mat_image_item.albedo = bpy.data.images[mat_slot.material.texture_atlas_albedo]
                         except Exception:
                             name = mat_slot.material.name + "_albedo_replacement"
-                            if name in bpy.data.images:
-                                bpy.data.images.remove(image=bpy.data.images[name], do_unlink=True)
-                            new_mat_image_item.albedo = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
-                            new_mat_image_item.albedo.pixels[:] = numpy.tile(numpy.array([0.0,0.0,0.0,1.0]), 32*32)
+                            if name not in bpy.data.images:
+                                new_mat_image_item.albedo = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
+                                new_mat_image_item.albedo.pixels[:] = numpy.tile(numpy.array([0.0,0.0,0.0,1.0]), 32*32)
+                            else:
+                                new_mat_image_item.albedo = bpy.data.images[name]
                         try:
                             new_mat_image_item.normal = bpy.data.images[mat_slot.material.texture_atlas_normal]
                         except Exception:
                             name = mat_slot.material.name + "_normal_replacement"
-                            if name in bpy.data.images:
-                                bpy.data.images.remove(image=bpy.data.images[name], do_unlink=True)
-                            new_mat_image_item.normal = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
-                            new_mat_image_item.normal.pixels[:] = numpy.tile(numpy.array([0.5,0.5,1.0,1.0]), 32*32)
+                            if name not in bpy.data.images:
+                                new_mat_image_item.normal = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
+                                new_mat_image_item.normal.pixels[:] = numpy.tile(numpy.array([0.5,0.5,1.0,1.0]), 32*32)
+                            else:
+                                new_mat_image_item.normal = bpy.data.images[name]
                         try:
                             new_mat_image_item.emission = bpy.data.images[mat_slot.material.texture_atlas_emission]
                         except Exception:
                             name = mat_slot.material.name + "_emission_replacement"
-                            if name in bpy.data.images:
-                                bpy.data.images.remove(image=bpy.data.images[name], do_unlink=True)
-                            new_mat_image_item.emission = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
-                            new_mat_image_item.emission.pixels[:] = numpy.tile(numpy.array([0.0,0.0,0.0,1.0]), 32*32)
+                            if name not in bpy.data.images:
+                                new_mat_image_item.emission = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
+                                new_mat_image_item.emission.pixels[:] = numpy.tile(numpy.array([0.0,0.0,0.0,1.0]), 32*32)
+                            else:
+                                new_mat_image_item.emission = bpy.data.images[name]
                         try:
                             new_mat_image_item.ambient_occlusion = bpy.data.images[mat_slot.material.texture_atlas_ambient_occlusion]
                         except Exception:
                             name = mat_slot.material.name + "_ambient_occlusion_replacement"
-                            if name in bpy.data.images:
-                                bpy.data.images.remove(image=bpy.data.images[name], do_unlink=True)
-                            new_mat_image_item.ambient_occlusion = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
-                            new_mat_image_item.ambient_occlusion.pixels[:] = numpy.tile(numpy.array([1.0,1.0,1.0,1.0]), 32*32)
+                            if name not in bpy.data.images:
+                                new_mat_image_item.ambient_occlusion = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
+                                new_mat_image_item.ambient_occlusion.pixels[:] = numpy.tile(numpy.array([1.0,1.0,1.0,1.0]), 32*32)
+                            else:
+                                new_mat_image_item.ambient_occlusion = bpy.data.images[name]
                         try:
                             new_mat_image_item.height = bpy.data.images[mat_slot.material.texture_atlas_height]
                         except Exception:
                             name = mat_slot.material.name + "_height_replacement"
-                            if name in bpy.data.images:
-                                bpy.data.images.remove(image=bpy.data.images[name], do_unlink=True)
-                            new_mat_image_item.height = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
-                            new_mat_image_item.height.pixels[:] = numpy.tile(numpy.array([0.5,0.5,0.5,1.0]), 32*32)
+                            if name not in bpy.data.images:
+                                new_mat_image_item.height = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
+                                new_mat_image_item.height.pixels[:] = numpy.tile(numpy.array([0.5,0.5,0.5,1.0]), 32*32)
+                            else:
+                                new_mat_image_item.height = bpy.data.images[name]
                         try:
                             new_mat_image_item.roughness = bpy.data.images[mat_slot.material.texture_atlas_roughness]
                         except Exception:
                             name = mat_slot.material.name + "_roughness_replacement"
-                            if name in bpy.data.images:
-                                bpy.data.images.remove(image=bpy.data.images[name], do_unlink=True)
-                            new_mat_image_item.roughness = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
-                            new_mat_image_item.roughness.pixels[:] = numpy.tile(numpy.array([1.0,1.0,1.0,0.0]), 32*32)
+                            if name not in bpy.data.images:
+                                new_mat_image_item.roughness = bpy.data.images.new(name=name, width=32, height=32, alpha=True)
+                                new_mat_image_item.roughness.pixels[:] = numpy.tile(numpy.array([1.0,1.0,1.0,0.0]), 32*32)
+                            else:
+                                new_mat_image_item.roughness = bpy.data.images[name]
                         
                         new_mat_image_item.material = mat_slot.material
                         new_mat_image_item.parent_mesh = obj
