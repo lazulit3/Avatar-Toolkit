@@ -127,9 +127,9 @@ def convertToBlenderShader(obj: bpy.types.Object, use_principled: bool = False, 
     for i in obj.material_slots:
         if not i.material:
             continue
-        if not i.material.use_nodes:
-            logger.debug(f"Enabling nodes for material: {i.material.name}")
-            i.material.use_nodes = True
+        # Note: material.use_nodes is deprecated in Blender 5.0 - materials always use nodes
+        if not i.material.node_tree or len(i.material.node_tree.nodes) == 0:
+            logger.debug(f"Setting up node tree for material: {i.material.name}")
             __convertToMMDBasicShader(i.material)
         if use_principled:
             logger.debug(f"Converting material to Principled BSDF: {i.material.name}")
@@ -143,9 +143,7 @@ def convertToMMDShader(obj: bpy.types.Object) -> None:
     for i in obj.material_slots:
         if not i.material:
             continue
-        if not i.material.use_nodes:
-            logger.debug(f"Enabling nodes for material: {i.material.name}")
-            i.material.use_nodes = True
+        # Note: material.use_nodes is deprecated in Blender 5.0 - materials always use nodes
         FnMaterial.convert_to_mmd_material(i.material)
 
 def __convertToMMDBasicShader(material: Material) -> None:

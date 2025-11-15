@@ -241,7 +241,7 @@ class AvatarToolKit_OT_AtlasMaterials(Operator):
             # Create material nodes
             atlased_mat.material = bpy.data.materials.new(
                 name=f"Atlas_Final_{context.scene.name}_{Path(bpy.data.filepath).stem}")
-            atlased_mat.material.use_nodes = True
+            # Note: material.use_nodes is deprecated in Blender 5.0 - materials always use nodes
             atlased_mat.material.node_tree.nodes.clear()
 
             principled_node = atlased_mat.material.node_tree.nodes.new(type="ShaderNodeBsdfPrincipled")

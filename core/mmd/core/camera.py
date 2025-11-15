@@ -10,6 +10,7 @@ from typing import Optional, List, Tuple, Callable, Any, Union
 
 import bpy
 from bpy.types import Object, ID, Camera, Context
+from bpy_extras import anim_utils
 from mathutils import Vector, Matrix, Euler
 import traceback
 
@@ -247,14 +248,27 @@ class MMDCamera:
             frame_count = frame_end - frame_start
             frames = range(frame_start, frame_end)
 
+            # Get channelbags for camera actions using Blender 5.0 API
+            if not parent_action.slots:
+                parent_slot = parent_action.slots.new(for_id=mmd_cam_root)
+            else:
+                parent_slot = parent_action.slots[0]
+            parent_channelbag = anim_utils.action_ensure_channelbag_for_slot(parent_action, parent_slot)
+            
+            if not distance_action.slots:
+                distance_slot = distance_action.slots.new(for_id=mmd_cam)
+            else:
+                distance_slot = distance_action.slots[0]
+            distance_channelbag = anim_utils.action_ensure_channelbag_for_slot(distance_action, distance_slot)
+
             fcurves = []
             for i in range(3):
-                fcurves.append(parent_action.fcurves.new(data_path="location", index=i))  # x, y, z
+                fcurves.append(parent_channelbag.fcurves.new(data_path="location", index=i))  # x, y, z
             for i in range(3):
-                fcurves.append(parent_action.fcurves.new(data_path="rotation_euler", index=i))  # rx, ry, rz
-            fcurves.append(parent_action.fcurves.new(data_path="mmd_camera.angle"))  # fov
-            fcurves.append(parent_action.fcurves.new(data_path="mmd_camera.is_perspective"))  # persp
-            fcurves.append(distance_action.fcurves.new(data_path="location", index=1))  # dis
+                fcurves.append(parent_channelbag.fcurves.new(data_path="rotation_euler", index=i))  # rx, ry, rz
+            fcurves.append(parent_channelbag.fcurves.new(data_path="mmd_camera.angle"))  # fov
+            fcurves.append(parent_channelbag.fcurves.new(data_path="mmd_camera.is_perspective"))  # persp
+            fcurves.append(distance_channelbag.fcurves.new(data_path="location", index=1))  # dis
             for c in fcurves:
                 c.keyframe_points.add(frame_count)
 

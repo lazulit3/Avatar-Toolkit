@@ -534,7 +534,8 @@ class PMXImporter:
             elif b_bone.name in specialTipBones:
                 mmd_bone.is_tip = True
 
-            b_bone.bone.hide = not pmx_bone.visible  # or mmd_bone.is_tip
+            # Blender 5.0: use pose bone hide for Pose/Object mode visibility
+            b_bone.hide = not pmx_bone.visible  # or mmd_bone.is_tip
 
             if not pmx_bone.isRotatable:
                 b_bone.lock_rotation = [True, True, True]
