@@ -481,7 +481,7 @@ class FnMaterial:
 
             preferred_output_node_target = {
                 "CYCLES": "CYCLES",
-                "BLENDER_EEVEE_NEXT": "EEVEE",
+                "BLENDER_EEVEE": "EEVEE",
             }.get(active_render_engine, "ALL")
 
             tex_node = None
@@ -559,7 +559,12 @@ class FnMaterial:
         mat = self.material
         if mat.node_tree is None:
             logger.debug(f"Creating node tree for {mat.name}")
-            mat.use_nodes = True
+            # Note: material.use_nodes is deprecated in Blender 5.0 - materials always use nodes
+            # Creating a new material automatically creates a node tree
+            if mat.node_tree is None:
+                # Fallback: node tree should exist, but if not, log warning
+                logger.warning(f"Node tree is None for material {mat.name} - this should not happen")
+                return
             mat.node_tree.nodes.clear()
 
         nodes, links = mat.node_tree.nodes, mat.node_tree.links

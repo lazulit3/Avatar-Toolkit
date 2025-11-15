@@ -82,7 +82,7 @@ class RigidBodyMaterial:
                 mat.shadow_method = "NONE"
             mat.use_backface_culling = True
             mat.show_transparent_back = False
-            mat.use_nodes = True
+            # Note: material.use_nodes is deprecated in Blender 5.0 - materials always use nodes
             nodes, links = mat.node_tree.nodes, mat.node_tree.links
             nodes.clear()
             node_color = nodes.new("ShaderNodeBackground")

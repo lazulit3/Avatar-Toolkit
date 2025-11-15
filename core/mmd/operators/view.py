@@ -32,16 +32,14 @@ class _SetShadingBase:
 
     @staticmethod
     def _reset_material_shading(context: Context, use_shadeless: bool = False) -> None:
-        for i in (x for x in context.scene.objects if x.type == "MESH" and x.mmd_type == "NONE"):
-            for s in i.material_slots:
-                if s.material is None:
-                    continue
-                s.material.use_nodes = False
-                s.material.use_shadeless = use_shadeless
+        # Note: material.use_nodes and material.use_shadeless are deprecated in Blender 5.0
+        # Materials always use nodes now, and shadeless is handled differently
+        # This method is kept for compatibility but no longer modifies materials
+        pass
 
     def execute(self, context: Context) -> Dict[str, str]:
-        context.scene.render.engine = "BLENDER_EEVEE_NEXT"
-        logger.debug(f"Setting render engine to BLENDER_EEVEE_NEXT")
+        context.scene.render.engine = "BLENDER_EEVEE"
+        logger.debug(f"Setting render engine to BLENDER_EEVEE")
 
         shading_mode: Optional[str] = getattr(self, "_shading_mode", None)
         for space in self._get_view3d_spaces(context):

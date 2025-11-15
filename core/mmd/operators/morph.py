@@ -475,7 +475,8 @@ class ViewBoneMorph(bpy.types.Operator):
         for morph_data in morph.data:
             p_bone: Optional[bpy.types.PoseBone] = armature.pose.bones.get(morph_data.bone, None)
             if p_bone:
-                p_bone.bone.select = True
+                # Blender 5.0: use pose bone select property directly
+                p_bone.select = True
                 mtx = (p_bone.matrix_basis.to_3x3() @ Quaternion(*morph_data.rotation.to_axis_angle()).to_matrix()).to_4x4()
                 mtx.translation = p_bone.location + morph_data.location
                 p_bone.matrix_basis = mtx
@@ -521,9 +522,10 @@ class ApplyBoneMorph(bpy.types.Operator):
                 item.bone = p_bone.name
                 item.location = p_bone.location
                 item.rotation = p_bone.rotation_quaternion if p_bone.rotation_mode == "QUATERNION" else p_bone.matrix_basis.to_quaternion()
-                p_bone.bone.select = True
+                # Blender 5.0: use pose bone select property directly
+                p_bone.select = True
             else:
-                p_bone.bone.select = False
+                p_bone.select = False
         logger.info(f"Applied current pose to bone morph: {morph.name}")
         return {"FINISHED"}
 

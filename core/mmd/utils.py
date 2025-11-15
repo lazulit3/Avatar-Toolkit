@@ -55,14 +55,13 @@ def selectSingleBone(context: bpy.types.Context, armature: Object, bone_name: st
     if reset_pose:
         for p_bone in armature.pose.bones:
             p_bone.matrix_basis.identity()
+    # Blender 5.0: bone selection in Pose mode now uses pose.bones[].select
     armature_bones: bpy.types.ArmatureBones = armature.data.bones
-    i: Bone
-    for i in armature_bones:
-        i.select = i.name == bone_name
-        i.select_head = i.select_tail = i.select
-        if i.select:
-            armature_bones.active = i
-            i.hide = False
+    for p_bone in armature.pose.bones:
+        p_bone.select = p_bone.name == bone_name
+        if p_bone.select:
+            armature_bones.active = armature_bones[p_bone.name]
+            p_bone.hide = False
 
 
 __CONVERT_NAME_TO_L_REGEXP = re.compile("^(.*)左(.*)$")

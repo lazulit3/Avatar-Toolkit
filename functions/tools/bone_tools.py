@@ -1,5 +1,7 @@
 import traceback
 import bpy
+import bpy_extras
+from bpy_extras import anim_utils
 import re
 from bpy.types import Operator, Context, EditBone, Object, Armature, Mesh
 from typing import Optional, Dict, Any, List, Tuple
@@ -347,10 +349,17 @@ class AvatarToolKit_OT_FlipCurrentKeyFrames(Operator):
         armature_data.bones.foreach_set("select", [False] * len(armature_data.bones)) 
 
 
+        # Get channelbag for the action using Blender 5.0 API
+        action = armature.animation_data.action
+        if not action.slots:
+            slot = action.slots.new(for_id=armature.data)
+        else:
+            slot = action.slots[0]
+        channelbag = anim_utils.action_ensure_channelbag_for_slot(action, slot)
         
         #create a set for every frame time where we need to key a keyframe for the flipped pose
         times: Dict[float,list[bpy.types.FCurve]] = {}
-        for curve in armature.animation_data.action.fcurves:
+        for curve in channelbag.fcurves:
             if not curve.data_path.startswith("pose"):
                 continue
             for point in curve.keyframe_points:

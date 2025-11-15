@@ -2,6 +2,7 @@ import traceback
 from types import FrameType
 import bpy
 import bpy_extras
+from bpy_extras import anim_utils
 from numpy import double
 from typing import Set, Dict
 import re
@@ -115,12 +116,33 @@ class AvatarToolkit_OT_ConvertResonite(Operator):
         return {'FINISHED'}
 
 
-def makeorexistingfcurve(action: bpy.types.Action,data_path: str,action_group: str, index=0) -> bpy.types.FCurve:
-    fcurve = action.fcurves.find(data_path=data_path,index=index)
-    if fcurve == None:
-        return action.fcurves.new(data_path,action_group=action_group,index=index)
+def makeorexistingfcurve(action: bpy.types.Action, data_path: str, action_group: str, index=0) -> bpy.types.FCurve:
+    """Get or create an F-Curve using Blender 5.0 channelbag system.
+    
+    Blender 5.0 Breaking Change: The legacy action.fcurves API has been removed.
+    F-Curves are now accessed through channelbags. Each slot of an Action can have a channelbag.
+    This function has been migrated to use bpy_extras.anim_utils.action_ensure_channelbag_for_slot().
+    """
+    # Get the action slot (assumes single slot for now - armature actions typically use first slot)
+    if not action.slots:
+        slot = action.slots.new(for_id=bpy.context.object.data if bpy.context.object and bpy.context.object.type == 'ARMATURE' else None)
     else:
-        print("fcurve with data \""+data_path+"\" already exists")
+        slot = action.slots[0]
+    
+    # Get or create channelbag for this slot
+    channelbag = anim_utils.action_ensure_channelbag_for_slot(action, slot)
+    
+    # Use ensure() to get existing or create new F-Curve
+    fcurve = channelbag.fcurves.ensure(data_path, index=index, group_name=action_group)
+    
+    if fcurve:
+        return fcurve
+    else:
+        print(f"fcurve with data \"{data_path}\" creation failed")
+        # Fallback: try to find or create manually
+        fcurve = channelbag.fcurves.find(data_path, index=index)
+        if fcurve is None:
+            fcurve = channelbag.fcurves.new(data_path, index=index, group_name=action_group)
         return fcurve
 
 class AvatarToolKit_OT_AnimX_Importer(Operator,bpy_extras.io_utils.ImportHelper):

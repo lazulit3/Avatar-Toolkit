@@ -11,6 +11,7 @@ import os
 from typing import Union
 
 import bpy
+from bpy_extras import anim_utils
 from mathutils import Quaternion, Vector
 
 from ... import utils
@@ -300,21 +301,31 @@ class VMDImporter:
         kp.handle_right = kp.co + Vector((1, 0))
 
     @staticmethod
-    def __keyframe_insert_inner(fcurves: bpy.types.ActionFCurves, path: str, index: int, frame: float, value: float):
-        fcurve = fcurves.find(path, index=index)
+    def __get_channelbag(action: bpy.types.Action, target_id=None):
+        """Get or create channelbag for action using Blender 5.0 API."""
+        if not action.slots:
+            slot = action.slots.new(for_id=target_id)
+        else:
+            slot = action.slots[0]
+        return anim_utils.action_ensure_channelbag_for_slot(action, slot)
+
+    @staticmethod
+    def __keyframe_insert_inner(action: bpy.types.Action, path: str, index: int, frame: float, value: float, target_id=None, group_name=None):
+        channelbag = VMDImporter.__get_channelbag(action, target_id)
+        fcurve = channelbag.fcurves.find(path, index=index)
         if fcurve is None:
-            fcurve = fcurves.new(path, index=index)
+            fcurve = channelbag.fcurves.new(path, index=index, group_name=group_name)
         fcurve.keyframe_points.insert(frame, value, options={"FAST"})
 
     @staticmethod
-    def __keyframe_insert(fcurves: bpy.types.ActionFCurves, path: str, frame: float, value: Union[int, float, Vector]):
+    def __keyframe_insert(action: bpy.types.Action, path: str, frame: float, value: Union[int, float, Vector], target_id=None, group_name=None):
         if isinstance(value, (int, float)):
-            VMDImporter.__keyframe_insert_inner(fcurves, path, 0, frame, value)
+            VMDImporter.__keyframe_insert_inner(action, path, 0, frame, value, target_id, group_name)
 
         elif isinstance(value, Vector):
-            VMDImporter.__keyframe_insert_inner(fcurves, path, 0, frame, value[0])
-            VMDImporter.__keyframe_insert_inner(fcurves, path, 1, frame, value[1])
-            VMDImporter.__keyframe_insert_inner(fcurves, path, 2, frame, value[2])
+            VMDImporter.__keyframe_insert_inner(action, path, 0, frame, value[0], target_id, group_name)
+            VMDImporter.__keyframe_insert_inner(action, path, 1, frame, value[1], target_id, group_name)
+            VMDImporter.__keyframe_insert_inner(action, path, 2, frame, value[2], target_id, group_name)
 
         else:
             raise TypeError("Unsupported type: {0}".format(type(value)))
@@ -407,16 +418,19 @@ class VMDImporter:
             assert bone_name_table.get(bone.name, name) == name
             bone_name_table[bone.name] = name
 
+            # Get channelbag for this action
+            channelbag = self.__get_channelbag(action, armObj.data)
+            
             fcurves = [dummy_keyframe_points] * 7  # x, y, z, r0, r1, r2, (r3)
             data_path_rot = prop_rot_map.get(bone.rotation_mode, "rotation_euler")
             bone_rotation = getattr(bone, data_path_rot)
             default_values = list(bone.location) + list(bone_rotation)
             data_path = 'pose.bones["%s"].location' % bone.name
             for axis_i in range(3):
-                fcurves[axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
+                fcurves[axis_i] = channelbag.fcurves.new(data_path=data_path, index=axis_i, group_name=bone.name)
             data_path = 'pose.bones["%s"].%s' % (bone.name, data_path_rot)
             for axis_i in range(len(bone_rotation)):
-                fcurves[3 + axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
+                fcurves[3 + axis_i] = channelbag.fcurves.new(data_path=data_path, index=axis_i, group_name=bone.name)
 
             for i in range(len(default_values)):
                 c = fcurves[i]
@@ -458,7 +472,9 @@ class VMDImporter:
                         self.__setInterpolation(interp[idx : idx + 16 : 4], prev_kp, kp)
                 prev_kps = curr_kps
 
-        for c in action.fcurves:
+        # Get channelbag to iterate fcurves
+        channelbag = self.__get_channelbag(action, armObj.data)
+        for c in channelbag.fcurves:
             self.__fixFcurveHandles(c)
 
         # property animation
@@ -518,7 +534,8 @@ class VMDImporter:
                 continue
             logging.info("(mesh) frames:%5d  name: %s", len(keyFrames), name)
             shapeKey = shapeKeyDict[name]
-            fcurve = action.fcurves.new(data_path='key_blocks["%s"].value' % shapeKey.name)
+            channelbag = self.__get_channelbag(action, meshObj.data.shape_keys)
+            fcurve = channelbag.fcurves.new(data_path='key_blocks["%s"].value' % shapeKey.name)
             fcurve.keyframe_points.add(len(keyFrames))
             keyFrames.sort(key=lambda x: x.frame_number)
             for k, v in zip(keyFrames, fcurve.keyframe_points):
@@ -541,7 +558,7 @@ class VMDImporter:
 
         logging.debug("(Display) list(frame, show): %s", [(keyFrame.frame_number, bool(keyFrame.visible)) for keyFrame in propertyAnim])
         for keyFrame in propertyAnim:
-            self.__keyframe_insert(action.fcurves, "mmd_root.show_meshes", keyFrame.frame_number + self.__frame_margin, float(keyFrame.visible))
+            self.__keyframe_insert(action, "mmd_root.show_meshes", keyFrame.frame_number + self.__frame_margin, float(keyFrame.visible), rootObj)
 
         self.__assign_action(rootObj, action)
 
@@ -574,14 +591,18 @@ class VMDImporter:
         if self.__mirror:
             _loc, _rot = _MirrorMapper.get_location, _MirrorMapper.get_rotation3
 
+        # Get channelbags for camera actions
+        parent_channelbag = self.__get_channelbag(parent_action, mmdCamera.parent)
+        distance_channelbag = self.__get_channelbag(distance_action, mmdCamera.distance)
+        
         fcurves = []
         for i in range(3):
-            fcurves.append(parent_action.fcurves.new(data_path="location", index=i))  # x, y, z
+            fcurves.append(parent_channelbag.fcurves.new(data_path="location", index=i))  # x, y, z
         for i in range(3):
-            fcurves.append(parent_action.fcurves.new(data_path="rotation_euler", index=i))  # rx, ry, rz
-        fcurves.append(parent_action.fcurves.new(data_path="mmd_camera.angle"))  # fov
-        fcurves.append(parent_action.fcurves.new(data_path="mmd_camera.is_perspective"))  # persp
-        fcurves.append(distance_action.fcurves.new(data_path="location", index=1))  # dis
+            fcurves.append(parent_channelbag.fcurves.new(data_path="rotation_euler", index=i))  # rx, ry, rz
+        fcurves.append(parent_channelbag.fcurves.new(data_path="mmd_camera.angle"))  # fov
+        fcurves.append(parent_channelbag.fcurves.new(data_path="mmd_camera.is_perspective"))  # persp
+        fcurves.append(distance_channelbag.fcurves.new(data_path="location", index=1))  # dis
         for c in fcurves:
             c.keyframe_points.add(len(cameraAnim))
 
@@ -640,10 +661,11 @@ class VMDImporter:
         _loc = _MirrorMapper.get_location if self.__mirror else lambda i: i
         for keyFrame in lampAnim:
             frame = keyFrame.frame_number + self.__frame_margin
-            self.__keyframe_insert(color_action.fcurves, "color", frame, Vector(keyFrame.color))
-            self.__keyframe_insert(location_action.fcurves, "location", frame, Vector(_loc(keyFrame.direction)).xzy * -1)
+            self.__keyframe_insert(color_action, "color", frame, Vector(keyFrame.color), lampObj)
+            self.__keyframe_insert(location_action, "location", frame, Vector(_loc(keyFrame.direction)).xzy * -1, mmdLamp)
 
-        for fcurve in location_action.fcurves:
+        location_channelbag = self.__get_channelbag(location_action, mmdLamp)
+        for fcurve in location_channelbag.fcurves:
             self.detectLampChange(fcurve)
 
         self.__assign_action(lampObj.data, color_action)

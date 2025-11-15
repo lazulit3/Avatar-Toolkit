@@ -386,7 +386,7 @@ class EdgePreviewSetup(Operator):
         return mat
 
     def __make_shader(self, m: Material) -> None:
-        m.use_nodes = True
+        # Note: material.use_nodes is deprecated in Blender 5.0 - materials always use nodes
         nodes, links = m.node_tree.nodes, m.node_tree.links
 
         node_shader = nodes.get("mmd_edge_preview", None)
