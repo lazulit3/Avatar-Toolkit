@@ -6,7 +6,7 @@ from bpy.types import UILayout, Context, Operator
 
 class UIStyle:
     """Centralized UI styling constants for consistent appearance"""
-    g
+    
     SECTION_SEPARATOR_FACTOR: float = 0.5
     SUBSECTION_SEPARATOR_FACTOR: float = 0.3
     PRIMARY_BUTTON_SCALE: float = 1.5
