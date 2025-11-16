@@ -10,6 +10,7 @@ from bpy.types import (
     Object
 )
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
+from .ui_utils import UIStyle, draw_section_header, draw_operator_row
 from ..core.translations import t
 from ..core.common import (
     get_active_armature, 
@@ -86,27 +87,19 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
         layout: UILayout = self.layout
         props = context.scene.avatar_toolkit
         
-        # Armature Selection Box
-        armature_box: UILayout = layout.box()
-        col: UILayout = armature_box.column(align=True)
-        col.label(text=t("QuickAccess.select_armature"), icon='ARMATURE_DATA')
-        col.separator(factor=0.5)
-        
         # Armature Selection
+        col = draw_section_header(layout, t("QuickAccess.select_armature"), icon='ARMATURE_DATA')
         col.prop(context.scene.avatar_toolkit, "active_armature", text="")
         
         # Get active armature
         active_armature: Optional[Object] = get_active_armature(context)
         if active_armature:
-            # Validation Button Box - Always visible
-            validation_box: UILayout = layout.box()
-            col = validation_box.column(align=True)
-            col.label(text=t("Validation.label", "Armature Validation"), icon='CHECKMARK')
-            col.separator(factor=0.5)
+            # Validation Section
+            col = draw_section_header(layout, t("Validation.label", "Armature Validation"), icon='CHECKMARK')
             
             # Main validate button with prominent styling
             validate_row = col.row(align=True)
-            validate_row.scale_y = 1.3
+            validate_row.scale_y = UIStyle.PRIMARY_BUTTON_SCALE
             validate_row.operator("avatar_toolkit.validate_armature_manual", 
                                 text=t("Validation.validate_now", "Validate Armature Now"), 
                                 icon='CHECKMARK')
@@ -127,7 +120,7 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                 # Check if this is a PMX model
                 pmx_detected = is_pmx_model(active_armature)
                 
-                results_box = validation_box.box()
+                results_box = col.box()
                 row = results_box.row()
                 row.prop(props, "show_validation_results", text=t("Validation.results", "Validation Results"), 
                         icon='TRIA_DOWN' if props.show_validation_results else 'TRIA_RIGHT', emboss=False)
@@ -248,50 +241,40 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                                         text=t("QuickAccess.standardize_armature"),
                                         icon='MODIFIER')
 
-            # T-Pose Validation Box
-            tpose_box: UILayout = layout.box()
-            col = tpose_box.column(align=True)
-            col.label(text=t("Validation.tpose.label"), icon='ARMATURE_DATA')
-            col.separator(factor=0.5)
+            # T-Pose Validation
+            col = draw_section_header(layout, t("Validation.tpose.label"), icon='ARMATURE_DATA')
             col.operator(AvatarToolkit_OT_ValidateTPose.bl_idname, text=t("Validation.tpose.validate_now"), icon='CHECKMARK')
 
             if props.show_tpose_validation:
-                validation_box = col.box()
+                validation_result_col = col.column(align=True)
                 if props.tpose_validation_result:
-                    validation_box.label(text=t("Validation.tpose.valid"), icon='CHECKMARK')
+                    validation_result_col.label(text=t("Validation.tpose.valid"), icon='CHECKMARK')
                 else:
-                    row = validation_box.row()
-                    row.alert = True
-                    row.label(text=t("Validation.tpose.warning"), icon='ERROR')
+                    validation_result_col.alert = True
+                    validation_result_col.label(text=t("Validation.tpose.warning"), icon='ERROR')
                     
                     for msg in props.tpose_validation_messages:
-                        row = validation_box.row()
-                        row.alert = True
-                        row.label(text=msg.name)
+                        validation_result_col.label(text=msg.name)
 
             # Pose Mode Controls
-            pose_box: UILayout = layout.box()
-            col = pose_box.column(align=True)
-            col.label(text=t("QuickAccess.pose_controls"), icon='ARMATURE_DATA')
-            col.separator(factor=0.5)
+            col = draw_section_header(layout, t("QuickAccess.pose_controls"), icon='ARMATURE_DATA')
             
             if context.mode == "POSE":
                 col.operator(AvatarToolkit_OT_StopPoseMode.bl_idname, icon='POSE_HLT')
-                col.separator(factor=0.5)
-                col.operator(AvatarToolkit_OT_ApplyPoseAsRest.bl_idname, icon='MOD_ARMATURE')
-                col.operator(AvatarToolkit_OT_ApplyPoseAsShapekey.bl_idname, icon='MOD_ARMATURE')
+                col.separator(factor=UIStyle.SUBSECTION_SEPARATOR_FACTOR)
+                draw_operator_row(col, [
+                    (AvatarToolkit_OT_ApplyPoseAsRest.bl_idname, t("QuickAccess.pose_as_rest"), 'MOD_ARMATURE'),
+                    (AvatarToolkit_OT_ApplyPoseAsShapekey.bl_idname, t("QuickAccess.pose_as_shapekey"), 'MOD_ARMATURE')
+                ])
             else:
                 col.operator(AvatarToolkit_OT_StartPoseMode.bl_idname, icon='POSE_HLT')
 
-        # Import/Export Box
-        import_box: UILayout = layout.box()
-        col = import_box.column(align=True)
-        col.label(text=t("QuickAccess.import_export"), icon='IMPORT')
-        col.separator(factor=0.5)
+        # Import/Export Section
+        col = draw_section_header(layout, t("QuickAccess.import_export"), icon='IMPORT')
         
         # Import/Export Buttons
-        button_row: UILayout = col.row(align=True)
-        button_row.scale_y = 1.5
-        button_row.operator(AvatarToolKit_OT_Import.bl_idname, text=t("QuickAccess.import"), icon='IMPORT')
-        button_row.operator(AvatarToolKit_OT_ExportMenu.bl_idname, text=t("QuickAccess.export"), icon='EXPORT')
+        draw_operator_row(col, [
+            (AvatarToolKit_OT_Import.bl_idname, t("QuickAccess.import"), 'IMPORT'),
+            (AvatarToolKit_OT_ExportMenu.bl_idname, t("QuickAccess.export"), 'EXPORT')
+        ], scale_y=UIStyle.PRIMARY_BUTTON_SCALE)
 

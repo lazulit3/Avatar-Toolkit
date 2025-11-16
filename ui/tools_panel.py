@@ -2,6 +2,7 @@ import bpy
 from typing import Set
 from bpy.types import Panel, Context, UILayout, Operator, UIList
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
+from .ui_utils import UIStyle, draw_section_header, draw_operator_row
 from ..core.translations import t
 
 from ..core.resonite_utils import AvatarToolkit_OT_ConvertResonite
@@ -38,94 +39,70 @@ class AvatarToolKit_PT_ToolsPanel(Panel):
         toolkit = context.scene.avatar_toolkit
         
         # General Tools
-        tools_box: UILayout = layout.box()
-        col: UILayout = tools_box.column(align=True)
-        col.label(text=t("Tools.general_title"), icon='TOOL_SETTINGS')
-        col.separator(factor=0.5)
+        col = draw_section_header(layout, t("Tools.general_title"), icon='TOOL_SETTINGS')
         col.operator(AvatarToolkit_OT_ConvertResonite.bl_idname, text=t("Tools.convert_resonite"), icon='EXPORT')
         
         # Separation Tools
-        sep_box: UILayout = layout.box()
-        col = sep_box.column(align=True)
-        col.label(text=t("Tools.separate_title"), icon='MOD_EXPLODE')
-        col.separator(factor=0.5)
-        row: UILayout = col.row(align=True)
-        row.operator(AvatarToolKit_OT_SeparateByMaterials.bl_idname, text=t("Tools.separate_materials"), icon='MATERIAL')
-        row.operator(AvatarToolKit_OT_SeparateByLooseParts.bl_idname, text=t("Tools.separate_loose"), icon='MESH_DATA')
+        col = draw_section_header(layout, t("Tools.separate_title"), icon='MOD_EXPLODE')
+        draw_operator_row(col, [
+            (AvatarToolKit_OT_SeparateByMaterials.bl_idname, t("Tools.separate_materials"), 'MATERIAL'),
+            (AvatarToolKit_OT_SeparateByLooseParts.bl_idname, t("Tools.separate_loose"), 'MESH_DATA')
+        ])
         
         # Bone Tools
-        bone_box: UILayout = layout.box()
-        col = bone_box.column(align=True)
-        col.label(text=t("Tools.bone_title"), icon='BONE_DATA')
-        col.separator(factor=0.5)
+        col = draw_section_header(layout, t("Tools.bone_title"), icon='BONE_DATA')
         col.operator(AvatarToolKit_OT_CreateDigitigradeLegs.bl_idname, text=t("Tools.create_digitigrade"), icon='BONE_DATA')
-        col.operator(AvatarToolKit_OT_FlipCurrentKeyFrames.bl_idname,text=t("Tools.flip_pose_frames"),icon="ACTION")
+        col.operator(AvatarToolKit_OT_FlipCurrentKeyFrames.bl_idname, text=t("Tools.flip_pose_frames"), icon="ACTION")
 
         # Mesh Tools
-        mesh_box: UILayout = layout.box()
-        col = mesh_box.column(align=True)
-        col.label(text=t("Tools.mesh_title"), icon='MESH_DATA')
-        col.separator(factor=0.5)
-        col.operator(AvatarToolkit_OT_SelectShortestSeamPath.bl_idname,text=t("Tools.find_shortest_seam_path"),icon="MESH_DATA")
-        col.operator(AvatarToolkit_OT_ApplyModifierForShapkeyObj.bl_idname,text=t("Tools.apply_modifier_on_shapekey_obj"),icon="SHAPEKEY_DATA")
-        col.operator(AvatarToolkit_OT_ExplodeMesh.bl_idname,text=t("Tools.explode_mesh"),icon="MOD_EXPLODE")
-        
+        col = draw_section_header(layout, t("Tools.mesh_title"), icon='MESH_DATA')
+        col.operator(AvatarToolkit_OT_SelectShortestSeamPath.bl_idname, text=t("Tools.find_shortest_seam_path"), icon="MESH_DATA")
+        col.operator(AvatarToolkit_OT_ApplyModifierForShapkeyObj.bl_idname, text=t("Tools.apply_modifier_on_shapekey_obj"), icon="SHAPEKEY_DATA")
+        col.operator(AvatarToolkit_OT_ExplodeMesh.bl_idname, text=t("Tools.explode_mesh"), icon="MOD_EXPLODE")
         
         # Standardization Tools
-        standardize_box: UILayout = bone_box.box()
-        col = standardize_box.column(align=True)
-        col.label(text=t("Tools.standardize_title"), icon='OUTLINER_OB_ARMATURE')
-        col.separator(factor=0.5)
+        col = draw_section_header(layout, t("Tools.standardize_title"), icon='OUTLINER_OB_ARMATURE')
         col.operator(AvatarToolkit_OT_StandardizeArmature.bl_idname, icon='CHECKMARK')
 
         # Weight Tools
-        weight_box: UILayout = bone_box.box()
-        col = weight_box.column(align=True)
+        col = draw_section_header(layout, t("Tools.weight_title"), icon='GROUP_BONE')
         col.prop(toolkit, "merge_twist_bones", text=t("Tools.merge_twist_bones"))
         col.prop(toolkit, "preserve_parent_bones")
         col.prop(toolkit, "target_bone_type")
         col.prop(toolkit, "list_only_mode")
         
         if toolkit.list_only_mode and len(toolkit.zero_weight_bones) > 0:
-            box = weight_box.box()
-            row = box.row()
+            sub_col = col.box()
+            row = sub_col.row()
             row.template_list("AVATAR_TOOLKIT_UL_ZeroWeightBones", "", 
                             toolkit, "zero_weight_bones",
                             toolkit, "zero_weight_bones_index")
             
-            col = box.column(align=True)
-            col.operator(AvatarToolKit_OT_RemoveSelectedBones.bl_idname, 
-                        text=t("Tools.remove_selected_bones"))
+            sub_col.operator(AvatarToolKit_OT_RemoveSelectedBones.bl_idname, 
+                           text=t("Tools.remove_selected_bones"))
         
-        row = col.row(align=True)
-        row.operator(AvatarToolKit_OT_RemoveZeroWeightBones.bl_idname, text=t("Tools.clean_weights"), icon='GROUP_BONE')
-        row.operator(AvatarToolKit_OT_DeleteBoneConstraints.bl_idname, text=t("Tools.clean_constraints"), icon='CONSTRAINT_BONE')
-        row = col.row(align=True)
-        row.operator(AvatarToolKit_OT_RemoveZeroWeightVertexGroups.bl_idname, text=t("Tools.clean_vertex_groups"), icon='CONSTRAINT_BONE')
+        # Combine weight
+        draw_operator_row(col, [
+            (AvatarToolKit_OT_RemoveZeroWeightBones.bl_idname, t("Tools.clean_weights"), 'GROUP_BONE'),
+            (AvatarToolKit_OT_DeleteBoneConstraints.bl_idname, t("Tools.clean_constraints"), 'CONSTRAINT_BONE')
+        ])
+        col.operator(AvatarToolKit_OT_RemoveZeroWeightVertexGroups.bl_idname, text=t("Tools.clean_vertex_groups"), icon='CONSTRAINT_BONE')
         
         # Merge Tools
-        merge_box: UILayout = layout.box()
-        col = merge_box.column(align=True)
-        col.label(text=t("Tools.merge_title"), icon='AUTOMERGE_ON')
-        col.separator(factor=0.5)
-        row = col.row(align=True)
-        row.operator(AvatarToolkit_OT_MergeToActive.bl_idname, text=t("Tools.merge_to_active"), icon='BONE_DATA')
-        row.operator(AvatarToolkit_OT_MergeToParent.bl_idname, text=t("Tools.merge_to_parent"), icon='BONE_DATA')
+        col = draw_section_header(layout, t("Tools.merge_title"), icon='AUTOMERGE_ON')
+        draw_operator_row(col, [
+            (AvatarToolkit_OT_MergeToActive.bl_idname, t("Tools.merge_to_active"), 'BONE_DATA'),
+            (AvatarToolkit_OT_MergeToParent.bl_idname, t("Tools.merge_to_parent"), 'BONE_DATA')
+        ])
         col.operator(AvatarToolkit_OT_ConnectBones.bl_idname, text=t("Tools.connect_bones"), icon='BONE_DATA')
         
         # Additional Tools
-        extra_box: UILayout = layout.box()
-        col = extra_box.column(align=True)
-        col.label(text=t("Tools.additional_title"), icon='TOOL_SETTINGS')
-        col.separator(factor=0.5)
+        col = draw_section_header(layout, t("Tools.additional_title"), icon='TOOL_SETTINGS')
         col.operator(AvatarToolkit_OT_ApplyTransforms.bl_idname, text=t("Tools.apply_transforms"), icon='OBJECT_DATA')
         col.operator(AvatarToolkit_OT_CleanShapekeys.bl_idname, text=t("Tools.clean_shapekeys"), icon='SHAPEKEY_DATA')
 
         # Rigify Tools
-        rigify_box: UILayout = layout.box()
-        col = rigify_box.column(align=True)
-        col.label(text=t("Tools.rigify_title"), icon='ARMATURE_DATA')
-        col.separator(factor=0.5)
+        col = draw_section_header(layout, t("Tools.rigify_title"), icon='ARMATURE_DATA')
         col.operator(AvatarToolkit_OT_ConvertRigifyToUnity.bl_idname, icon='ARMATURE_DATA')
         col.prop(context.scene.avatar_toolkit, "merge_twist_bones")
 
