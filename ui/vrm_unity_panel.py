@@ -1,6 +1,7 @@
 import bpy
 from bpy.types import Panel, Context, UILayout
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
+from .panel_layout import get_panel_order, should_open_by_default
 from ..core.translations import t
 from ..core.common import get_active_armature
 from ..core.vrm_unity_converter import detect_vrm_armature
@@ -15,8 +16,8 @@ class AvatarToolKit_PT_VRMUnityPanel(Panel):
     bl_region_type = 'UI'
     bl_category = CATEGORY_NAME
     bl_parent_id = AvatarToolKit_PT_AvatarToolkitPanel.bl_idname
-    bl_order = 3
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_order = get_panel_order('vrm_unity')
+    bl_options = set() if not should_open_by_default('VRM_UNITY') else {'DEFAULT_CLOSED'}
 
     def draw(self, context: Context) -> None:
         """Draw the VRM to Unity conversion panel interface"""

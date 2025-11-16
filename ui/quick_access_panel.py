@@ -11,6 +11,7 @@ from bpy.types import (
 )
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
 from .ui_utils import UIStyle, draw_section_header, draw_operator_row
+from .panel_layout import get_panel_order, should_open_by_default
 from ..core.translations import t
 from ..core.common import (
     get_active_armature, 
@@ -80,7 +81,8 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
     bl_region_type: str = 'UI'
     bl_category: str = CATEGORY_NAME
     bl_parent_id: str = AvatarToolKit_PT_AvatarToolkitPanel.bl_idname
-    bl_order: int = 0
+    bl_order: int = get_panel_order('quick_access')
+    bl_options = {'DEFAULT_CLOSED'} if should_open_by_default('QUICK_ACCESS') else set()
 
     def draw(self, context: Context) -> None:
         """Draw the panel layout"""
