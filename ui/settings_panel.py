@@ -9,6 +9,7 @@ from bpy.types import (
     Event
 )
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
+from .ui_utils import UIStyle, draw_section_header, wrap_text_label
 from ..core.translations import t, get_languages_list
 from ..core.armature_validation import AvatarToolkit_OT_HighlightProblemBones, AvatarToolkit_OT_ClearBoneHighlighting
 
@@ -26,8 +27,10 @@ class AvatarToolkit_OT_TranslationRestartPopup(Operator):
     
     def draw(self, context: Context) -> None:
         layout: UILayout = self.layout
-        layout.label(text=t("Language.changed.success"))
-        layout.label(text=t("Language.changed.restart"))
+        col = layout.column(align=True)
+        col.label(text=t("Language.changed.success"))
+        col.separator(factor=UIStyle.SUBSECTION_SEPARATOR_FACTOR)
+        wrap_text_label(col, t("Language.changed.restart"), max_length=50)
 
 class AvatarToolKit_PT_SettingsPanel(Panel):
     """Settings panel for Avatar Toolkit containing language preferences"""
@@ -46,30 +49,18 @@ class AvatarToolKit_PT_SettingsPanel(Panel):
         props = context.scene.avatar_toolkit
         
         # Language Settings
-        lang_box: UILayout = layout.box()
-        col: UILayout = lang_box.column(align=True)
-        row: UILayout = col.row()
-        row.scale_y = 1.2
-        row.label(text=t("Settings.language"), icon='WORLD')
-        col.separator()
+        col = draw_section_header(layout, t("Settings.language"), icon='WORLD')
         col.prop(props, "language", text="")
         
-        # Validation Settings
-        val_box: UILayout = layout.box()
-        col = val_box.column(align=True)
-        row = col.row()
-        row.scale_y = 1.2
-        row.label(text=t("Settings.validation_mode"), icon='CHECKMARK')
-        col.separator()
+        # Validation Settings with help text
+        col = draw_section_header(layout, t("Settings.validation_mode"), icon='CHECKMARK')
         col.prop(props, "validation_mode", text="")
+        # Help text for validation mode
+        col.separator(factor=UIStyle.SUBSECTION_SEPARATOR_FACTOR)
+        wrap_text_label(col, "Select how strictly to validate armature bone structure and naming conventions.", max_length=40)
         
         # Bone Highlighting Settings
-        bone_box: UILayout = layout.box()
-        col = bone_box.column(align=True)
-        row = col.row()
-        row.scale_y = 1.2
-        row.label(text=t("Settings.bone_highlighting"), icon='BONE_DATA')
-        col.separator()
+        col = draw_section_header(layout, t("Settings.bone_highlighting"), icon='BONE_DATA')
         col.prop(props, "highlight_problem_bones")
         if props.highlight_problem_bones:
             col.operator(AvatarToolkit_OT_HighlightProblemBones.bl_idname, icon='COLOR')
