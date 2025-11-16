@@ -63,6 +63,6 @@ def get_addon_preferences(context):
 # Initialize preferences if the file doesn't exist
 if not os.path.exists(PREFERENCES_FILE):
     save_preference("language", 0)  # Set default language to 0 (auto)
-    save_preference("validation_mode", "STRICT")  # Set default validation mode
+    save_preference("validation_mode", "NONE")  # Set default validation mode to NONE (off by default)
     save_preference("enable_logging", False) # Set default logging mode
     save_preference("highlight_problem_bones", True) # Set default bone highlighting
