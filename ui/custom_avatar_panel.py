@@ -2,6 +2,7 @@ import bpy
 from typing import Set, List, Tuple, Any
 from bpy.types import Panel, Context, UILayout, Operator, Event, WindowManager
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
+from .panel_layout import get_panel_order, should_open_by_default
 from ..functions.custom_tools.mesh_attachment import AvatarToolkit_OT_AttachMesh
 from ..functions.custom_tools.armature_merging import AvatarToolkit_OT_MergeArmature
 from ..core.translations import t
@@ -112,8 +113,8 @@ class AvatarToolKit_PT_CustomPanel(Panel):
     bl_region_type: str = 'UI'
     bl_category: str = CATEGORY_NAME
     bl_parent_id: str = AvatarToolKit_PT_AvatarToolkitPanel.bl_idname
-    bl_order: int = 4
-    bl_options: Set[str] = {'DEFAULT_CLOSED'}
+    bl_order: int = get_panel_order('custom_avatar')
+    bl_options: Set[str] = set() if not should_open_by_default('CUSTOM_AVATAR') else {'DEFAULT_CLOSED'}
 
     def draw(self, context: Context) -> None:
         """Draw the custom avatar panel UI"""

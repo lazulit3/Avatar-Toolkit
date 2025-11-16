@@ -3,6 +3,7 @@ from typing import Set
 from bpy.types import Panel, Context, UILayout, Operator
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
 from .ui_utils import UIStyle, draw_section_header, draw_operator_row
+from .panel_layout import get_panel_order, should_open_by_default
 from ..core.translations import t
 from ..functions.optimization.materials_tools import AvatarToolkit_OT_CombineMaterials
 from ..functions.optimization.remove_doubles import AvatarToolkit_OT_RemoveDoubles
@@ -16,8 +17,8 @@ class AvatarToolKit_PT_OptimizationPanel(Panel):
     bl_region_type: str = 'UI'
     bl_category: str = CATEGORY_NAME
     bl_parent_id: str = AvatarToolKit_PT_AvatarToolkitPanel.bl_idname
-    bl_order: int = 1
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_order: int = get_panel_order('optimization')
+    bl_options = set() if not should_open_by_default('OPTIMIZATION') else {'DEFAULT_CLOSED'}
 
     def draw(self, context: Context) -> None:
         """Draws the optimization panel interface with material, mesh cleanup and join mesh tools"""

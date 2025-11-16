@@ -10,6 +10,7 @@ from bpy.types import (
 )
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
 from .ui_utils import UIStyle, draw_section_header, wrap_text_label
+from .panel_layout import get_panel_order, should_open_by_default
 from ..core.translations import t, get_languages_list
 from ..core.armature_validation import AvatarToolkit_OT_HighlightProblemBones, AvatarToolkit_OT_ClearBoneHighlighting
 
@@ -40,8 +41,8 @@ class AvatarToolKit_PT_SettingsPanel(Panel):
     bl_region_type: str = 'UI'
     bl_category: str = CATEGORY_NAME
     bl_parent_id: str = AvatarToolKit_PT_AvatarToolkitPanel.bl_idname
-    bl_order: int = 8
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_order: int = get_panel_order('settings')
+    bl_options = set() if not should_open_by_default('SETTINGS') else {'DEFAULT_CLOSED'}
 
     def draw(self, context: Context) -> None:
         """Draw the settings panel layout with language selection"""

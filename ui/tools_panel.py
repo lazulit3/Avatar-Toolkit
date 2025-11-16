@@ -3,6 +3,7 @@ from typing import Set
 from bpy.types import Panel, Context, UILayout, Operator, UIList
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
 from .ui_utils import UIStyle, draw_section_header, draw_operator_row
+from .panel_layout import get_panel_order, should_open_by_default
 from ..core.translations import t
 
 from ..core.resonite_utils import AvatarToolkit_OT_ConvertResonite
@@ -30,8 +31,8 @@ class AvatarToolKit_PT_ToolsPanel(Panel):
     bl_region_type: str = 'UI'
     bl_category: str = CATEGORY_NAME
     bl_parent_id: str = AvatarToolKit_PT_AvatarToolkitPanel.bl_idname
-    bl_order: int = 2
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_order: int = get_panel_order('tools')
+    bl_options = set() if not should_open_by_default('TOOLS') else {'DEFAULT_CLOSED'}
 
     def draw(self, context: Context) -> None:
         """Draw the tools panel interface"""

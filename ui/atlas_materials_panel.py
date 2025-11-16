@@ -2,6 +2,7 @@ from bpy.types import UIList, Panel, UILayout, Object, Context, Material, Operat
 import bpy
 from math import sqrt
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
+from .panel_layout import get_panel_order, should_open_by_default
 from ..core.common import SceneMatClass, MaterialListBool, get_active_armature
 from ..functions.atlas_materials import AvatarToolKit_OT_AtlasMaterials
 from ..core.translations import t
@@ -214,7 +215,8 @@ class AvatarToolKit_PT_TextureAtlasPanel(Panel):
     bl_region_type = 'UI'
     bl_category = CATEGORY_NAME
     bl_parent_id = AvatarToolKit_PT_AvatarToolkitPanel.bl_idname
-    bl_order = 7
+    bl_order = get_panel_order('texture_atlas')
+    bl_options = set() if not should_open_by_default('TEXTURE_ATLAS') else {'DEFAULT_CLOSED'}
 
     def draw(self, context: Context):
         layout = self.layout

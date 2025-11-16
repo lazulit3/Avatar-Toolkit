@@ -2,6 +2,7 @@ import bpy
 from bpy.types import Panel, Context, UILayout, Object, ShapeKey
 from ..core.translations import t
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
+from .panel_layout import get_panel_order, should_open_by_default
 from ..core.common import get_active_armature
 from ..functions.visemes import AvatarToolkit_OT_PreviewVisemes, AvatarToolkit_OT_CreateVisemes
 
@@ -13,8 +14,8 @@ class AvatarToolKit_PT_VisemesPanel(Panel):
     bl_region_type: str = 'UI'
     bl_category: str = CATEGORY_NAME
     bl_parent_id: str = AvatarToolKit_PT_AvatarToolkitPanel.bl_idname
-    bl_order: int = 5
-    bl_options: set[str] = {'DEFAULT_CLOSED'}
+    bl_order: int = get_panel_order('visemes')
+    bl_options: set[str] = set() if not should_open_by_default('VISEMES') else {'DEFAULT_CLOSED'}
 
     def draw(self, context: Context) -> None:
         """Draw the visemes panel interface with shape key selection and preview controls"""
