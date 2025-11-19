@@ -200,6 +200,7 @@
     "Tools.digitigrade_error": "Failed to create digitigrade legs: {error}",
     "Tools.digitigrade_success": "Successfully created digitigrade leg setup",
     "Tools.processing_leg": "Processing leg bone: {bone}",
+    "Tools.weight_title": "Weight Tools",
     "Tools.merge_twist_bones": "Keep Twist Bones",
     "Tools.merge_twist_bones_desc": "When checked, twist bones will be kept, even if there are zero-weight",
     "Tools.clean_weights": "Remove Zero Weight Bones",

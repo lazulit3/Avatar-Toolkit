@@ -265,8 +265,8 @@ class AvatarToolKit_PT_QuickAccessPanel(Panel):
                 col.operator(AvatarToolkit_OT_StopPoseMode.bl_idname, icon='POSE_HLT')
                 col.separator(factor=UIStyle.SUBSECTION_SEPARATOR_FACTOR)
                 draw_operator_row(col, [
-                    (AvatarToolkit_OT_ApplyPoseAsRest.bl_idname, t("QuickAccess.pose_as_rest"), 'MOD_ARMATURE'),
-                    (AvatarToolkit_OT_ApplyPoseAsShapekey.bl_idname, t("QuickAccess.pose_as_shapekey"), 'MOD_ARMATURE')
+                    (AvatarToolkit_OT_ApplyPoseAsRest.bl_idname, t("QuickAccess.apply_pose_as_rest.label"), 'MOD_ARMATURE'),
+                    (AvatarToolkit_OT_ApplyPoseAsShapekey.bl_idname, t("QuickAccess.apply_pose_as_shapekey.label"), 'MOD_ARMATURE')
                 ])
             else:
                 col.operator(AvatarToolkit_OT_StartPoseMode.bl_idname, icon='POSE_HLT')
