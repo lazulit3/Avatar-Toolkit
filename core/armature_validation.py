@@ -15,6 +15,26 @@ from ..core.dictionaries import (
 )
 from ..core.logging_setup import logger
 
+def is_pmx_model(armature: Object) -> bool:
+    """
+    Check if the armature is a PMX/MMD model.
+    PMX models have an mmd_type attribute set to 'ROOT' on the root object.
+    """
+    if not armature:
+        return False
+    
+    # Check if armature itself has mmd_type set to ROOT
+    if hasattr(armature, 'mmd_type') and armature.mmd_type == 'ROOT':
+        return True
+    
+    # Check if parent has mmd_type set to ROOT (parent container model)
+    if hasattr(armature, 'parent') and armature.parent:
+        parent = armature.parent
+        if hasattr(parent, 'mmd_type') and parent.mmd_type == 'ROOT':
+            return True
+    
+    return False
+
 def validate_armature(armature: Object, detailed_messages: bool = False, override_mode: Optional[str] = None) -> Union[Tuple[bool, List[str], bool], Tuple[bool, List[str], bool, List[str], List[str], List[str]]]:
     """
     Validates armature and returns validation results
@@ -27,9 +47,8 @@ def validate_armature(armature: Object, detailed_messages: bool = False, overrid
     scale_messages: List[str] = []
     
     # Check if this is a PMX model
-    is_pmx_model = False
-    if armature and hasattr(armature, 'mmd_type') or (hasattr(armature, 'parent') and armature.parent and hasattr(armature.parent, 'mmd_type')):
-        is_pmx_model = True
+    pmx_model = is_pmx_model(armature)
+    if pmx_model:
         logger.debug("Detected PMX model, using specialized validation")
     
     if validation_mode == 'NONE':
@@ -157,7 +176,7 @@ def validate_armature(armature: Object, detailed_messages: bool = False, overrid
             non_standard_messages.append(t("Armature.validation.standardize_note.line3"))
     
     # Special handling for PMX models
-    if is_pmx_model:
+    if pmx_model:
         logger.info("PMX model detected, applying specialized validation")
         # For PMX models, we'll be more lenient with validation
         # and provide specific guidance for these models
@@ -782,4 +801,45 @@ class AvatarToolkit_OT_ClearBoneHighlighting(Operator):
         
         logger.info("Bone highlighting cleared")
         self.report({'INFO'}, t("Validation.highlighting_cleared"))
+        return {'FINISHED'}
+
+class AvatarToolkit_OT_ValidateArmatureManual(Operator):
+    """Manually validate armature and show results"""
+    bl_idname = "avatar_toolkit.validate_armature_manual"
+    bl_label = t("Validation.validate_now", "Validate Armature Now")
+    bl_description = t("Validation.validate_now_desc", "Run armature validation and display detailed results")
+    
+    @classmethod
+    def poll(cls, context):
+        return get_active_armature(context) is not None
+    
+    def execute(self, context):
+        armature = get_active_armature(context)
+        if not armature:
+            logger.warning("No active armature found for validation")
+            self.report({'ERROR'}, t("Validation.no_armature"))
+            return {'CANCELLED'}
+        
+        logger.info(f"Running manual validation for armature: {armature.name}")
+        
+        # Clear the validation cache to force a refresh
+        from ..ui.quick_access_panel import clear_armature_caches
+        clear_armature_caches()
+        
+        # Toggle the show_validation_results flag to display results
+        props = context.scene.avatar_toolkit
+        props.show_validation_results = True
+        
+        # Run validation
+        is_valid, messages, is_acceptable = validate_armature(armature, detailed_messages=False)
+        
+        if is_valid:
+            if is_acceptable:
+                self.report({'INFO'}, t("Armature.validation.acceptable_standard.success"))
+            else:
+                self.report({'INFO'}, t("QuickAccess.valid_armature"))
+        else:
+            self.report({'WARNING'}, t("Validation.status.failed"))
+        
+        logger.info("Manual validation complete")
         return {'FINISHED'}

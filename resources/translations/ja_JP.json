@@ -1,7 +1,7 @@
 {
   "authors": ["Avatar Toolkit Team"],
   "messages": {
-    "AvatarToolkit.label": "アバターツールキット (アルファ 0.5.0)",
+    "AvatarToolkit.label": "アバターツールキット (アルファ 0.6.0)",
     "AvatarToolkit.desc1": "アバターツールキットは早期アクセス中であり、",
     "AvatarToolkit.desc2": "問題が発生する可能性があります。問題を見つけた場合は、",
     "AvatarToolkit.desc3": "GitHubで報告してください。",
@@ -117,6 +117,15 @@
     "Validation.clear_bone_highlighting": "ボーンの強調表示をクリア",
     "Validation.clear_bone_highlighting_desc": "ボーンの強調表示を削除し、ボーンの色をデフォルトにリセット",
     "Validation.highlighting_cleared": "ボーンの強調表示が正常にクリアされました",
+    "Validation.label": "アーマチュア検証",
+    "Validation.validate_now": "アーマチュアを検証する",
+    "Validation.validate_now_desc": "アーマチュア検証を実行し、詳細な結果を表示",
+    "Validation.results": "検証結果",
+    "Validation.tpose.validate_now": "T-ポーズを検証する",
+
+    "Armature.validation.acceptable_standard.success": "アーマチュアが許容可能な標準を満たしています",
+    "Armature.validation.acceptable_standard.note": "これは、ほとんどのアバターシステムと互換性のある有効なアーマチュア形式です",
+    "Armature.validation.acceptable_standard.option": "必要に応じてアーマチュアを標準化できます",
 
     "Mesh.validation.no_data": "メッシュデータがありません",
     "Mesh.validation.no_vertex_groups": "頂点グループが見つかりません",
@@ -194,6 +203,7 @@
     "Tools.digitigrade_error": "デジティグレード脚の作成に失敗: {error}",
     "Tools.digitigrade_success": "デジティグレード脚の設定が正常に作成されました",
     "Tools.processing_leg": "脚のボーンを処理中: {bone}",
+    "Tools.weight_title": "ウェイトツール",
     "Tools.merge_twist_bones": "ツイストボーンを保持",
     "Tools.merge_twist_bones_desc": "チェックすると、ウェイトがゼロでもツイストボーンが保持されます",
     "Tools.clean_weights": "ゼロウェイトボーンを削除",
@@ -549,7 +559,6 @@
     "VRM.armature_name": "アーマチュア: {name}",
     "VRM.armature_detected": "VRMアーマチュアが検出されました",
     "VRM.no_vrm_bones_detected": "VRMボーンが検出されませんでした",
-    "VRM.remove_colliders": "コライダーを削除",
     "VRM.remove_root_bone": "ルートボーンを削除",
     "VRM.convert_to_unity_format": "Unity形式に変換",
     "VRM.convert_to_unity.label": "VRMをUnityに変換",

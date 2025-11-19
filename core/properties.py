@@ -34,6 +34,11 @@ def update_validation_mode(self: PropertyGroup, context: Context) -> None:
     """Updates validation mode and saves preference"""
     logger.info(f"Updating validation mode to: {self.validation_mode}")
     save_preference("validation_mode", self.validation_mode)
+    
+    # Hide validation results if mode is set to NONE
+    if self.validation_mode == 'NONE':
+        self.show_validation_results = False
+        logger.debug("Validation mode set to NONE, hiding validation results")
 
 
 def update_logging_state(self: PropertyGroup, context: Context) -> None:
@@ -151,6 +156,12 @@ class AvatarToolkitSceneProperties(PropertyGroup):
     show_hierarchy: BoolProperty(
         name="Show Hierarchy Issues",
         default=False
+    )
+
+    show_validation_results: BoolProperty(
+        name="Show Validation Results",
+        default=False,
+        description="Show the validation results section"
     )
 
     material_search_filter: StringProperty(
@@ -283,7 +294,7 @@ class AvatarToolkitSceneProperties(PropertyGroup):
             ('BASIC', t("Settings.validation_mode.basic"), t("Settings.validation_mode.basic_desc")),
             ('NONE', t("Settings.validation_mode.none"), t("Settings.validation_mode.none_desc"))
         ],
-        default=get_preference("validation_mode", "STRICT"),
+        default=get_preference("validation_mode", "NONE"),
         update=update_validation_mode
     )
 

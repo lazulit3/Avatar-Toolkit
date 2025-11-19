@@ -1,7 +1,7 @@
 {
   "authors": ["Avatar Toolkit Team"],
   "messages": {
-    "AvatarToolkit.label": "Avatar Toolkit (Alpha 0.5.0)",
+    "AvatarToolkit.label": "Avatar Toolkit (Alpha 0.6.0)",
     "AvatarToolkit.desc1": "Avatar Toolkit is in Early Access there",
     "AvatarToolkit.desc2": "will be issues, if you find any issues,",
     "AvatarToolkit.desc3": "please report it on our Github.",
@@ -117,6 +117,15 @@
     "Validation.clear_bone_highlighting": "Clear Bone Highlighting",
     "Validation.clear_bone_highlighting_desc": "Remove bone highlighting and reset bone colors to default",
     "Validation.highlighting_cleared": "Bone highlighting cleared successfully",
+    "Validation.label": "Armature Validation",
+    "Validation.validate_now": "Validate Armature Now",
+    "Validation.validate_now_desc": "Run armature validation and display detailed results",
+    "Validation.results": "Validation Results",
+    "Validation.tpose.validate_now": "Validate T-Pose Now",
+
+    "Armature.validation.acceptable_standard.success": "Armature meets acceptable standards",
+    "Armature.validation.acceptable_standard.note": "This is a valid armature format that is compatible with most avatar systems",
+    "Armature.validation.acceptable_standard.option": "You can standardize the armature if desired",
 
     "Mesh.validation.no_data": "No mesh data",
     "Mesh.validation.no_vertex_groups": "No vertex groups found",
@@ -191,6 +200,7 @@
     "Tools.digitigrade_error": "Failed to create digitigrade legs: {error}",
     "Tools.digitigrade_success": "Successfully created digitigrade leg setup",
     "Tools.processing_leg": "Processing leg bone: {bone}",
+    "Tools.weight_title": "Weight Tools",
     "Tools.merge_twist_bones": "Keep Twist Bones",
     "Tools.merge_twist_bones_desc": "When checked, twist bones will be kept, even if there are zero-weight",
     "Tools.clean_weights": "Remove Zero Weight Bones",
@@ -587,7 +597,6 @@
     "VRM.validation.hierarchy_issues": "Conversion completed but hierarchy validation found issues:",
     "VRM.validation.armature_passed": "Armature passes standard validation",
     "VRM.validation.failed": "Conversion completed but validation failed: {error}",
-    "VRM.remove_colliders": "Remove Colliders",
     "VRM.remove_colliders_desc": "Remove VRM collider bones during conversion",
     "VRM.remove_root": "Remove Root Bone", 
     "VRM.remove_root_desc": "Remove unnecessary VRM root bone and make Hips the root bone",

@@ -12,6 +12,7 @@ from bpy.types import (
     Object
 )
 from .main_panel import AvatarToolKit_PT_AvatarToolkitPanel, CATEGORY_NAME
+from .panel_layout import get_panel_order, should_open_by_default
 from ..core.translations import t
 from ..core.logging_setup import logger
 from ..core.common import get_active_armature, ProgressTracker
@@ -465,8 +466,8 @@ class AvatarToolKit_PT_TranslationPanel(Panel):
     bl_region_type: str = 'UI'
     bl_category: str = CATEGORY_NAME
     bl_parent_id: str = AvatarToolKit_PT_AvatarToolkitPanel.bl_idname
-    bl_order: int = 9
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_order: int = get_panel_order('translation')
+    bl_options = set() if not should_open_by_default('TRANSLATION') else {'DEFAULT_CLOSED'}
 
     def draw(self, context: Context) -> None:
         """Draw the translation panel layout"""

@@ -1,7 +1,7 @@
 {
   "authors": ["Avatar Toolkit Team"],
   "messages": {
-    "AvatarToolkit.label": "아바타 툴킷 (알파 0.5.0)",
+    "AvatarToolkit.label": "아바타 툴킷 (알파 0.6.0)",
     "AvatarToolkit.desc1": "아바타 툴킷은 초기 액세스 단계에 있으므로",
     "AvatarToolkit.desc2": "문제가 있을 수 있습니다. 문제를 발견하시면",
     "AvatarToolkit.desc3": "Github에 보고해 주세요.",
@@ -117,6 +117,15 @@
     "Validation.clear_bone_highlighting": "본 강조 표시 지우기",
     "Validation.clear_bone_highlighting_desc": "본 강조 표시를 제거하고 본 색상을 기본값으로 재설정",
     "Validation.highlighting_cleared": "본 강조 표시 지우기 성공",
+    "Validation.label": "아마추어 검증",
+    "Validation.validate_now": "지금 아마추어 검증",
+    "Validation.validate_now_desc": "아마추어 검증을 실행하고 자세한 결과 표시",
+    "Validation.results": "검증 결과",
+    "Validation.tpose.validate_now": "지금 T-포즈 검증",
+
+    "Armature.validation.acceptable_standard.success": "아마추어가 허용 가능한 표준을 충족합니다",
+    "Armature.validation.acceptable_standard.note": "이것은 대부분의 아바타 시스템과 호환되는 유효한 아마추어 형식입니다",
+    "Armature.validation.acceptable_standard.option": "필요한 경우 아마추어를 표준화할 수 있습니다",
 
     "Mesh.validation.no_data": "메시 데이터 없음",
     "Mesh.validation.no_vertex_groups": "버텍스 그룹을 찾을 수 없음",
@@ -194,6 +203,7 @@
     "Tools.digitigrade_error": "디지티그레이드 다리 생성 실패: {error}",
     "Tools.digitigrade_success": "디지티그레이드 다리 설정 생성 성공",
     "Tools.processing_leg": "다리 본 처리 중: {bone}",
+    "Tools.weight_title": "가중치 도구",
     "Tools.merge_twist_bones": "트위스트 본 유지",
     "Tools.merge_twist_bones_desc": "체크하면 가중치가 0이더라도 트위스트 본이 유지됩니다",
     "Tools.clean_weights": "가중치 0인 본 제거",
@@ -549,7 +559,6 @@
     "VRM.armature_name": "아마추어: {name}",
     "VRM.armature_detected": "VRM 아마추어 감지됨",
     "VRM.no_vrm_bones_detected": "VRM 본이 감지되지 않음",
-    "VRM.remove_colliders": "콜라이더 제거",
     "VRM.remove_root_bone": "루트 본 제거",
     "VRM.convert_to_unity_format": "Unity 형식으로 변환",
     "VRM.convert_to_unity.label": "VRM을 Unity로 변환",

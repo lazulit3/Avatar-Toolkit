@@ -1,6 +1,7 @@
 import bpy
 from typing import Optional, Set
 from bpy.types import Panel, Context, UILayout
+from .ui_utils import UIStyle, wrap_text_label
 from ..core.translations import t
 
 CATEGORY_NAME: str = "Avatar Toolkit"
@@ -16,13 +17,14 @@ def draw_title(self: Panel) -> None:
     row.scale_y: float = 1.2
     row.label(text=t("AvatarToolkit.label"), icon='ARMATURE_DATA')
     
-    # Description as a flowing paragraph
-    desc_col: UILayout = col.column()
-    desc_col.scale_y: float = 0.6
-    desc_col.label(text=t("AvatarToolkit.desc1"))
-    desc_col.label(text=t("AvatarToolkit.desc2"))
-    desc_col.label(text=t("AvatarToolkit.desc3"))
-    col.separator()
+    # Description
+    col.separator(factor=UIStyle.SECTION_SEPARATOR_FACTOR)
+    description = " ".join([
+        t("AvatarToolkit.desc1"),
+        t("AvatarToolkit.desc2"),
+        t("AvatarToolkit.desc3")
+    ])
+    wrap_text_label(col, description, max_length=50)
 
 class AvatarToolKit_PT_AvatarToolkitPanel(Panel):
     """Main panel for Avatar Toolkit containing general information and settings"""
