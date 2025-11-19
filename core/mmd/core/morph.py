@@ -1,39 +1,34 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014 MMD Tools authors
-# This file was originally part of the MMD Tools add-on for Blender
-# You can find MMD Tools here: https://github.com/MMD-Blender/blender_mmd_tools
-# Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
-# MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
+# Copyright 2016 MMD Tools authors
+# This file is part of MMD Tools.
 
+from ....core.logging_setup import logger
+import math
 import re
-from typing import TYPE_CHECKING, Tuple, cast, List, Dict, Optional, Set, Any, Union, Iterator
+from typing import TYPE_CHECKING, Tuple, cast
 
 import bpy
-import numpy as np
-from bpy.types import Object, ShapeKey, Material, Mesh, Armature, PoseBone, Constraint
 
 from .. import bpyutils, utils
 from ..bpyutils import FnContext, FnObject, TransformConstraintOp
-from ....core.logging_setup import logger
 
 if TYPE_CHECKING:
     from .model import Model
 
 
 class FnMorph:
-    def __init__(self, morph: Any, model: "Model"):
+    def __init__(self, morph, model: "Model"):
         self.__morph = morph
         self.__rig = model
 
     @classmethod
-    def storeShapeKeyOrder(cls, obj: Object, shape_key_names: List[str]) -> None:
+    def storeShapeKeyOrder(cls, obj, shape_key_names):
         if len(shape_key_names) < 1:
             return
         assert FnContext.get_active_object(FnContext.ensure_context()) == obj
         if obj.data.shape_keys is None:
             bpy.ops.object.shape_key_add()
 
-        def __move_to_bottom(key_blocks: bpy.types.bpy_prop_collection, name: str) -> None:
+        def __move_to_bottom(key_blocks, name):
             obj.active_shape_key_index = key_blocks.find(name)
             bpy.ops.object.shape_key_move(type="BOTTOM")
 
@@ -45,7 +40,7 @@ class FnMorph:
                 __move_to_bottom(key_blocks, name)
 
     @classmethod
-    def fixShapeKeyOrder(cls, obj: Object, shape_key_names: List[str]) -> None:
+    def fixShapeKeyOrder(cls, obj, shape_key_names):
         if len(shape_key_names) < 1:
             return
         assert FnContext.get_active_object(FnContext.ensure_context()) == obj
@@ -60,11 +55,11 @@ class FnMorph:
             bpy.ops.object.shape_key_move(type="BOTTOM")
 
     @staticmethod
-    def get_morph_slider(rig: "Model") -> "_MorphSlider":
+    def get_morph_slider(rig):
         return _MorphSlider(rig)
 
     @staticmethod
-    def category_guess(morph: Any) -> None:
+    def category_guess(morph):
         name_lower = morph.name.lower()
         if "mouth" in name_lower:
             morph.category = "MOUTH"
@@ -75,7 +70,7 @@ class FnMorph:
                 morph.category = "EYE"
 
     @classmethod
-    def load_morphs(cls, rig: "Model") -> None:
+    def load_morphs(cls, rig):
         mmd_root = rig.rootObject().mmd_root
         vertex_morphs = mmd_root.vertex_morphs
         uv_morphs = mmd_root.uv_morphs
@@ -94,7 +89,7 @@ class FnMorph:
                     cls.category_guess(item)
 
     @staticmethod
-    def remove_shape_key(mesh_object: Object, shape_key_name: str) -> None:
+    def remove_shape_key(mesh_object: bpy.types.Object, shape_key_name: str):
         assert isinstance(mesh_object.data, bpy.types.Mesh)
 
         shape_keys = mesh_object.data.shape_keys
@@ -106,7 +101,7 @@ class FnMorph:
             FnObject.mesh_remove_shape_key(mesh_object, key_blocks[shape_key_name])
 
     @staticmethod
-    def copy_shape_key(mesh_object: Object, src_name: str, dest_name: str) -> None:
+    def copy_shape_key(mesh_object: bpy.types.Object, src_name: str, dest_name: str):
         assert isinstance(mesh_object.data, bpy.types.Mesh)
 
         shape_keys = mesh_object.data.shape_keys
@@ -128,13 +123,13 @@ class FnMorph:
         mesh_object.active_shape_key_index = key_blocks.find(dest_name)
 
     @staticmethod
-    def get_uv_morph_vertex_groups(obj: Object, morph_name: Optional[str] = None, offset_axes: str = "XYZW") -> Iterator[Tuple[bpy.types.VertexGroup, str, str]]:
+    def get_uv_morph_vertex_groups(obj, morph_name=None, offset_axes="XYZW"):
         pattern = "UV_%s[+-][%s]$" % (morph_name or ".{1,}", offset_axes or "XYZW")
         # yield (vertex_group, morph_name, axis),...
         return ((g, g.name[3:-2], g.name[-2:]) for g in obj.vertex_groups if re.match(pattern, g.name))
 
     @staticmethod
-    def copy_uv_morph_vertex_groups(obj: Object, src_name: str, dest_name: str) -> None:
+    def copy_uv_morph_vertex_groups(obj, src_name, dest_name):
         for vg, n, x in FnMorph.get_uv_morph_vertex_groups(obj, dest_name):
             obj.vertex_groups.remove(vg)
 
@@ -145,12 +140,12 @@ class FnMorph:
             obj.vertex_groups.active.name = vg_name.replace(src_name, dest_name)
 
     @staticmethod
-    def overwrite_bone_morphs_from_action_pose(armature_object: Object) -> None:
+    def overwrite_bone_morphs_from_action_pose(armature_object):
         armature = armature_object.id_data
-        
+
         # Use animation_data and action instead of action_pose
         if armature.animation_data is None or armature.animation_data.action is None:
-            logger.warning('Armature "%s" has no animation data or action', armature_object.name)
+            logger.warning('[WARNING] armature "%s" has no animation data or action', armature_object.name)
             return
 
         action = armature.animation_data.action
@@ -164,7 +159,7 @@ class FnMorph:
         bone_morphs = mmd_root.bone_morphs
 
         utils.selectAObject(armature_object)
-        original_mode = bpy.context.object.mode
+        original_mode = bpy.context.active_object.mode
         bpy.ops.object.mode_set(mode="POSE")
         try:
             for index, pose_marker in enumerate(pose_markers):
@@ -175,7 +170,7 @@ class FnMorph:
 
                 bpy.ops.pose.select_all(action="SELECT")
                 bpy.ops.pose.transforms_clear()
-                
+
                 frame = pose_marker.frame
                 bpy.context.scene.frame_set(int(frame))
 
@@ -189,9 +184,9 @@ class FnMorph:
         utils.selectAObject(root)
 
     @staticmethod
-    def clean_uv_morph_vertex_groups(obj: Object) -> None:
+    def clean_uv_morph_vertex_groups(obj):
         # remove empty vertex groups of uv morphs
-        vg_indices: Set[int] = {g.index for g, n, x in FnMorph.get_uv_morph_vertex_groups(obj)}
+        vg_indices = {g.index for g, n, x in FnMorph.get_uv_morph_vertex_groups(obj)}
         vertex_groups = obj.vertex_groups
         for v in obj.data.vertices:
             for x in v.groups:
@@ -205,8 +200,8 @@ class FnMorph:
             vertex_groups.remove(vg)
 
     @staticmethod
-    def get_uv_morph_offset_map(obj: Object, morph: Any) -> Dict[int, List[float]]:
-        offset_map: Dict[int, List[float]] = {}  # offset_map[vertex_index] = offset_xyzw
+    def get_uv_morph_offset_map(obj, morph):
+        offset_map = {}  # offset_map[vertex_index] = offset_xyzw
         if morph.data_type == "VERTEX_GROUP":
             scale = morph.vertex_group_scale
             axis_map = {g.index: x for g, n, x in FnMorph.get_uv_morph_vertex_groups(obj, morph.name)}
@@ -221,13 +216,13 @@ class FnMorph:
             for val in morph.data:
                 i = val.index
                 if i in offset_map:
-                    offset_map[i] = [a + b for a, b in zip(offset_map[i], val.offset)]
+                    offset_map[i] = [a + b for a, b in zip(offset_map[i], val.offset, strict=False)]
                 else:
                     offset_map[i] = val.offset
         return offset_map
 
     @staticmethod
-    def store_uv_morph_data(obj: Object, morph: Any, offsets: Optional[List[Any]] = None, offset_axes: str = "XYZW") -> None:
+    def store_uv_morph_data(obj, morph, offsets=None, offset_axes="XYZW"):
         vertex_groups = obj.vertex_groups
         morph_name = getattr(morph, "name", None)
         if offset_axes:
@@ -246,13 +241,13 @@ class FnMorph:
         max_value = max(max(abs(x) for x in v) for v in offset_map.values() or ([0],))
         scale = morph.vertex_group_scale = max(abs(morph.vertex_group_scale), max_value)
         for idx, offset in offset_map.items():
-            for val, axis in zip(offset, "XYZW"):
+            for val, axis in zip(offset, "XYZW", strict=False):
                 if abs(val) > 1e-4:
-                    vg_name = "UV_{0}{1}{2}".format(morph_name, "-" if val < 0 else "+", axis)
+                    vg_name = f"UV_{morph_name}{'-' if val < 0 else '+'}{axis}"
                     vg = vertex_groups.get(vg_name, None) or vertex_groups.new(name=vg_name)
                     vg.add(index=[idx], weight=abs(val) / scale, type="REPLACE")
 
-    def update_mat_related_mesh(self, new_mesh: Optional[Object] = None) -> None:
+    def update_mat_related_mesh(self, new_mesh=None):
         for offset in self.__morph.data:
             # Use the new_mesh if provided
             meshObj = new_mesh
@@ -272,28 +267,28 @@ class FnMorph:
                 offset.related_mesh = meshObj.data.name
 
     @staticmethod
-    def clean_duplicated_material_morphs(mmd_root_object: Object) -> None:
+    def clean_duplicated_material_morphs(mmd_root_object: bpy.types.Object):
         """Clean duplicated material_morphs and data from mmd_root_object.mmd_root.material_morphs[].data[]"""
         mmd_root = mmd_root_object.mmd_root
 
-        def morph_data_equals(l: Any, r: Any) -> bool:
+        def morph_data_equals(left, right) -> bool:
             return (
-                l.related_mesh_data == r.related_mesh_data
-                and l.offset_type == r.offset_type
-                and l.material == r.material
-                and all(a == b for a, b in zip(l.diffuse_color, r.diffuse_color))
-                and all(a == b for a, b in zip(l.specular_color, r.specular_color))
-                and l.shininess == r.shininess
-                and all(a == b for a, b in zip(l.ambient_color, r.ambient_color))
-                and all(a == b for a, b in zip(l.edge_color, r.edge_color))
-                and l.edge_weight == r.edge_weight
-                and all(a == b for a, b in zip(l.texture_factor, r.texture_factor))
-                and all(a == b for a, b in zip(l.sphere_texture_factor, r.sphere_texture_factor))
-                and all(a == b for a, b in zip(l.toon_texture_factor, r.toon_texture_factor))
+                left.related_mesh_data == right.related_mesh_data
+                and left.offset_type == right.offset_type
+                and left.material == right.material
+                and all(a == b for a, b in zip(left.diffuse_color, right.diffuse_color, strict=False))
+                and all(a == b for a, b in zip(left.specular_color, right.specular_color, strict=False))
+                and left.shininess == right.shininess
+                and all(a == b for a, b in zip(left.ambient_color, right.ambient_color, strict=False))
+                and all(a == b for a, b in zip(left.edge_color, right.edge_color, strict=False))
+                and left.edge_weight == right.edge_weight
+                and all(a == b for a, b in zip(left.texture_factor, right.texture_factor, strict=False))
+                and all(a == b for a, b in zip(left.sphere_texture_factor, right.sphere_texture_factor, strict=False))
+                and all(a == b for a, b in zip(left.toon_texture_factor, right.toon_texture_factor, strict=False))
             )
 
-        def morph_equals(l: Any, r: Any) -> bool:
-            return len(l.data) == len(r.data) and all(morph_data_equals(a, b) for a, b in zip(l.data, r.data))
+        def morph_equals(left, right) -> bool:
+            return len(left.data) == len(right.data) and all(morph_data_equals(a, b) for a, b in zip(left.data, right.data, strict=False))
 
         # Remove duplicated mmd_root.material_morphs.data[]
         for material_morph in mmd_root.material_morphs:
@@ -327,7 +322,7 @@ class _MorphSlider:
     def __init__(self, model: "Model"):
         self.__rig = model
 
-    def placeholder(self, create: bool = False, binded: bool = False) -> Optional[Object]:
+    def placeholder(self, create=False, binded=False):
         rig = self.__rig
         root = rig.rootObject()
         obj = next((x for x in root.children if x.mmd_type == "PLACEHOLDER" and x.type == "MESH"), None)
@@ -345,11 +340,11 @@ class _MorphSlider:
         return obj
 
     @property
-    def dummy_armature(self) -> Optional[Object]:
+    def dummy_armature(self):
         obj = self.placeholder()
         return self.__dummy_armature(obj) if obj else None
 
-    def __dummy_armature(self, obj: Object, create: bool = False) -> Optional[Object]:
+    def __dummy_armature(self, obj, create=False):
         arm = next((x for x in obj.children if x.mmd_type == "PLACEHOLDER" and x.type == "ARMATURE"), None)
         if create and arm is None:
             arm = bpy.data.objects.new(name=".dummy_armature", object_data=bpy.data.armatures.new(name=".dummy_armature"))
@@ -362,7 +357,7 @@ class _MorphSlider:
             FnBone.setup_special_bone_collections(arm)
         return arm
 
-    def get(self, morph_name: str) -> Optional[ShapeKey]:
+    def get(self, morph_name):
         obj = self.placeholder()
         if obj is None:
             return None
@@ -371,13 +366,13 @@ class _MorphSlider:
             return None
         return key_blocks.get(morph_name, None)
 
-    def create(self) -> Object:
+    def create(self):
         self.__rig.loadMorphs()
         obj = self.placeholder(create=True)
         self.__load(obj, self.__rig.rootObject().mmd_root)
         return obj
 
-    def __load(self, obj: Object, mmd_root: Any) -> None:
+    def __load(self, obj, mmd_root):
         attr_list = ("group", "vertex", "bone", "uv", "material")
         morph_sliders = obj.data.shape_keys.key_blocks
         for m in (x for attr in attr_list for x in getattr(mmd_root, attr + "_morphs", ())):
@@ -388,15 +383,15 @@ class _MorphSlider:
                 obj.shape_key_add(name=name, from_mix=False)
 
     @staticmethod
-    def __driver_variables(id_data: Any, path: str, index: int = -1) -> Tuple[Any, Any]:
+    def __driver_variables(id_data, path, index=-1):
         d = id_data.driver_add(path, index)
         variables = d.driver.variables
-        for x in variables:
+        for x in reversed(variables):
             variables.remove(x)
         return d.driver, variables
 
     @staticmethod
-    def __add_single_prop(variables: Any, id_obj: Object, data_path: str, prefix: str) -> Any:
+    def __add_single_prop(variables, id_obj, data_path, prefix):
         var = variables.new()
         var.name = f"{prefix}{len(variables)}"
         var.type = "SINGLE_PROP"
@@ -407,7 +402,7 @@ class _MorphSlider:
         return var
 
     @staticmethod
-    def __shape_key_driver_check(key_block: ShapeKey, resolve_path: bool = False) -> bool:
+    def __shape_key_driver_check(key_block, resolve_path=False):
         if resolve_path:
             try:
                 key_block.id_data.path_resolve(key_block.path_from_id())
@@ -421,22 +416,20 @@ class _MorphSlider:
             d = next((i for i in key_block.id_data.animation_data.drivers if i.data_path == data_path), None)
         return not d or d.driver.expression == "".join(("*w", "+g", "v")[-1 if i < 1 else i % 2] + str(i + 1) for i in range(len(d.driver.variables)))
 
-    def __cleanup(self, names_in_use: Optional[Dict[str, Any]] = None) -> None:
-        from math import ceil, floor
-
+    def __cleanup(self, names_in_use=None):
         names_in_use = names_in_use or {}
         rig = self.__rig
         morph_sliders = self.placeholder()
         morph_sliders = morph_sliders.data.shape_keys.key_blocks if morph_sliders else {}
         for mesh_object in rig.meshes():
-            for kb in getattr(mesh_object.data.shape_keys, "key_blocks", cast(Tuple[ShapeKey], ())):
+            for kb in getattr(mesh_object.data.shape_keys, "key_blocks", cast("Tuple[bpy.types.ShapeKey]", ())):
                 if kb.name in names_in_use:
                     continue
 
                 if kb.name.startswith("mmd_bind"):
                     kb.driver_remove("value")
                     ms = morph_sliders[kb.relative_key.name]
-                    kb.relative_key.slider_min, kb.relative_key.slider_max = min(ms.slider_min, floor(ms.value)), max(ms.slider_max, ceil(ms.value))
+                    kb.relative_key.slider_min, kb.relative_key.slider_max = min(ms.slider_min, math.floor(ms.value)), max(ms.slider_max, math.ceil(ms.value))
                     kb.relative_key.value = ms.value
                     kb.relative_key.mute = False
                     FnObject.mesh_remove_shape_key(mesh_object, kb)
@@ -444,9 +437,9 @@ class _MorphSlider:
                 elif kb.name in morph_sliders and self.__shape_key_driver_check(kb):
                     ms = morph_sliders[kb.name]
                     kb.driver_remove("value")
-                    kb.slider_min, kb.slider_max = min(ms.slider_min, floor(kb.value)), max(ms.slider_max, ceil(kb.value))
+                    kb.slider_min, kb.slider_max = min(ms.slider_min, math.floor(kb.value)), max(ms.slider_max, math.ceil(kb.value))
 
-            for m in mesh_object.modifiers:  # uv morph
+            for m in reversed(mesh_object.modifiers):  # uv morph
                 if m.name.startswith("mmd_bind") and m.name not in names_in_use:
                     mesh_object.modifiers.remove(m)
 
@@ -461,13 +454,13 @@ class _MorphSlider:
         attributes = set(TransformConstraintOp.min_max_attributes("LOCATION", "to"))
         attributes |= set(TransformConstraintOp.min_max_attributes("ROTATION", "to"))
         for b in rig.armature().pose.bones:
-            for c in b.constraints:
+            for c in reversed(b.constraints):
                 if c.name.startswith("mmd_bind") and c.name[:-4] not in names_in_use:
                     for attr in attributes:
                         c.driver_remove(attr)
                     b.constraints.remove(c)
 
-    def unbind(self) -> None:
+    def unbind(self):
         mmd_root = self.__rig.rootObject().mmd_root
 
         # after unbind, the weird lag problem will disappear.
@@ -490,7 +483,7 @@ class _MorphSlider:
                         b.driver_remove("rotation_quaternion")
         self.__cleanup()
 
-    def bind(self) -> None:
+    def bind(self):
         rig = self.__rig
         root = rig.rootObject()
         armObj = rig.armature()
@@ -504,10 +497,10 @@ class _MorphSlider:
         morph_sliders = obj.data.shape_keys.key_blocks
 
         # data gathering
-        group_map: Dict[Tuple[str, str], List[List[Any]]] = {}
+        group_map = {}
 
-        shape_key_map: Dict[str, List[Tuple[ShapeKey, str, List[Any]]]] = {}
-        uv_morph_map: Dict[str, List[Tuple[str, str, str, List[Any]]]] = {}
+        shape_key_map = {}
+        uv_morph_map = {}
         for mesh_object in rig.meshes():
             mesh_object.show_only_shape_key = False
             key_blocks = getattr(mesh_object.data.shape_keys, "key_blocks", ())
@@ -528,11 +521,11 @@ class _MorphSlider:
                 kb_bind.slider_max = 10
 
                 data_path = 'data.shape_keys.key_blocks["%s"].value' % kb_name.replace('"', '\\"')
-                groups: List[Any] = []
+                groups = []
                 shape_key_map.setdefault(name_bind, []).append((kb_bind, data_path, groups))
                 group_map.setdefault(("vertex_morphs", kb_name), []).append(groups)
 
-            uv_layers = [l.name for l in mesh_object.data.uv_layers if not l.name.startswith("_")]
+            uv_layers = [layer.name for layer in mesh_object.data.uv_layers if not layer.name.startswith("_")]
             uv_layers += [""] * (5 - len(uv_layers))
             for vg, morph_name, axis in FnMorph.get_uv_morph_vertex_groups(mesh_object):
                 morph = mmd_root.uv_morphs.get(morph_name, None)
@@ -544,7 +537,7 @@ class _MorphSlider:
                     continue
 
                 name_bind = "mmd_bind%s" % hash(vg.name)
-                uv_morph_map.setdefault(name_bind, [])
+                uv_morph_map.setdefault(name_bind, ())
                 mod = mesh_object.modifiers.get(name_bind, None) or mesh_object.modifiers.new(name=name_bind, type="UV_WARP")
                 mod.show_expanded = False
                 mod.vertex_group = vg.name
@@ -557,13 +550,13 @@ class _MorphSlider:
                 else:
                     mod.bone_from, mod.bone_to = name_bind, "mmd_bind_ctrl_base"
 
-        bone_offset_map: Dict[str, Tuple[str, Any, str, str, List[Any]]] = {}
+        bone_offset_map = {}
         with bpyutils.edit_object(arm) as data:
             from .bone import FnBone
 
             edit_bones = data.edit_bones
 
-            def __get_bone(name: str, parent: Optional[bpy.types.EditBone]) -> bpy.types.EditBone:
+            def __get_bone(name, parent):
                 b = edit_bones.get(name, None) or edit_bones.new(name=name)
                 b.head = (0, 0, 0)
                 b.tail = (0, 0, 1)
@@ -580,7 +573,7 @@ class _MorphSlider:
                         continue
                     d.name = name_bind = f"mmd_bind{hash(d)}"
                     b = FnBone.set_edit_bone_to_shadow(__get_bone(name_bind, None))
-                    groups: List[Any] = []
+                    groups = []
                     bone_offset_map[name_bind] = (m.name, d, b.name, data_path, groups)
                     group_map.setdefault(("bone_morphs", m.name), []).append(groups)
 
@@ -591,21 +584,21 @@ class _MorphSlider:
                 scale_path = f'mmd_root.uv_morphs["{morph_name}"].vertex_group_scale'
                 name_bind = f"mmd_bind{hash(m.name)}"
                 b = FnBone.set_edit_bone_to_dummy(__get_bone(name_bind, ctrl_base))
-                groups: List[Any] = []
+                groups = []
                 uv_morph_map.setdefault(name_bind, []).append((b.name, data_path, scale_path, groups))
                 group_map.setdefault(("uv_morphs", m.name), []).append(groups)
 
-            used_bone_names: Set[str] = set(bone_offset_map.keys()) | set(uv_morph_map.keys())
+            used_bone_names = bone_offset_map.keys() | uv_morph_map.keys()
             used_bone_names.add(ctrl_base.name)
-            for b in edit_bones:  # cleanup
+            for b in reversed(edit_bones):  # cleanup
                 if b.name.startswith("mmd_bind") and b.name not in used_bone_names:
                     edit_bones.remove(b)
 
-        material_offset_map: Dict[str, Any] = {}
+        material_offset_map = {}
         for m in mmd_root.material_morphs:
             morph_name = m.name.replace('"', '\\"')
             data_path = f'data.shape_keys.key_blocks["{morph_name}"].value'
-            groups: List[Any] = []
+            groups = []
             group_map.setdefault(("material_morphs", m.name), []).append(groups)
             material_offset_map.setdefault("group_dict", {})[m.name] = (data_path, groups)
             for d in m.data:
@@ -616,7 +609,7 @@ class _MorphSlider:
 
         for m in mmd_root.group_morphs:
             if len(m.data) != len(set(m.data.keys())):
-                logger.warning('Found duplicated morph data in Group Morph "%s"', m.name)
+                logger.warning(' * Found duplicated morph data in Group Morph "%s"', m.name)
             morph_name = m.name.replace('"', '\\"')
             morph_path = f'data.shape_keys.key_blocks["{morph_name}"].value'
             for d in m.data:
@@ -627,7 +620,7 @@ class _MorphSlider:
 
         self.__cleanup(shape_key_map.keys() | bone_offset_map.keys() | uv_morph_map.keys())
 
-        def __config_groups(variables: Any, expression: str, groups: List[Any]) -> str:
+        def __config_groups(variables, expression, groups):
             for g_name, morph_path, factor_path in groups:
                 var = self.__add_single_prop(variables, obj, morph_path, "g")
                 fvar = self.__add_single_prop(variables, root, factor_path, "w")
@@ -635,7 +628,7 @@ class _MorphSlider:
             return expression
 
         # vertex morphs
-        for kb_bind, morph_data_path, groups in (i for l in shape_key_map.values() for i in l):
+        for kb_bind, morph_data_path, groups in (i for value_list in shape_key_map.values() for i in value_list):
             driver, variables = self.__driver_variables(kb_bind, "value")
             var = self.__add_single_prop(variables, obj, morph_data_path, "v")
             if kb_bind.name.startswith("mmd_bind"):
@@ -646,7 +639,7 @@ class _MorphSlider:
             kb_bind.mute = False
 
         # bone morphs
-        def __config_bone_morph(constraints: bpy.types.ArmatureConstraints, map_type: str, attributes: Set[str], val: float, val_str: str) -> None:
+        def __config_bone_morph(constraints, map_type, attributes, val, val_str):
             c_name = f"mmd_bind{hash(data)}.{map_type[:3]}"
             c = TransformConstraintOp.create(constraints, c_name, map_type)
             TransformConstraintOp.update_min_max(c, val, None)
@@ -660,8 +653,6 @@ class _MorphSlider:
                 sign = "-" if attr.startswith("to_min") else ""
                 driver.expression = f"{sign}{val_str}*({expression})"
 
-        from math import pi
-
         attributes_rot = TransformConstraintOp.min_max_attributes("ROTATION", "to")
         attributes_loc = TransformConstraintOp.min_max_attributes("LOCATION", "to")
         for morph_name, data, bname, morph_data_path, groups in bone_offset_map.values():
@@ -671,7 +662,7 @@ class _MorphSlider:
             b.is_mmd_shadow_bone = True
             b.mmd_shadow_bone_type = "BIND"
             pb = armObj.pose.bones[data.bone]
-            __config_bone_morph(pb.constraints, "ROTATION", attributes_rot, pi, "pi")
+            __config_bone_morph(pb.constraints, "ROTATION", attributes_rot, math.pi, "pi")
             __config_bone_morph(pb.constraints, "LOCATION", attributes_loc, 100, "100")
 
         # uv morphs
@@ -680,7 +671,7 @@ class _MorphSlider:
         b = arm.pose.bones["mmd_bind_ctrl_base"]
         b.is_mmd_shadow_bone = True
         b.mmd_shadow_bone_type = "BIND"
-        for bname, data_path, scale_path, groups in (i for l in uv_morph_map.values() for i in l):
+        for bname, data_path, scale_path, groups in (i for value_list in uv_morph_map.values() for i in value_list):
             b = arm.pose.bones[bname]
             b.is_mmd_shadow_bone = True
             b.mmd_shadow_bone_type = "BIND"
@@ -694,9 +685,9 @@ class _MorphSlider:
 
         group_dict = material_offset_map.get("group_dict", {})
 
-        def __config_material_morph(mat: Material, morph_list: List[Tuple[str, Any, str]]) -> None:
+        def __config_material_morph(mat, morph_list):
             nodes = _MaterialMorph.setup_morph_nodes(mat, tuple(x[1] for x in morph_list))
-            for (morph_name, data, name_bind), node in zip(morph_list, nodes):
+            for (morph_name, data, name_bind), node in zip(morph_list, nodes, strict=False):
                 node.label, node.name = morph_name, name_bind
                 data_path, groups = group_dict[morph_name]
                 driver, variables = self.__driver_variables(mat.node_tree, node.inputs[0].path_from_id("default_value"))
@@ -706,7 +697,7 @@ class _MorphSlider:
         for mat in (m for m in rig.materials() if m and m.use_nodes and not m.name.startswith("mmd_")):
             mul_all, add_all = material_offset_map.get("#", ([], []))
             if mat.name == "":
-                logger.warning("Oh no. The material name should never be empty.")
+                logger.warning("Oh no. The material name should never empty.")
                 mul_list, add_list = [], []
             else:
                 mat_name = "#" + mat.name
@@ -722,7 +713,7 @@ class _MorphSlider:
 
 class MigrationFnMorph:
     @staticmethod
-    def update_mmd_morph() -> None:
+    def update_mmd_morph():
         from .material import FnMaterial
 
         for root in bpy.data.objects:
@@ -733,7 +724,7 @@ class MigrationFnMorph:
                 for morph_data in mat_morph.data:
                     if morph_data.material_data is not None:
                         # SUPPORT_UNTIL: 5 LTS
-                        # The material_id is also no longer used, but for compatibility with older version mmd_tools, keep it.
+                        # The material_id is also no longer used, but for compatibility with older version mmd_tools_local, keep it.
                         if "material_id" not in morph_data.material_data.mmd_material or "material_id" not in morph_data or morph_data.material_data.mmd_material["material_id"] == morph_data["material_id"]:
                             # In the new version, the related_mesh property is no longer used.
                             # Explicitly remove this property to avoid misuse.
@@ -741,15 +732,14 @@ class MigrationFnMorph:
                                 del morph_data["related_mesh"]
                             continue
 
-                        else:
-                            # Compat case. The new version mmd_tools saved. And old version mmd_tools edit. Then new version mmd_tools load again.
-                            # Go update path.
-                            pass
+                        # Compat case. The new version mmd_tools_local saved. And old version mmd_tools_local edit. Then new version mmd_tools_local load again.
+                        # Go update path.
+                        pass
 
                     morph_data.material_data = None
                     if "material_id" in morph_data:
                         mat_id = morph_data["material_id"]
-                        if mat_id != -1:
+                        if mat_id >= 0:
                             fnMat = FnMaterial.from_material_id(mat_id)
                             if fnMat:
                                 morph_data.material_data = fnMat.material
@@ -764,11 +754,11 @@ class MigrationFnMorph:
                             morph_data.related_mesh_data = bpy.data.meshes[related_mesh]
 
     @staticmethod
-    def ensure_material_id_not_conflict() -> None:
-        mat_ids_set: Set[int] = set()
+    def ensure_material_id_not_conflict():
+        mat_ids_set = set()
 
         # The reference library properties cannot be modified and bypassed in advance.
-        need_update_mat: List[Material] = []
+        need_update_mat = []
         for mat in bpy.data.materials:
             if mat.mmd_material.material_id < 0:
                 continue
@@ -783,7 +773,7 @@ class MigrationFnMorph:
             mat_ids_set.add(mat.mmd_material.material_id)
 
     @staticmethod
-    def compatible_with_old_version_mmd_tools() -> None:
+    def compatible_with_old_version_mmd_tools_local():
         MigrationFnMorph.ensure_material_id_not_conflict()
 
         for root in bpy.data.objects:

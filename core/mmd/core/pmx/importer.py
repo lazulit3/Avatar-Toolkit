@@ -6,6 +6,7 @@
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
 import collections
+import math
 import os
 import time
 from typing import TYPE_CHECKING, List, Optional, Dict, Tuple, Set, Callable, Any, Union, FrozenSet, Iterator
@@ -103,7 +104,7 @@ class PMXImporter:
         obj_name = self.__safe_name(bpy.path.display_name(pmxModel.filepath), max_length=54)
         logger.info(f"Creating objects for model: {obj_name}")
         
-        self.__rig = Model.create(pmxModel.name, pmxModel.name_e, self.__scale or 1.0, obj_name)
+        self.__rig = Model.create(pmxModel.name, pmxModel.name_e, self.__scale, obj_name)
         root = self.__rig.rootObject()
         mmd_root: 'MMDRoot' = root.mmd_root
         self.__root = root
@@ -192,7 +193,7 @@ class PMXImporter:
 
         mesh: Mesh = self.__meshObj.data
         mesh.vertices.add(count=vertex_count)
-        mesh.vertices.foreach_set("co", tuple(i for pv in pmx_vertices for i in (Vector(pv.co).xzy * (self.__scale or 1.0))))
+        mesh.vertices.foreach_set("co", tuple(i for pv in pmx_vertices for i in (Vector(pv.co).xzy * self.__scale)))
 
         vertex_group_table = self.__vertexGroupTable
         if not vertex_group_table:
@@ -249,9 +250,9 @@ class PMXImporter:
         
         for i, pv in self.__sdefVertices.items():
             w = pv.weight.weights
-            sdefC.data[i].co = Vector(w.c).xzy * (self.__scale or 1.0)
-            sdefR0.data[i].co = Vector(w.r0).xzy * (self.__scale or 1.0)
-            sdefR1.data[i].co = Vector(w.r1).xzy * (self.__scale or 1.0)
+            sdefC.data[i].co = Vector(w.c).xzy * self.__scale
+            sdefR0.data[i].co = Vector(w.r0).xzy * self.__scale
+            sdefR1.data[i].co = Vector(w.r1).xzy * self.__scale
             
         logger.debug(f"Stored {len(self.__sdefVertices)} SDEF vertices in shape keys")
 
@@ -290,13 +291,13 @@ class PMXImporter:
             # Create bones
             for i in pmx_bones:
                 bone = data.edit_bones.new(name=i.name)
-                loc = _VectorXZY(i.location) * (self.__scale or 1.0)
+                loc = _VectorXZY(i.location) * self.__scale
                 bone.head = loc
                 editBoneTable.append(bone)
                 nameTable.append(bone.name)
 
             # Set parent relationships
-            for i, (b_bone, m_bone) in enumerate(zip(editBoneTable, pmx_bones)):
+            for i, (b_bone, m_bone) in enumerate(zip(editBoneTable, pmx_bones, strict=False)):
                 if m_bone.parent != -1:
                     if i not in dependency_cycle_ik_bones:
                         b_bone.parent = editBoneTable[m_bone.parent]
@@ -304,18 +305,18 @@ class PMXImporter:
                         b_bone.parent = editBoneTable[m_bone.parent].parent
 
             # Set tail positions
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
+            for b_bone, m_bone in zip(editBoneTable, pmx_bones, strict=False):
                 if isinstance(m_bone.displayConnection, int):
                     if m_bone.displayConnection != -1:
                         b_bone.tail = editBoneTable[m_bone.displayConnection].head
                     else:
                         b_bone.tail = b_bone.head
                 else:
-                    loc = _VectorXZY(m_bone.displayConnection) * (self.__scale or 1.0)
+                    loc = _VectorXZY(m_bone.displayConnection) * self.__scale
                     b_bone.tail = b_bone.head + loc
 
             # Check and fix IK links
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
+            for b_bone, m_bone in zip(editBoneTable, pmx_bones, strict=False):
                 if m_bone.isIK and m_bone.target != -1:
                     logger.debug(f"Checking IK links of {b_bone.name}")
                     b_target = editBoneTable[m_bone.target]
@@ -333,30 +334,30 @@ class PMXImporter:
                                 b_bone_link.tail = b_bone_link.head + loc
 
             # Fix too short bones
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
+            for b_bone, m_bone in zip(editBoneTable, pmx_bones, strict=False):
                 # Set the length of too short bones to 1 because Blender delete them.
                 if b_bone.length < 0.001:
                     if not self.__apply_bone_fixed_axis and m_bone.axis is not None:
                         fixed_axis = Vector(m_bone.axis)
                         if fixed_axis.length:
-                            b_bone.tail = b_bone.head + fixed_axis.xzy.normalized() * (self.__scale or 1.0)
+                            b_bone.tail = b_bone.head + fixed_axis.xzy.normalized() * self.__scale
                         else:
-                            b_bone.tail = b_bone.head + Vector((0, 0, 1)) * (self.__scale or 1.0)
+                            b_bone.tail = b_bone.head + Vector((0, 0, 1)) * self.__scale
                     else:
-                        b_bone.tail = b_bone.head + Vector((0, 0, 1)) * (self.__scale or 1.0)
+                        b_bone.tail = b_bone.head + Vector((0, 0, 1)) * self.__scale
                     if m_bone.displayConnection != -1 and m_bone.displayConnection != [0.0, 0.0, 0.0]:
                         logger.debug(f"Special tip bone {b_bone.name}, display {str(m_bone.displayConnection)}")
                         specialTipBones.append(b_bone.name)
 
             # Update bone roll
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
+            for b_bone, m_bone in zip(editBoneTable, pmx_bones, strict=False):
                 if m_bone.localCoordinate is not None:
                     FnBone.update_bone_roll(b_bone, m_bone.localCoordinate.x_axis, m_bone.localCoordinate.z_axis)
                 elif FnBone.has_auto_local_axis(m_bone.name):
                     FnBone.update_auto_bone_roll(b_bone)
 
             # Set bone connections
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
+            for b_bone, m_bone in zip(editBoneTable, pmx_bones, strict=False):
                 if isinstance(m_bone.displayConnection, int) and m_bone.displayConnection >= 0:
                     t = editBoneTable[m_bone.displayConnection]
                     if t.parent is None or t.parent != b_bone:
@@ -590,7 +591,7 @@ class PMXImporter:
         )
         
         for i, (rigid, rigid_obj) in enumerate(zip(self.__model.rigids, rigid_pool)):
-            loc = Vector(rigid.location).xzy * (self.__scale or 1.0)
+            loc = Vector(rigid.location).xzy * self.__scale
             rot = Vector(rigid.rotation).xzy * -1
             size = Vector(rigid.size).xzy if rigid.type == pmx.Rigid.TYPE_BOX else Vector(rigid.size)
 
@@ -599,7 +600,7 @@ class PMXImporter:
                 shape_type=rigid.type,
                 location=loc,
                 rotation=rot,
-                size=size * (self.__scale or 1.0),
+                size=size * self.__scale,
                 dynamics_type=rigid.mode,
                 name=rigid.name,
                 name_e=rigid.name_e,
@@ -637,7 +638,7 @@ class PMXImporter:
         )
         
         for i, (joint, joint_obj) in enumerate(zip(self.__model.joints, joint_pool)):
-            loc = Vector(joint.location).xzy * (self.__scale or 1.0)
+            loc = Vector(joint.location).xzy * self.__scale
             rot = Vector(joint.rotation).xzy * -1
 
             obj = FnRigidBody.setup_joint_object(
@@ -648,8 +649,8 @@ class PMXImporter:
                 rotation=rot,
                 rigid_a=self.__rigidTable.get(joint.src_rigid, None),
                 rigid_b=self.__rigidTable.get(joint.dest_rigid, None),
-                maximum_location=Vector(joint.maximum_location).xzy * (self.__scale or 1.0),
-                minimum_location=Vector(joint.minimum_location).xzy * (self.__scale or 1.0),
+                maximum_location=Vector(joint.maximum_location).xzy * self.__scale,
+                minimum_location=Vector(joint.minimum_location).xzy * self.__scale,
                 maximum_rotation=Vector(joint.minimum_rotation).xzy * -1,
                 minimum_rotation=Vector(joint.maximum_rotation).xzy * -1,
                 spring_linear=Vector(joint.spring_constant).xzy,
@@ -753,7 +754,7 @@ class PMXImporter:
         uv_layer.data.foreach_set("uv", tuple(v for i in loop_indices_orig for v in uv_table[i]))
 
         if hasattr(mesh, "uv_textures"):
-            for bf, mi in zip(uv_tex.data, material_indices):
+            for bf, mi in zip(uv_tex.data, material_indices, strict=False):
                 bf.image = self.__imageTable.get(mi, None)
 
         if pmxModel.header and pmxModel.header.additional_uvs:
@@ -830,14 +831,18 @@ class PMXImporter:
         logger.debug(f"Found {len(vertex_morphs)} vertex morphs")
         
         for morph in vertex_morphs:
-            shapeKey = self.__meshObj.shape_key_add(name=morph.name)
+            shapeKey = self.__meshObj.shape_key_add(name=morph.name, from_mix=False)
+            shapeKey.value = 0.0  # Set shape key value to 0 (inactive) on import
             vtx_morph = mmd_root.vertex_morphs.add()
             vtx_morph.name = morph.name
             vtx_morph.name_e = morph.name_e
             vtx_morph.category = categories.get(morph.category, "OTHER")
             for md in morph.offsets:
-                shapeKeyPoint = shapeKey.data[md.index]
-                shapeKeyPoint.co += Vector(md.offset).xzy * (self.__scale or 1.0)
+                if md.index < len(shapeKey.data):
+                    shapeKeyPoint = shapeKey.data[md.index]
+                    shapeKeyPoint.co += Vector(md.offset).xzy * self.__scale
+                else:
+                    logger.warning(f"Morph {morph.name} has out-of-range vertex index: {md.index}")
             logger.debug(f"Imported vertex morph: {morph.name} with {len(morph.offsets)} offsets")
 
     def __importMaterialMorphs(self) -> None:
@@ -898,7 +903,7 @@ class PMXImporter:
                 data = bone_morph.data.add()
                 bl_bone = self.__boneTable[morph_data.index]
                 data.bone = bl_bone.name
-                converter = BoneConverter(bl_bone, self.__scale or 1.0)
+                converter = BoneConverter(bl_bone, self.__scale)
                 data.location = converter.convert_location(morph_data.location_offset)
                 data.rotation = converter.convert_rotation(morph_data.rotation_offset)
                 valid_offsets += 1
@@ -1001,12 +1006,19 @@ class PMXImporter:
         armModifier = meshObj.modifiers.new(name="Armature", type="ARMATURE")
         armModifier.object = armObj
         armModifier.use_vertex_groups = True
-        armModifier.name = "mmd_bone_order_override"
-        armModifier.show_render = armModifier.show_viewport = len(meshObj.data.vertices) > 0
+        armModifier.name = "mmd_armature"
         logger.debug("Armature modifier added")
 
     def __assignCustomNormals(self) -> None:
         """Assign custom normals to the mesh"""
+        # NOTE: This uses the older Blender API instead of the newer mesh.attributes approach
+        # because it requires "INT16_2D" format for proper functionality.
+        # Manual calculation of normals in INT16_2D format is overly complex.
+        # The newer implementation was removed in commit [ad47b9a] due to these issues.
+        # The current implementation uses normals_split_custom_set() with 179-degree sharp edge
+        # marking as a workaround. While not ideal, this remains the most practical solution
+        # for preserving custom normals in most cases.
+        
         if not self.__meshObj or not self.__model:
             logger.error("Mesh object or model not created")
             return
@@ -1014,17 +1026,41 @@ class PMXImporter:
         mesh: Mesh = self.__meshObj.data
         logger.info("Setting custom normals...")
         
+        # CRITICAL: Mark sharp edges (based on angle) BEFORE setting custom normals
+        # For mesh.normals_split_custom_set() to work as expected, two conditions must be met:
+        # 1. The normal vectors must be non-zero (mentioned in Blender documentation)
+        # 2. Some edges must be marked as sharp (NOT mentioned in Blender documentation)
+        # An angle of 179 degrees is confirmed to be sufficient to preserve all custom normals.
+        # 180 degrees does not work because it misses some sharp edges required for normals_split_custom_set to work 100% correctly.
+        current_mode = bpy.context.active_object.mode if bpy.context.active_object else 'OBJECT'
+        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.select_all(action="DESELECT")
+        bpy.context.view_layer.objects.active = self.__meshObj
+        
+        # Mark sharp edges
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="DESELECT")
+        bpy.ops.mesh.edges_select_sharp(sharpness=math.radians(179))
+        bpy.ops.mesh.mark_sharp()
+        bpy.ops.object.mode_set(mode="OBJECT")
+        
+        # Logging
+        total_edges = len(mesh.edges)
+        sharp_edges = sum(1 for edge in mesh.edges if edge.use_edge_sharp)
+        percentage = (sharp_edges / total_edges) * 100 if total_edges > 0 else 0
+        logger.info(f"   - Marked {sharp_edges}/{total_edges} ({percentage:.2f}%) sharp edges with angle: 179 degrees")
+        
         if self.__vertex_map:
             verts, faces = self.__model.vertices, self.__model.faces
             custom_normals = [(Vector(verts[i].normal).xzy).normalized() for f in faces for i in f]
             mesh.normals_split_custom_set(custom_normals)
-            logger.debug(f"Set {len(custom_normals)} custom normals using face data")
         else:
             custom_normals = [(Vector(v.normal).xzy).normalized() for v in self.__model.vertices]
             mesh.normals_split_custom_set_from_vertices(custom_normals)
-            logger.debug(f"Set {len(custom_normals)} custom normals from vertices")
             
-        logger.info("Custom normals set successfully")
+        bpy.ops.object.mode_set(mode=current_mode)
+        logger.info("   - Done!!")
+            # Continue without custom normals - mesh will use auto-calculated normals
 
     def __renameLRBones(self, use_underscore: bool) -> None:
         """Rename bones with left/right naming convention"""

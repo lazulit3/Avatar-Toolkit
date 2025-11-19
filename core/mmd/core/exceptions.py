@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014 MMD Tools authors
-# This file was originally part of the MMD Tools add-on for Blender
-# You can find MMD Tools here: https://github.com/MMD-Blender/blender_mmd_tools
-# Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
-# MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
+# Copyright 2016 MMD Tools authors
+# This file is part of MMD Tools.
+
+# Module for custom exceptions
 
 
 class MaterialNotFoundError(KeyError):
     """Exception raised when a material is not found in the scene"""
 
     def __init__(self, *args: object) -> None:
-        """Constructor for MaterialNotFoundError"""
+        """Initialize MaterialNotFoundError"""
         super().__init__(*args)

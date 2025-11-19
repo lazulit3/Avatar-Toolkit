@@ -1,25 +1,17 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014 MMD Tools authors
-# This file was originally part of the MMD Tools add-on for Blender
-# You can find MMD Tools here: https://github.com/MMD-Blender/blender_mmd_tools
-# Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
-# MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
+# Copyright 2016 MMD Tools authors
+# This file is part of MMD Tools.
 
 import csv
+from ...core.logging_setup import logger
+import os
 import time
-from typing import List, Tuple, Dict, Optional, Any, Generator, Union, TextIO, Iterator, Set
+from collections import OrderedDict
 
 import bpy
-from bpy.types import Text, Context
 
 from .bpyutils import FnContext
-from ..logging_setup import logger
 
-# Type definitions for translation tuples
-TranslationTuple = Tuple[str, str]
-TranslationList = List[TranslationTuple]
-
-jp_half_to_full_tuples: TranslationList = (
+jp_half_to_full_tuples = (
     ("ｳﾞ", "ヴ"),
     ("ｶﾞ", "ガ"),
     ("ｷﾞ", "ギ"),
@@ -109,7 +101,7 @@ jp_half_to_full_tuples: TranslationList = (
     ("ﾝ", "ン"),
 )
 
-jp_to_en_tuples: TranslationList = [
+jp_to_en_tuples = [
     ("全ての親", "ParentNode"),
     ("操作中心", "ControlNode"),
     ("センター", "Center"),
@@ -299,30 +291,22 @@ jp_to_en_tuples: TranslationList = [
 ]
 
 
-def translateFromJp(name: str) -> str:
-    """Translate a Japanese name to English using the translation tuples."""
-    logger.debug(f"Translating from Japanese: {name}")
-    for tuple in jp_to_en_tuples:
-        if tuple[0] in name:
-            name = name.replace(tuple[0], tuple[1])
-    logger.debug(f"Translation result: {name}")
+def translateFromJp(name):
+    for t in jp_to_en_tuples:
+        if t[0] in name:
+            name = name.replace(t[0], t[1])
     return name
 
 
-def getTranslator(csvfile: Union[str, Dict[str, str], Text] = "", keep_order: bool = False) -> 'MMDTranslator':
-    """Get a translator instance with the specified CSV file."""
+def getTranslator(csvfile="", keep_order=False):
     translator = MMDTranslator()
     if isinstance(csvfile, bpy.types.Text):
-        logger.debug(f"Loading translator from Text object: {csvfile.name}")
         translator.load_from_stream(csvfile)
     elif isinstance(csvfile, dict):
-        logger.debug(f"Loading translator from dictionary with {len(csvfile)} entries")
         translator.csv_tuples.extend(csvfile.items())
     elif csvfile in bpy.data.texts.keys():
-        logger.debug(f"Loading translator from text data: {csvfile}")
         translator.load_from_stream(bpy.data.texts[csvfile])
     else:
-        logger.debug(f"Loading translator from file: {csvfile}")
         translator.load(csvfile)
 
     if not keep_order:
@@ -332,20 +316,16 @@ def getTranslator(csvfile: Union[str, Dict[str, str], Text] = "", keep_order: bo
 
 
 class MMDTranslator:
-    """Handles translation of Japanese text to English for MMD models."""
-    
-    def __init__(self) -> None:
-        self.__csv_tuples: List[Tuple[str, str]] = []
-        self.__fails: Dict[str, str] = {}
+    def __init__(self):
+        self.__csv_tuples = []
+        self.__fails = {}
 
     @staticmethod
-    def default_csv_filepath() -> str:
-        """Get the default CSV filepath for translations."""
+    def default_csv_filepath():
         return __file__[:-3] + ".csv"
 
     @staticmethod
-    def get_csv_text(text_name: Optional[str] = None) -> Text:
-        """Get or create a Text object for CSV data."""
+    def get_csv_text(text_name=None):
         text_name = text_name or bpy.path.basename(MMDTranslator.default_csv_filepath())
         csv_text = bpy.data.texts.get(text_name, None)
         if csv_text is None:
@@ -353,88 +333,67 @@ class MMDTranslator:
         return csv_text
 
     @staticmethod
-    def replace_from_tuples(name: str, tuples: List[Tuple[str, str]]) -> str:
-        """Replace parts of a string based on translation tuples."""
+    def replace_from_tuples(name, tuples):
         for pair in tuples:
             if pair[0] in name:
                 name = name.replace(pair[0], pair[1])
         return name
 
     @property
-    def csv_tuples(self) -> List[Tuple[str, str]]:
-        """Get the CSV tuples."""
+    def csv_tuples(self):
         return self.__csv_tuples
 
     @property
-    def fails(self) -> Dict[str, str]:
-        """Get the failed translations."""
+    def fails(self):
         return self.__fails
 
-    def sort(self) -> None:
-        """Sort the CSV tuples by length (longest first) and then alphabetically."""
-        logger.debug("Sorting translation tuples")
+    def sort(self):
         self.__csv_tuples.sort(key=lambda row: (-len(row[0]), row))
 
-    def update(self) -> None:
-        """Update the CSV tuples, removing duplicates."""
-        from collections import OrderedDict
-
+    def update(self):
         count_old = len(self.__csv_tuples)
         tuples_dict = OrderedDict((row[0], row) for row in self.__csv_tuples if len(row) >= 2 and row[0])
         self.__csv_tuples.clear()
         self.__csv_tuples.extend(tuples_dict.values())
-        logger.info("Translation update - removed items: %d (of %d)", count_old - len(self.__csv_tuples), count_old)
+        logger.info(" - removed items:\t%d\t(of %d)", count_old - len(self.__csv_tuples), count_old)
 
-    def half_to_full(self, name: str) -> str:
-        """Convert half-width Japanese characters to full-width."""
+    def half_to_full(self, name):
         return self.replace_from_tuples(name, jp_half_to_full_tuples)
 
-    def is_translated(self, name: str) -> bool:
-        """Check if a string is already translated (contains only ASCII characters)."""
+    def is_translated(self, name):
         try:
             name.encode("ascii", errors="strict")
         except UnicodeEncodeError:
             return False
         return True
 
-    def translate(self, name: str, default: Optional[str] = None, from_full_width: bool = True) -> str:
-        """Translate a string from Japanese to English."""
-        logger.debug(f"Translating: {name}")
+    def translate(self, name, default=None, from_full_width=True):
         if from_full_width:
             name = self.half_to_full(name)
         name_new = self.replace_from_tuples(name, self.__csv_tuples)
         if default is not None and not self.is_translated(name_new):
-            logger.warning(f"Translation failed for: {name}")
             self.__fails[name] = name_new
             return default
         return name_new
 
-    def save_fails(self, text_name: Optional[str] = None) -> Text:
-        """Save failed translations to a Text object."""
+    def save_fails(self, text_name=None):
         text_name = text_name or (__name__ + ".fails")
         txt = self.get_csv_text(text_name)
         fmt = '"%s","%s"'
         items = sorted(self.__fails.items(), key=lambda row: (-len(row[0]), row))
         txt.from_string("\n".join(fmt % (k, v) for k, v in items))
-        logger.info(f"Saved {len(items)} failed translations to {text_name}")
         return txt
 
-    def load_from_stream(self, csvfile: Union[Text, Iterator[str]] = None) -> None:
-        """Load translations from a stream."""
+    def load_from_stream(self, csvfile=None):
         csvfile = csvfile or self.get_csv_text()
         if isinstance(csvfile, bpy.types.Text):
-            csvfile = (l.body + "\n" for l in csvfile.lines)
+            csvfile = (line.body + "\n" for line in csvfile.lines)
         spamreader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
         csv_tuples = [tuple(row) for row in spamreader if len(row) >= 2]
         self.__csv_tuples = csv_tuples
-        logger.info("Loaded %d translation items", len(self.__csv_tuples))
+        logger.info(" - load items:\t%d", len(self.__csv_tuples))
 
-    def save_to_stream(self, csvfile: Union[Text, TextIO] = None) -> None:
-        """Save translations to a stream.
-        
-        Args:
-            csvfile: The CSV file or stream to save to
-        """
+    def save_to_stream(self, csvfile=None):
         csvfile = csvfile or self.get_csv_text()
         lineterminator = "\r\n"
         if isinstance(csvfile, bpy.types.Text):
@@ -442,38 +401,27 @@ class MMDTranslator:
             lineterminator = "\n"
         spamwriter = csv.writer(csvfile, delimiter=",", lineterminator=lineterminator, quoting=csv.QUOTE_ALL)
         spamwriter.writerows(self.__csv_tuples)
-        logger.info("Saved %d translation items", len(self.__csv_tuples))
+        logger.info(" - save items:\t%d", len(self.__csv_tuples))
 
-    def load(self, filepath: Optional[str] = None) -> None:
-        """Load translations from a file."""
+    def load(self, filepath=None):
         filepath = filepath or self.default_csv_filepath()
-        logger.info("Loading CSV file: %s", filepath)
-        try:
-            with open(filepath, "rt", encoding="utf-8", newline="") as csvfile:
-                self.load_from_stream(csvfile)
-        except Exception as e:
-            logger.error(f"Failed to load CSV file: {e}")
+        logger.info("Loading csv file:\t%s", filepath)
+        with open(filepath, encoding="utf-8", newline="") as csvfile:
+            self.load_from_stream(csvfile)
 
-    def save(self, filepath: Optional[str] = None) -> None:
-        """Save translations to a file."""
+    def save(self, filepath=None):
         filepath = filepath or self.default_csv_filepath()
-        logger.info("Saving CSV file: %s", filepath)
-        try:
-            with open(filepath, "wt", encoding="utf-8", newline="") as csvfile:
-                self.save_to_stream(csvfile)
-        except Exception as e:
-            logger.error(f"Failed to save CSV file: {e}")
+        logger.info("Saving csv file:\t%s", filepath)
+        with open(filepath, "w", encoding="utf-8", newline="") as csvfile:
+            self.save_to_stream(csvfile)
 
 
 class DictionaryEnum:
-    """Handles dictionary enumeration for UI."""
-    
-    __items_ttl: float = 0.0
-    __items_cache: Optional[List[Tuple[str, str, str, int]]] = None
+    __items_ttl = 0.0
+    __items_cache = None
 
     @staticmethod
-    def get_dictionary_items(prop: Any, context: Context) -> List[Tuple[str, str, str, Union[int, str], int]]:
-        """Get dictionary items for UI enumeration."""
+    def get_dictionary_items(prop, context):
         if DictionaryEnum.__items_ttl > time.time():
             return DictionaryEnum.__items_cache
 
@@ -487,8 +435,6 @@ class DictionaryEnum:
         for txt_name in sorted(x.name for x in bpy.data.texts if x.name.lower().endswith(".csv")):
             items.append((txt_name, txt_name, f"bpy.data.texts['{txt_name}']", "TEXT", len(items)))
 
-        import os
-
         folder = FnContext.get_addon_preferences_attribute(context, "dictionary_folder", "")
         if os.path.isdir(folder):
             for filename in sorted(x for x in os.listdir(folder) if x.lower().endswith(".csv")):
@@ -498,19 +444,12 @@ class DictionaryEnum:
 
         if "dictionary" in prop:
             prop["dictionary"] = min(prop["dictionary"], len(items) - 1)
-        
-        logger.debug(f"Found {len(items)} dictionary items")
         return items
 
     @staticmethod
-    def get_translator(dictionary: str) -> Optional[MMDTranslator]:
-        """Get a translator for the specified dictionary."""
+    def get_translator(dictionary):
         if dictionary == "DISABLED":
-            logger.debug("Translation disabled")
             return None
         if dictionary == "INTERNAL":
-            logger.debug("Using internal dictionary")
             return getTranslator(dict(jp_to_en_tuples))
-        
-        logger.debug(f"Using dictionary: {dictionary}")
         return getTranslator(dictionary)
