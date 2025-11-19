@@ -203,6 +203,7 @@
     "Tools.digitigrade_error": "디지티그레이드 다리 생성 실패: {error}",
     "Tools.digitigrade_success": "디지티그레이드 다리 설정 생성 성공",
     "Tools.processing_leg": "다리 본 처리 중: {bone}",
+    "Tools.weight_title": "가중치 도구",
     "Tools.merge_twist_bones": "트위스트 본 유지",
     "Tools.merge_twist_bones_desc": "체크하면 가중치가 0이더라도 트위스트 본이 유지됩니다",
     "Tools.clean_weights": "가중치 0인 본 제거",

@@ -203,6 +203,7 @@
     "Tools.digitigrade_error": "デジティグレード脚の作成に失敗: {error}",
     "Tools.digitigrade_success": "デジティグレード脚の設定が正常に作成されました",
     "Tools.processing_leg": "脚のボーンを処理中: {bone}",
+    "Tools.weight_title": "ウェイトツール",
     "Tools.merge_twist_bones": "ツイストボーンを保持",
     "Tools.merge_twist_bones_desc": "チェックすると、ウェイトがゼロでもツイストボーンが保持されます",
     "Tools.clean_weights": "ゼロウェイトボーンを削除",
