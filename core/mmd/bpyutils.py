@@ -1,18 +1,13 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014 MMD Tools authors
-# This file was originally part of the MMD Tools add-on for Blender
-# You can find MMD Tools here: https://github.com/MMD-Blender/blender_mmd_tools
-# Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
-# MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
+# Copyright 2013 MMD Tools authors
+# This file is part of MMD Tools.
 
 import contextlib
-from typing import Generator, List, Optional, TypeVar, Any, Set, Tuple, Dict, Union
+import math
+from typing import Generator, List, Optional, TypeVar
 
+import bmesh
 import bpy
-from bpy.types import Object, Context, ID, Key, ShapeKey, FCurve, LayerCollection, Collection
-from bpy.types import AddonPreferences, Addon, WindowManager, Area, Region, Window
-
-from ..logging_setup import logger
+from mathutils import Matrix
 
 
 class Props:  # For API changes of only name changed properties
@@ -24,7 +19,7 @@ class Props:  # For API changes of only name changed properties
 
 
 class __EditMode:
-    def __init__(self, obj: Object):
+    def __init__(self, obj):
         if not isinstance(obj, bpy.types.Object):
             raise ValueError
         self.__prevMode = obj.mode
@@ -34,10 +29,10 @@ class __EditMode:
             if obj.mode != "EDIT":
                 bpy.ops.object.mode_set(mode="EDIT")
 
-    def __enter__(self) -> Any:
+    def __enter__(self):
         return self.__obj.data
 
-    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
+    def __exit__(self, exc_type, exc_value, traceback):
         if self.__prevMode == "EDIT":
             bpy.ops.object.mode_set(mode="OBJECT")  # update edited data
         bpy.ops.object.mode_set(mode=self.__prevMode)
@@ -45,43 +40,46 @@ class __EditMode:
 
 
 class __SelectObjects:
-    def __init__(self, active_object: Object, selected_objects: Optional[List[Object]] = None):
+    def __init__(self, active_object: bpy.types.Object, selected_objects: Optional[List[bpy.types.Object]] = None):
         if not isinstance(active_object, bpy.types.Object):
             raise ValueError
         try:
             bpy.ops.object.mode_set(mode="OBJECT")
         except Exception:
-            logger.debug("Failed to set object mode")
             pass
 
-        context = FnContext.ensure_context()
+        contenxt = FnContext.ensure_context()
 
-        for i in context.selected_objects:
+        for i in contenxt.selected_objects:
             i.select_set(False)
 
         self.__active_object = active_object
-        self.__selected_objects = tuple(set(selected_objects) | set([active_object])) if selected_objects else (active_object,)
+        self.__selected_objects = tuple(set(selected_objects) | {active_object}) if selected_objects else (active_object,)
 
         self.__hides: List[bool] = []
         for i in self.__selected_objects:
             self.__hides.append(i.hide_get())
-            FnContext.select_object(context, i)
-        FnContext.set_active_object(context, active_object)
+            FnContext.select_object(contenxt, i)
+        FnContext.set_active_object(contenxt, active_object)
 
-    def __enter__(self) -> Object:
+    def __enter__(self) -> bpy.types.Object:
         return self.__active_object
 
-    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
-        for i, j in zip(self.__selected_objects, self.__hides):
-            i.hide_set(j)
+    def __exit__(self, exc_type, exc_value, traceback):
+        for i, j in zip(self.__selected_objects, self.__hides, strict=False):
+            try:
+                i.hide_set(j)
+            except ReferenceError:
+                # Object may no longer exist, so skip restoring hidden state.
+                pass
 
 
-def setParent(obj: Object, parent: Object) -> None:
+def setParent(obj, parent):
     with select_object(parent, objects=[parent, obj]):
         bpy.ops.object.parent_set(type="OBJECT", xmirror=False, keep_transform=False)
 
 
-def setParentToBone(obj: Object, parent: Object, bone_name: str) -> None:
+def setParentToBone(obj, parent, bone_name):
     with select_object(parent, objects=[parent, obj]):
         bpy.ops.object.mode_set(mode="POSE")
         parent.data.bones.active = parent.data.bones[bone_name]
@@ -89,7 +87,7 @@ def setParentToBone(obj: Object, parent: Object, bone_name: str) -> None:
         bpy.ops.object.mode_set(mode="OBJECT")
 
 
-def edit_object(obj: Object) -> __EditMode:
+def edit_object(obj):
     """Set the object interaction mode to 'EDIT'
 
     It is recommended to use 'edit_object' with 'with' statement like the following code.
@@ -100,7 +98,7 @@ def edit_object(obj: Object) -> __EditMode:
     return __EditMode(obj)
 
 
-def select_object(obj: Object, objects: Optional[List[Object]] = None) -> __SelectObjects:
+def select_object(obj: bpy.types.Object, objects: Optional[List[bpy.types.Object]] = None):
     """Select objects.
 
     It is recommended to use 'select_object' with 'with' statement like the following code.
@@ -109,27 +107,26 @@ def select_object(obj: Object, objects: Optional[List[Object]] = None) -> __Sele
        with select_object(obj):
            some functions...
     """
-    # TODO: Reimplement with bpy.context.temp_override (If it ain't broke, don't fix it.)
+    # TODO: Consider reimplementing with bpy.context.temp_override,
+    #       but note that Blender's new API has stability issues.
+    #       temp_override is prone to crashes, making the current approach safer.
+    #       If it ain't broke, don't fix it.
     return __SelectObjects(obj, objects)
 
 
-def duplicateObject(obj: Object, total_len: int) -> List[Object]:
+def duplicateObject(obj, total_len):
     return FnContext.duplicate_object(FnContext.ensure_context(), obj, total_len)
 
 
-def createObject(name: str = "Object", object_data: Optional[ID] = None, target_scene: Optional[bpy.types.Scene] = None) -> Object:
+def createObject(name="Object", object_data=None, target_scene=None):
     context = FnContext.ensure_context(target_scene)
     return FnContext.set_active_object(context, FnContext.new_and_link_object(context, name, object_data))
 
 
-def makeSphere(segment: int = 8, ring_count: int = 5, radius: float = 1.0, target_object: Optional[Object] = None) -> Object:
-    import bmesh
-
+def makeSphere(segment=8, ring_count=5, radius=1.0, target_object=None):
     if target_object is None:
-        target_object = createObject(name="Sphere")
-        logger.debug(f"Created new sphere object: {target_object.name}")
-    else:
-        logger.debug(f"Using existing object for sphere: {target_object.name}")
+        mesh_data = bpy.data.meshes.new("Sphere")
+        target_object = createObject(name="Sphere", object_data=mesh_data)
 
     mesh = target_object.data
     bm = bmesh.new()
@@ -146,15 +143,10 @@ def makeSphere(segment: int = 8, ring_count: int = 5, radius: float = 1.0, targe
     return target_object
 
 
-def makeBox(size: Tuple[float, float, float] = (1, 1, 1), target_object: Optional[Object] = None) -> Object:
-    import bmesh
-    from mathutils import Matrix
-
+def makeBox(size=(1, 1, 1), target_object=None):
     if target_object is None:
-        target_object = createObject(name="Box")
-        logger.debug(f"Created new box object: {target_object.name}")
-    else:
-        logger.debug(f"Using existing object for box: {target_object.name}")
+        mesh_data = bpy.data.meshes.new("Box")
+        target_object = createObject(name="Box", object_data=mesh_data)
 
     mesh = target_object.data
     bm = bmesh.new()
@@ -170,16 +162,10 @@ def makeBox(size: Tuple[float, float, float] = (1, 1, 1), target_object: Optiona
     return target_object
 
 
-def makeCapsule(segment: int = 8, ring_count: int = 2, radius: float = 1.0, height: float = 1.0, target_object: Optional[Object] = None) -> Object:
-    import math
-    import bmesh
-
+def makeCapsule(segment=8, ring_count=2, radius=1.0, height=1.0, target_object=None):
     if target_object is None:
-        target_object = createObject(name="Capsule")
-        logger.debug(f"Created new capsule object: {target_object.name}")
-    else:
-        logger.debug(f"Using existing object for capsule: {target_object.name}")
-        
+        mesh_data = bpy.data.meshes.new("Capsule")
+        target_object = createObject(name="Capsule", object_data=mesh_data)
     height = max(height, 1e-3)
 
     mesh = target_object.data
@@ -188,8 +174,11 @@ def makeCapsule(segment: int = 8, ring_count: int = 2, radius: float = 1.0, heig
     top = (0, 0, height / 2 + radius)
     verts.new(top)
 
-    # f = lambda i: radius*i/ring_count
-    f = lambda i: radius * math.sin(0.5 * math.pi * i / ring_count)
+    # def f(i):
+    #     return radius * i / ring_count
+    def f(i):
+        return radius * math.sin(0.5 * math.pi * i / ring_count)
+
     for i in range(ring_count, 0, -1):
         z = f(i - 1)
         t = math.sqrt(radius**2 - z**2)
@@ -238,10 +227,10 @@ def makeCapsule(segment: int = 8, ring_count: int = 2, radius: float = 1.0, heig
 
 
 class TransformConstraintOp:
-    __MIN_MAX_MAP: Dict[Union[str, Tuple[str, str]], Union[str, Tuple[str, ...]]] = {"ROTATION": "_rot", "SCALE": "_scale"}
+    __MIN_MAX_MAP = {"ROTATION": "_rot", "SCALE": "_scale"}
 
     @staticmethod
-    def create(constraints: bpy.types.ObjectConstraints, name: str, map_type: str) -> bpy.types.TransformConstraint:
+    def create(constraints, name, map_type):
         c = constraints.get(name, None)
         if c and c.type != "TRANSFORM":
             constraints.remove(c)
@@ -259,7 +248,7 @@ class TransformConstraintOp:
         return c
 
     @classmethod
-    def min_max_attributes(cls, map_type: str, name_id: str = "") -> Tuple[str, ...]:
+    def min_max_attributes(cls, map_type, name_id=""):
         key = (map_type, name_id)
         ret = cls.__MIN_MAX_MAP.get(key, None)
         if ret is None:
@@ -269,7 +258,7 @@ class TransformConstraintOp:
         return ret
 
     @classmethod
-    def update_min_max(cls, constraint: bpy.types.TransformConstraint, value: float, influence: Optional[float] = 1) -> None:
+    def update_min_max(cls, constraint, value, influence=1):
         c = constraint
         if not c or c.type != "TRANSFORM":
             return
@@ -293,14 +282,14 @@ class FnObject:
         raise NotImplementedError("This class is not expected to be instantiated.")
 
     @staticmethod
-    def mesh_remove_shape_key(mesh_object: Object, shape_key: ShapeKey) -> None:
+    def mesh_remove_shape_key(mesh_object: bpy.types.Object, shape_key: bpy.types.ShapeKey):
         assert isinstance(mesh_object.data, bpy.types.Mesh)
 
-        key: Key = shape_key.id_data
+        key: bpy.types.Key = shape_key.id_data
         assert key == mesh_object.data.shape_keys
 
         if mesh_object.animation_data is not None:
-            fc_curve: FCurve
+            fc_curve: bpy.types.FCurve
             for fc_curve in mesh_object.animation_data.drivers:
                 if not fc_curve.data_path.startswith(shape_key.path_from_id()):
                     continue
@@ -324,35 +313,43 @@ class FnContext:
         raise NotImplementedError("This class is not expected to be instantiated.")
 
     @staticmethod
-    def ensure_context(context: Optional[Context] = None) -> Context:
+    def ensure_context(context: Optional[bpy.types.Context] = None) -> bpy.types.Context:
         return context or bpy.context
 
     @staticmethod
-    def get_active_object(context: Context) -> Optional[Object]:
+    def get_active_object(context: bpy.types.Context) -> Optional[bpy.types.Object]:
+        # Added defensive programming for get methods
+        # Related to: https://github.com/MMD-Blender/blender_mmd_tools_local/issues/176
+        if context is None or not hasattr(context, "active_object"):
+            return None
         return context.active_object
 
     @staticmethod
-    def set_active_object(context: Context, obj: Object) -> Object:
+    def set_active_object(context: bpy.types.Context, obj: bpy.types.Object) -> bpy.types.Object:
         context.view_layer.objects.active = obj
         return obj
 
     @staticmethod
-    def set_active_and_select_single_object(context: Context, obj: Object) -> Object:
+    def set_active_and_select_single_object(context: bpy.types.Context, obj: bpy.types.Object) -> bpy.types.Object:
         return FnContext.set_active_object(context, FnContext.select_single_object(context, obj))
 
     @staticmethod
-    def get_scene_objects(context: Context) -> bpy.types.SceneObjects:
+    def get_scene_objects(context: bpy.types.Context) -> bpy.types.SceneObjects:
+        # Added defensive programming for get methods
+        # Added for consistency with get_active_object
+        if context is None or not hasattr(context, "scene") or not hasattr(context.scene, "objects"):
+            return []
         return context.scene.objects
 
     @staticmethod
-    def ensure_selectable(context: Context, obj: Object) -> Object:
+    def ensure_selectable(context: bpy.types.Context, obj: bpy.types.Object) -> bpy.types.Object:
         obj.hide_viewport = False
         obj.hide_select = False
         obj.hide_set(False)
 
         if obj not in context.selectable_objects:
 
-            def __layer_check(layer_collection: LayerCollection) -> bool:
+            def __layer_check(layer_collection: bpy.types.LayerCollection) -> bool:
                 for lc in layer_collection.children:
                     if __layer_check(lc):
                         lc.hide_viewport = False
@@ -374,44 +371,44 @@ class FnContext:
         return obj
 
     @staticmethod
-    def select_object(context: Context, obj: Object) -> Object:
+    def select_object(context: bpy.types.Context, obj: bpy.types.Object) -> bpy.types.Object:
         FnContext.ensure_selectable(context, obj).select_set(True)
         return obj
 
     @staticmethod
-    def select_objects(context: Context, *objects: Object) -> List[Object]:
+    def select_objects(context: bpy.types.Context, *objects: bpy.types.Object) -> List[bpy.types.Object]:
         return [FnContext.select_object(context, obj) for obj in objects]
 
     @staticmethod
-    def select_single_object(context: Context, obj: Object) -> Object:
+    def select_single_object(context: bpy.types.Context, obj: bpy.types.Object) -> bpy.types.Object:
         for i in context.selected_objects:
             if i != obj:
                 i.select_set(False)
         return FnContext.select_object(context, obj)
 
     @staticmethod
-    def link_object(context: Context, obj: Object) -> Object:
+    def link_object(context: bpy.types.Context, obj: bpy.types.Object) -> bpy.types.Object:
         context.collection.objects.link(obj)
         return obj
 
     @staticmethod
-    def new_and_link_object(context: Context, name: str, object_data: Optional[ID]) -> Object:
+    def new_and_link_object(context: bpy.types.Context, name: str, object_data: Optional[bpy.types.ID]) -> bpy.types.Object:
         return FnContext.link_object(context, bpy.data.objects.new(name=name, object_data=object_data))
 
     @staticmethod
-    def duplicate_object(context: Context, object_to_duplicate: Object, target_count: int) -> List[Object]:
+    def duplicate_object(context: bpy.types.Context, object_to_duplicate: bpy.types.Object, target_count: int) -> List[bpy.types.Object]:
         """
         Duplicate object.
 
         This function duplicates the given object and returns a list of duplicated objects.
 
         Args:
-            context (Context): The context in which the duplication is performed.
-            object_to_duplicate (Object): The object to be duplicated.
+            context (bpy.types.Context): The context in which the duplication is performed.
+            object_to_duplicate (bpy.types.Object): The object to be duplicated.
             target_count (int): The desired count of duplicated objects.
 
         Returns:
-            List[Object]: A list of duplicated objects.
+            List[bpy.types.Object]: A list of duplicated objects.
 
         Raises:
             AssertionError: If the number of selected objects in the context is not equal to 1 or if the selected object is not the same as the object to be duplicated.
@@ -435,28 +432,27 @@ class FnContext:
                     last_selected_objects[i].select_set(True)
                 last_selected_objects = context.selected_objects
         assert len(result_objects) == target_count
-        logger.debug(f"Duplicated object {object_to_duplicate.name} to create {target_count} objects")
         return result_objects
 
     @staticmethod
-    def find_user_layer_collection_by_object(context: Context, target_object: Object) -> Optional[LayerCollection]:
+    def find_user_layer_collection_by_object(context: bpy.types.Context, target_object: bpy.types.Object) -> Optional[bpy.types.LayerCollection]:
         """
-        Finds the layer collection that contains the given target_object in the user's collections.
+        Find the layer collection that contains the given target_object in the user's collections.
 
         Args:
-            context (Context): The Blender context.
-            target_object (Object): The target object to find the layer collection for.
+            context (bpy.types.Context): The Blender context.
+            target_object (bpy.types.Object): The target object to find the layer collection for.
 
         Returns:
-            Optional[LayerCollection]: The layer collection that contains the target_object, or None if not found.
+            Optional[bpy.types.LayerCollection]: The layer collection that contains the target_object, or None if not found.
         """
-        scene_layer_collection: LayerCollection = context.view_layer.layer_collection
+        scene_layer_collection: bpy.types.LayerCollection = context.view_layer.layer_collection
 
-        def find_layer_collection_by_name(layer_collection: LayerCollection, name: str) -> Optional[LayerCollection]:
+        def find_layer_collection_by_name(layer_collection: bpy.types.LayerCollection, name: str) -> Optional[bpy.types.LayerCollection]:
             if layer_collection.name == name:
                 return layer_collection
 
-            child_layer_collection: LayerCollection
+            child_layer_collection: bpy.types.LayerCollection
             for child_layer_collection in layer_collection.children:
                 found = find_layer_collection_by_name(child_layer_collection, name)
                 if found is not None:
@@ -464,7 +460,7 @@ class FnContext:
 
             return None
 
-        user_collection: Collection
+        user_collection: bpy.types.Collection
         for user_collection in target_object.users_collection:
             found = find_layer_collection_by_name(scene_layer_collection, user_collection.name)
             if found is not None:
@@ -474,7 +470,7 @@ class FnContext:
 
     @staticmethod
     @contextlib.contextmanager
-    def temp_override_active_layer_collection(context: Context, target_object: Object) -> Generator[Context, None, None]:
+    def temp_override_active_layer_collection(context: bpy.types.Context, target_object: bpy.types.Object) -> Generator[bpy.types.Context, None, None]:
         """
         Context manager to temporarily override the active_layer_collection that contains the target object.
 
@@ -482,11 +478,11 @@ class FnContext:
         It ensures that the original active_layer_collection is restored after the context is exited.
 
         Args:
-            context (Context): The context in which the active_layer_collection will be overridden.
-            target_object (Object): The target object whose layer collection will be set as the active_layer_collection.
+            context (bpy.types.Context): The context in which the active_layer_collection will be overridden.
+            target_object (bpy.types.Object): The target object whose layer collection will be set as the active_layer_collection.
 
         Yields:
-            Context: The modified context with the active_layer_collection overridden.
+            bpy.types.Context: The modified context with the active_layer_collection overridden.
 
         Example:
             with FnContext.temp_override_active_layer_collection(context, target_object):
@@ -507,24 +503,24 @@ class FnContext:
                 context.view_layer.active_layer_collection = original_layer_collection
 
     @staticmethod
-    def __get_addon_preferences(context: Context) -> Optional[AddonPreferences]:
-        addon: Addon = context.preferences.addons.get(__package__, None)
+    def __get_addon_preferences(context: bpy.types.Context) -> Optional[bpy.types.AddonPreferences]:
+        addon: bpy.types.Addon = context.preferences.addons.get(__package__, None)
         return addon.preferences if addon else None
 
     @staticmethod
-    def get_addon_preferences_attribute(context: Context, attribute_name: str, default_value: ADDON_PREFERENCE_ATTRIBUTE_VALUE_TYPE = None) -> ADDON_PREFERENCE_ATTRIBUTE_VALUE_TYPE:
+    def get_addon_preferences_attribute(context: bpy.types.Context, attribute_name: str, default_value: ADDON_PREFERENCE_ATTRIBUTE_VALUE_TYPE = None) -> ADDON_PREFERENCE_ATTRIBUTE_VALUE_TYPE:
         return getattr(FnContext.__get_addon_preferences(context), attribute_name, default_value)
 
     @staticmethod
     def temp_override_objects(
-        context: Context,
-        window: Optional[Window] = None,
-        area: Optional[Area] = None,
-        region: Optional[Region] = None,
-        active_object: Optional[Object] = None,
-        selected_objects: Optional[List[Object]] = None,
-        **keywords: Any,
-    ) -> Generator[Context, None, None]:
+        context: bpy.types.Context,
+        window: Optional[bpy.types.Window] = None,
+        area: Optional[bpy.types.Area] = None,
+        region: Optional[bpy.types.Region] = None,
+        active_object: Optional[bpy.types.Object] = None,
+        selected_objects: Optional[List[bpy.types.Object]] = None,
+        **keywords,
+    ) -> Generator[bpy.types.Context, None, None]:
         if active_object is not None:
             keywords["active_object"] = active_object
             keywords["object"] = active_object

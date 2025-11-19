@@ -8,7 +8,6 @@ from bpy_extras.io_utils import ImportHelper
 from typing import Optional, Callable, Dict, List, Union, Set
 from ..common import clear_default_objects
 from ..translations import t
-from ..mmd.core.pmx.importer import PMXImporter
 import traceback
 
 # Configure logging
@@ -203,34 +202,31 @@ class AvatarToolKit_OT_Import(Operator, ImportHelper):
 
 def import_pmx_file(filepath: str) -> None:
     """
-    Import a PMX file using the MMD Tools PMXImporter
+    Import a PMX file using the MMD Tools import operator
     
     Args:
         filepath: Path to the PMX file
     """
     
-    # Default import settings
-    import_settings = {
-        "filepath": filepath,
-        "scale": 0.08, 
-        "types": {"MESH", "ARMATURE", "MORPHS", "DISPLAY"},
-        "clean_model": True,
-        "remove_doubles": False,
-        "fix_IK_links": True,
-        "ik_loop_factor": 3,  
-        "use_mipmap": True,
-        "sph_blend_factor": 1.0,
-        "spa_blend_factor": 1.0,
-        "rename_LR_bones": False,
-        "use_underscore": False,
-        "apply_bone_fixed_axis": False,
-    }
-    
-    # Create and execute the importer
-    importer = PMXImporter()
+    # Use the MMD Tools operator to import PMX files (CATS-compatible)
+    # Must pass files + directory like CATS does, not just filepath
     try:
-        importer.execute(**import_settings)
+        directory = os.path.dirname(filepath)
+        filename = os.path.basename(filepath)
+        
+        bpy.ops.mmd_tools.import_model('EXEC_DEFAULT',
+                                      files=[{'name': filename}],
+                                      directory=directory,
+                                      scale=0.08,
+                                      types={'MESH', 'ARMATURE', 'MORPHS', 'DISPLAY'},
+                                      clean_model=False,  # Disable cleaning to preserve morph indices
+                                      remove_doubles=False,
+                                      fix_ik_links=False,
+                                      ik_loop_factor=5,
+                                      apply_bone_fixed_axis=False,
+                                      rename_bones=False,
+                                      use_underscore=False)
         logger.info(f"Successfully imported PMX file: {filepath}")
-    except Exception:
-        logger.error(f"Failed to import PMX file: {traceback.format_exc()}", exc_info=True)
+    except (AttributeError, TypeError, ValueError) as e:
+        logger.error(f"Failed to import PMX file: {e}", exc_info=True)
         raise

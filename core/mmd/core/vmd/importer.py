@@ -5,7 +5,7 @@
 # Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
-import logging
+from .....core.logging_setup import logger
 import math
 import os
 from typing import Union
@@ -261,7 +261,7 @@ class VMDImporter:
     def __init__(self, filepath, scale=1.0, bone_mapper=None, use_pose_mode=False, convert_mmd_camera=True, convert_mmd_lamp=True, frame_margin=5, use_mirror=False, use_NLA=False):
         self.__vmdFile = vmd.File()
         self.__vmdFile.load(filepath=filepath)
-        logging.debug(str(self.__vmdFile.header))
+        logger.debug(str(self.__vmdFile.header))
         self.__scale = scale
         self.__convert_mmd_camera = convert_mmd_camera
         self.__convert_mmd_lamp = convert_mmd_lamp
@@ -381,7 +381,7 @@ class VMDImporter:
 
     def __assignToArmature(self, armObj, action_name=None):
         boneAnim = self.__vmdFile.boneAnimation
-        logging.info("---- bone animations:%5d  target: %s", len(boneAnim), armObj.name)
+        logger.info("---- bone animations:%5d  target: %s", len(boneAnim), armObj.name)
         if len(boneAnim) < 1:
             return
 
@@ -412,9 +412,9 @@ class VMDImporter:
                 continue
             bone = pose_bones.get(name, None)
             if bone is None:
-                logging.warning("WARNING: not found bone %s (%d frames)", name, len(keyFrames))
+                logger.warning("WARNING: not found bone %s (%d frames)", name, len(keyFrames))
                 continue
-            logging.info("(bone) frames:%5d  name: %s", len(keyFrames), name)
+            logger.info("(bone) frames:%5d  name: %s", len(keyFrames), name)
             assert bone_name_table.get(bone.name, name) == name
             bone_name_table[bone.name] = name
 
@@ -480,9 +480,9 @@ class VMDImporter:
         # property animation
         propertyAnim = self.__vmdFile.propertyAnimation
         if len(propertyAnim) > 0:
-            logging.info("---- IK animations:%5d  target: %s", len(propertyAnim), armObj.name)
+            logger.info("---- IK animations:%5d  target: %s", len(propertyAnim), armObj.name)
             for keyFrame in propertyAnim:
-                logging.debug("(IK) frame:%5d  list: %s", keyFrame.frame_number, keyFrame.ik_states)
+                logger.debug("(IK) frame:%5d  list: %s", keyFrame.frame_number, keyFrame.ik_states)
                 frame = keyFrame.frame_number + self.__frame_margin
                 for ikName, enable in keyFrame.ik_states:
                     bone = pose_bones.get(ikName, None)
@@ -516,7 +516,7 @@ class VMDImporter:
 
     def __assignToMesh(self, meshObj, action_name=None):
         shapeKeyAnim = self.__vmdFile.shapeKeyAnimation
-        logging.info("---- morph animations:%5d  target: %s", len(shapeKeyAnim), meshObj.name)
+        logger.info("---- morph animations:%5d  target: %s", len(shapeKeyAnim), meshObj.name)
         if len(shapeKeyAnim) < 1:
             return
 
@@ -530,9 +530,9 @@ class VMDImporter:
 
         for name, keyFrames in shapeKeyAnim.items():
             if name not in shapeKeyDict:
-                logging.warning("WARNING: not found shape key %s (%d frames)", name, len(keyFrames))
+                logger.warning("WARNING: not found shape key %s (%d frames)", name, len(keyFrames))
                 continue
-            logging.info("(mesh) frames:%5d  name: %s", len(keyFrames), name)
+            logger.info("(mesh) frames:%5d  name: %s", len(keyFrames), name)
             shapeKey = shapeKeyDict[name]
             channelbag = self.__get_channelbag(action, meshObj.data.shape_keys)
             fcurve = channelbag.fcurves.new(data_path='key_blocks["%s"].value' % shapeKey.name)
@@ -549,14 +549,14 @@ class VMDImporter:
 
     def __assignToRoot(self, rootObj, action_name=None):
         propertyAnim = self.__vmdFile.propertyAnimation
-        logging.info("---- display animations:%5d  target: %s", len(propertyAnim), rootObj.name)
+        logger.info("---- display animations:%5d  target: %s", len(propertyAnim), rootObj.name)
         if len(propertyAnim) < 1:
             return
 
         action_name = action_name or rootObj.name
         action = bpy.data.actions.new(name=action_name)
 
-        logging.debug("(Display) list(frame, show): %s", [(keyFrame.frame_number, bool(keyFrame.visible)) for keyFrame in propertyAnim])
+        logger.debug("(Display) list(frame, show): %s", [(keyFrame.frame_number, bool(keyFrame.visible)) for keyFrame in propertyAnim])
         for keyFrame in propertyAnim:
             self.__keyframe_insert(action, "mmd_root.show_meshes", keyFrame.frame_number + self.__frame_margin, float(keyFrame.visible), rootObj)
 
@@ -579,7 +579,7 @@ class VMDImporter:
         cameraObj = mmdCameraInstance.camera()
 
         cameraAnim = self.__vmdFile.cameraAnimation
-        logging.info("(camera) frames:%5d  name: %s", len(cameraAnim), mmdCamera.name)
+        logger.info("(camera) frames:%5d  name: %s", len(cameraAnim), mmdCamera.name)
         if len(cameraAnim) < 1:
             return
 
@@ -650,7 +650,7 @@ class VMDImporter:
         lampObj = mmdLampInstance.lamp()
 
         lampAnim = self.__vmdFile.lampAnimation
-        logging.info("(lamp) frames:%5d  name: %s", len(lampAnim), mmdLamp.name)
+        logger.info("(lamp) frames:%5d  name: %s", len(lampAnim), mmdLamp.name)
         if len(lampAnim) < 1:
             return
 

@@ -5,7 +5,7 @@
 # Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
 # MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
 
-import logging
+from .....core.logging_setup import logger
 import os
 import struct
 
@@ -40,7 +40,7 @@ class FileStream:
 
     def close(self):
         if self.__file_obj is not None:
-            logging.debug('close the file("%s")', self.__path)
+            logger.debug('close the file("%s")', self.__path)
             self.__file_obj.close()
             self.__file_obj = None
 
@@ -260,20 +260,20 @@ class Header:
             return 4
 
     def load(self, fs):
-        logging.info('loading pmx header information...')
+        logger.info('loading pmx header information...')
         self.sign = fs.readBytes(4)
-        logging.debug('File signature is %s', self.sign)
+        logger.debug('File signature is %s', self.sign)
         if self.sign[:3] != self.PMX_SIGN[:3]:
-            logging.info('File signature is invalid')
-            logging.error('This file is unsupported format, or corrupt file.')
+            logger.info('File signature is invalid')
+            logger.error('This file is unsupported format, or corrupt file.')
             raise InvalidFileError('File signature is invalid.')
         self.version = fs.readFloat()
-        logging.info('pmx format version: %f', self.version)
+        logger.info('pmx format version: %f', self.version)
         if self.version != self.VERSION:
-            logging.error('PMX version %.1f is unsupported', self.version)
+            logger.error('PMX version %.1f is unsupported', self.version)
             raise UnsupportedVersionError('unsupported PMX version: %.1f'%self.version)
         if fs.readByte() != 8 or self.sign[3] != self.PMX_SIGN[3]:
-            logging.warning(' * This file might be corrupted.')
+            logger.warning(' * This file might be corrupted.')
         self.encoding = Encoding(fs.readByte())
         self.additional_uvs = fs.readByte()
         self.vertex_index_size = fs.readByte()
@@ -283,19 +283,19 @@ class Header:
         self.morph_index_size = fs.readByte()
         self.rigid_index_size = fs.readByte()
 
-        logging.info('----------------------------')
-        logging.info('pmx header information')
-        logging.info('----------------------------')
-        logging.info('pmx version: %.1f', self.version)
-        logging.info('encoding: %s', str(self.encoding))
-        logging.info('number of uvs: %d', self.additional_uvs)
-        logging.info('vertex index size: %d byte(s)', self.vertex_index_size)
-        logging.info('texture index: %d byte(s)', self.texture_index_size)
-        logging.info('material index: %d byte(s)', self.material_index_size)
-        logging.info('bone index: %d byte(s)', self.bone_index_size)
-        logging.info('morph index: %d byte(s)', self.morph_index_size)
-        logging.info('rigid index: %d byte(s)', self.rigid_index_size)
-        logging.info('----------------------------')
+        logger.info('----------------------------')
+        logger.info('pmx header information')
+        logger.info('----------------------------')
+        logger.info('pmx version: %.1f', self.version)
+        logger.info('encoding: %s', str(self.encoding))
+        logger.info('number of uvs: %d', self.additional_uvs)
+        logger.info('vertex index size: %d byte(s)', self.vertex_index_size)
+        logger.info('texture index: %d byte(s)', self.texture_index_size)
+        logger.info('material index: %d byte(s)', self.material_index_size)
+        logger.info('bone index: %d byte(s)', self.bone_index_size)
+        logger.info('morph index: %d byte(s)', self.morph_index_size)
+        logger.info('rigid index: %d byte(s)', self.rigid_index_size)
+        logger.info('----------------------------')
 
     def save(self, fs):
         fs.writeBytes(self.PMX_SIGN)
@@ -364,27 +364,27 @@ class Model:
         self.comment = fs.readStr()
         self.comment_e = fs.readStr()
 
-        logging.info('Model name: %s', self.name)
-        logging.info('Model name(english): %s', self.name_e)
-        logging.info('Comment:%s', self.comment)
-        logging.info('Comment(english):%s', self.comment_e)
+        logger.info('Model name: %s', self.name)
+        logger.info('Model name(english): %s', self.name_e)
+        logger.info('Comment:%s', self.comment)
+        logger.info('Comment(english):%s', self.comment_e)
 
-        logging.info('')
-        logging.info('------------------------------')
-        logging.info('Load Vertices')
-        logging.info('------------------------------')
+        logger.info('')
+        logger.info('------------------------------')
+        logger.info('Load Vertices')
+        logger.info('------------------------------')
         num_vertices = fs.readInt()
         self.vertices = []
         for i in range(num_vertices):
             v = Vertex()
             v.load(fs)
             self.vertices.append(v)
-        logging.info('----- Loaded %d vertices', len(self.vertices))
+        logger.info('----- Loaded %d vertices', len(self.vertices))
 
-        logging.info('')
-        logging.info('------------------------------')
-        logging.info(' Load Faces')
-        logging.info('------------------------------')
+        logger.info('')
+        logger.info('------------------------------')
+        logger.info(' Load Faces')
+        logger.info('------------------------------')
         num_faces = fs.readInt()
         self.faces = []
         for i in range(int(num_faces/3)):
@@ -392,25 +392,25 @@ class Model:
             f2 = fs.readVertexIndex()
             f3 = fs.readVertexIndex()
             self.faces.append((f3, f2, f1))
-        logging.info(' Load %d faces', len(self.faces))
+        logger.info(' Load %d faces', len(self.faces))
 
-        logging.info('')
-        logging.info('------------------------------')
-        logging.info(' Load Textures')
-        logging.info('------------------------------')
+        logger.info('')
+        logger.info('------------------------------')
+        logger.info(' Load Textures')
+        logger.info('------------------------------')
         num_textures = fs.readInt()
         self.textures = []
         for i in range(num_textures):
             t = Texture()
             t.load(fs)
             self.textures.append(t)
-            logging.info('Texture %d: %s', i, t.path)
-        logging.info(' ----- Loaded %d textures', len(self.textures))
+            logger.info('Texture %d: %s', i, t.path)
+        logger.info(' ----- Loaded %d textures', len(self.textures))
 
-        logging.info('')
-        logging.info('------------------------------')
-        logging.info(' Load Materials')
-        logging.info('------------------------------')
+        logger.info('')
+        logger.info('------------------------------')
+        logger.info(' Load Materials')
+        logger.info('------------------------------')
         num_materials = fs.readInt()
         self.materials = []
         for i in range(num_materials):
@@ -418,38 +418,38 @@ class Model:
             m.load(fs, num_textures)
             self.materials.append(m)
 
-            logging.info('Material %d: %s', i, m.name)
-            logging.debug('  Name(english): %s', m.name_e)
-            logging.debug('  Comment: %s', m.comment)
-            logging.debug('  Vertex Count: %d', m.vertex_count)
-            logging.debug('  Diffuse: (%.2f, %.2f, %.2f, %.2f)', *m.diffuse)
-            logging.debug('  Specular: (%.2f, %.2f, %.2f)', *m.specular)
-            logging.debug('  Shininess: %f', m.shininess)
-            logging.debug('  Ambient: (%.2f, %.2f, %.2f)', *m.ambient)
-            logging.debug('  Double Sided: %s', str(m.is_double_sided))
-            logging.debug('  Drop Shadow: %s', str(m.enabled_drop_shadow))
-            logging.debug('  Self Shadow: %s', str(m.enabled_self_shadow))
-            logging.debug('  Self Shadow Map: %s', str(m.enabled_self_shadow_map))
-            logging.debug('  Edge: %s', str(m.enabled_toon_edge))
-            logging.debug('  Edge Color: (%.2f, %.2f, %.2f, %.2f)', *m.edge_color)
-            logging.debug('  Edge Size: %.2f', m.edge_size)
+            logger.info('Material %d: %s', i, m.name)
+            logger.debug('  Name(english): %s', m.name_e)
+            logger.debug('  Comment: %s', m.comment)
+            logger.debug('  Vertex Count: %d', m.vertex_count)
+            logger.debug('  Diffuse: (%.2f, %.2f, %.2f, %.2f)', *m.diffuse)
+            logger.debug('  Specular: (%.2f, %.2f, %.2f)', *m.specular)
+            logger.debug('  Shininess: %f', m.shininess)
+            logger.debug('  Ambient: (%.2f, %.2f, %.2f)', *m.ambient)
+            logger.debug('  Double Sided: %s', str(m.is_double_sided))
+            logger.debug('  Drop Shadow: %s', str(m.enabled_drop_shadow))
+            logger.debug('  Self Shadow: %s', str(m.enabled_self_shadow))
+            logger.debug('  Self Shadow Map: %s', str(m.enabled_self_shadow_map))
+            logger.debug('  Edge: %s', str(m.enabled_toon_edge))
+            logger.debug('  Edge Color: (%.2f, %.2f, %.2f, %.2f)', *m.edge_color)
+            logger.debug('  Edge Size: %.2f', m.edge_size)
             if m.texture != -1:
-                logging.debug('  Texture Index: %d', m.texture)
+                logger.debug('  Texture Index: %d', m.texture)
             else:
-                logging.debug('  Texture: None')
+                logger.debug('  Texture: None')
             if m.sphere_texture != -1:
-                logging.debug('  Sphere Texture Index: %d', m.sphere_texture)
-                logging.debug('  Sphere Texture Mode: %d', m.sphere_texture_mode)
+                logger.debug('  Sphere Texture Index: %d', m.sphere_texture)
+                logger.debug('  Sphere Texture Mode: %d', m.sphere_texture_mode)
             else:
-                logging.debug('  Sphere Texture: None')
-            logging.debug('')
+                logger.debug('  Sphere Texture: None')
+            logger.debug('')
 
-        logging.info('----- Loaded %d  materials.', len(self.materials))
+        logger.info('----- Loaded %d  materials.', len(self.materials))
 
-        logging.info('')
-        logging.info('------------------------------')
-        logging.info(' Load Bones')
-        logging.info('------------------------------')
+        logger.info('')
+        logger.info('------------------------------')
+        logger.info(' Load Bones')
+        logger.info('------------------------------')
         num_bones = fs.readInt()
         self.bones = []
         for i in range(num_bones):
@@ -457,33 +457,33 @@ class Model:
             b.load(fs)
             self.bones.append(b)
 
-            logging.info('Bone %d: %s', i, b.name)
-            logging.debug('  Name(english): %s', b.name_e)
-            logging.debug('  Location: (%f, %f, %f)', *b.location)
-            logging.debug('  displayConnection: %s', str(b.displayConnection))
-            logging.debug('  Parent: %s', str(b.parent))
-            logging.debug('  Transform Order: %s', str(b.transform_order))
-            logging.debug('  Rotatable: %s', str(b.isRotatable))
-            logging.debug('  Movable: %s', str(b.isMovable))
-            logging.debug('  Visible: %s', str(b.visible))
-            logging.debug('  Controllable: %s', str(b.isControllable))
-            logging.debug('  Additional Location: %s', str(b.hasAdditionalLocation))
-            logging.debug('  Additional Rotation: %s', str(b.hasAdditionalRotate))
+            logger.info('Bone %d: %s', i, b.name)
+            logger.debug('  Name(english): %s', b.name_e)
+            logger.debug('  Location: (%f, %f, %f)', *b.location)
+            logger.debug('  displayConnection: %s', str(b.displayConnection))
+            logger.debug('  Parent: %s', str(b.parent))
+            logger.debug('  Transform Order: %s', str(b.transform_order))
+            logger.debug('  Rotatable: %s', str(b.isRotatable))
+            logger.debug('  Movable: %s', str(b.isMovable))
+            logger.debug('  Visible: %s', str(b.visible))
+            logger.debug('  Controllable: %s', str(b.isControllable))
+            logger.debug('  Additional Location: %s', str(b.hasAdditionalLocation))
+            logger.debug('  Additional Rotation: %s', str(b.hasAdditionalRotate))
             if b.additionalTransform is not None:
-                logging.debug('  Additional Transform: Bone:%d, influence: %f', *b.additionalTransform)
-            logging.debug('  IK: %s', str(b.isIK))
+                logger.debug('  Additional Transform: Bone:%d, influence: %f', *b.additionalTransform)
+            logger.debug('  IK: %s', str(b.isIK))
             if b.isIK:
-                logging.debug('    Unit Angle: %f', b.rotationConstraint)
-                logging.debug('    Target: %d', b.target)
+                logger.debug('    Unit Angle: %f', b.rotationConstraint)
+                logger.debug('    Target: %d', b.target)
                 for j, link in enumerate(b.ik_links):
-                    logging.debug('    IK Link %d: %d, %s - %s', j, link.target, str(link.minimumAngle), str(link.maximumAngle))
-            logging.debug('')
-        logging.info('----- Loaded %d bones.', len(self.bones))
+                    logger.debug('    IK Link %d: %d, %s - %s', j, link.target, str(link.minimumAngle), str(link.maximumAngle))
+            logger.debug('')
+        logger.info('----- Loaded %d bones.', len(self.bones))
 
-        logging.info('')
-        logging.info('------------------------------')
-        logging.info(' Load Morphs')
-        logging.info('------------------------------')
+        logger.info('')
+        logger.info('------------------------------')
+        logger.info(' Load Morphs')
+        logger.info('------------------------------')
         num_morph = fs.readInt()
         self.morphs = []
         display_categories = {0: 'System', 1: 'Eyebrow', 2: 'Eye', 3: 'Mouth', 4: 'Other'}
@@ -491,16 +491,16 @@ class Model:
             m = Morph.create(fs)
             self.morphs.append(m)
 
-            logging.info('%s %d: %s', m.__class__.__name__, i, m.name)
-            logging.debug('  Name(english): %s', m.name_e)
-            logging.debug('  Category: %s (%d)', display_categories.get(m.category, '#Invalid'), m.category)
-            logging.debug('')
-        logging.info('----- Loaded %d morphs.', len(self.morphs))
+            logger.info('%s %d: %s', m.__class__.__name__, i, m.name)
+            logger.debug('  Name(english): %s', m.name_e)
+            logger.debug('  Category: %s (%d)', display_categories.get(m.category, '#Invalid'), m.category)
+            logger.debug('')
+        logger.info('----- Loaded %d morphs.', len(self.morphs))
 
-        logging.info('')
-        logging.info('------------------------------')
-        logging.info(' Load Display Items')
-        logging.info('------------------------------')
+        logger.info('')
+        logger.info('------------------------------')
+        logger.info(' Load Display Items')
+        logger.info('------------------------------')
         num_disp = fs.readInt()
         self.display = []
         for i in range(num_disp):
@@ -508,15 +508,15 @@ class Model:
             d.load(fs)
             self.display.append(d)
 
-            logging.info('Display Item %d: %s', i, d.name)
-            logging.debug('  Name(english): %s', d.name_e)
-            logging.debug('')
-        logging.info('----- Loaded %d display items.', len(self.display))
+            logger.info('Display Item %d: %s', i, d.name)
+            logger.debug('  Name(english): %s', d.name_e)
+            logger.debug('')
+        logger.info('----- Loaded %d display items.', len(self.display))
 
-        logging.info('')
-        logging.info('------------------------------')
-        logging.info(' Load Rigid Bodies')
-        logging.info('------------------------------')
+        logger.info('')
+        logger.info('------------------------------')
+        logger.info(' Load Rigid Bodies')
+        logger.info('------------------------------')
         num_rigid = fs.readInt()
         self.rigids = []
         rigid_types = {0: 'Sphere', 1: 'Box', 2: 'Capsule'}
@@ -525,27 +525,27 @@ class Model:
             r = Rigid()
             r.load(fs)
             self.rigids.append(r)
-            logging.info('Rigid Body %d: %s', i, r.name)
-            logging.debug('  Name(english): %s', r.name_e)
-            logging.debug('  Type: %s', rigid_types[r.type])
-            logging.debug('  Mode: %s (%d)', rigid_modes.get(r.mode, '#Invalid'), r.mode)
-            logging.debug('  Related bone: %s', r.bone)
-            logging.debug('  Collision group: %d', r.collision_group_number)
-            logging.debug('  Collision group mask: 0x%x', r.collision_group_mask)
-            logging.debug('  Size: (%f, %f, %f)', *r.size)
-            logging.debug('  Location: (%f, %f, %f)', *r.location)
-            logging.debug('  Rotation: (%f, %f, %f)', *r.rotation)
-            logging.debug('  Mass: %f', r.mass)
-            logging.debug('  Bounce: %f', r.bounce)
-            logging.debug('  Friction: %f', r.friction)
-            logging.debug('')
+            logger.info('Rigid Body %d: %s', i, r.name)
+            logger.debug('  Name(english): %s', r.name_e)
+            logger.debug('  Type: %s', rigid_types[r.type])
+            logger.debug('  Mode: %s (%d)', rigid_modes.get(r.mode, '#Invalid'), r.mode)
+            logger.debug('  Related bone: %s', r.bone)
+            logger.debug('  Collision group: %d', r.collision_group_number)
+            logger.debug('  Collision group mask: 0x%x', r.collision_group_mask)
+            logger.debug('  Size: (%f, %f, %f)', *r.size)
+            logger.debug('  Location: (%f, %f, %f)', *r.location)
+            logger.debug('  Rotation: (%f, %f, %f)', *r.rotation)
+            logger.debug('  Mass: %f', r.mass)
+            logger.debug('  Bounce: %f', r.bounce)
+            logger.debug('  Friction: %f', r.friction)
+            logger.debug('')
 
-        logging.info('----- Loaded %d rigid bodies.', len(self.rigids))
+        logger.info('----- Loaded %d rigid bodies.', len(self.rigids))
 
-        logging.info('')
-        logging.info('------------------------------')
-        logging.info(' Load Joints')
-        logging.info('------------------------------')
+        logger.info('')
+        logger.info('------------------------------')
+        logger.info(' Load Joints')
+        logger.info('------------------------------')
         num_joints = fs.readInt()
         self.joints = []
         for i in range(num_joints):
@@ -553,19 +553,19 @@ class Model:
             j.load(fs)
             self.joints.append(j)
 
-            logging.info('Joint %d: %s', i, j.name)
-            logging.debug('  Name(english): %s', j.name_e)
-            logging.debug('  Rigid A: %s', j.src_rigid)
-            logging.debug('  Rigid B: %s', j.dest_rigid)
-            logging.debug('  Location: (%f, %f, %f)', *j.location)
-            logging.debug('  Rotation: (%f, %f, %f)', *j.rotation)
-            logging.debug('  Location Limit: (%f, %f, %f) - (%f, %f, %f)', *(j.minimum_location + j.maximum_location))
-            logging.debug('  Rotation Limit: (%f, %f, %f) - (%f, %f, %f)', *(j.minimum_rotation + j.maximum_rotation))
-            logging.debug('  Spring: (%f, %f, %f)', *j.spring_constant)
-            logging.debug('  Spring(rotation): (%f, %f, %f)', *j.spring_rotation_constant)
-            logging.debug('')
+            logger.info('Joint %d: %s', i, j.name)
+            logger.debug('  Name(english): %s', j.name_e)
+            logger.debug('  Rigid A: %s', j.src_rigid)
+            logger.debug('  Rigid B: %s', j.dest_rigid)
+            logger.debug('  Location: (%f, %f, %f)', *j.location)
+            logger.debug('  Rotation: (%f, %f, %f)', *j.rotation)
+            logger.debug('  Location Limit: (%f, %f, %f) - (%f, %f, %f)', *(j.minimum_location + j.maximum_location))
+            logger.debug('  Rotation Limit: (%f, %f, %f) - (%f, %f, %f)', *(j.minimum_rotation + j.maximum_rotation))
+            logger.debug('  Spring: (%f, %f, %f)', *j.spring_constant)
+            logger.debug('  Spring(rotation): (%f, %f, %f)', *j.spring_rotation_constant)
+            logger.debug('')
 
-        logging.info('----- Loaded %d joints.', len(self.joints))
+        logger.info('----- Loaded %d joints.', len(self.joints))
 
     def save(self, fs):
         fs.writeStr(self.name)
@@ -574,7 +574,7 @@ class Model:
         fs.writeStr(self.comment)
         fs.writeStr(self.comment_e)
 
-        logging.info('''exportings pmx model data...
+        logger.info('''exportings pmx model data...
 name: %s
 name(english): %s
 comment:
@@ -583,62 +583,62 @@ comment(english):
 %s
 ''', self.name, self.name_e, self.comment, self.comment_e)
 
-        logging.info('exporting vertices... %d', len(self.vertices))
+        logger.info('exporting vertices... %d', len(self.vertices))
         fs.writeInt(len(self.vertices))
         for i in self.vertices:
             i.save(fs)
-        logging.info('finished exporting vertices.')
+        logger.info('finished exporting vertices.')
 
-        logging.info('exporting faces... %d', len(self.faces))
+        logger.info('exporting faces... %d', len(self.faces))
         fs.writeInt(len(self.faces)*3)
         for f3, f2, f1 in self.faces:
             fs.writeVertexIndex(f1)
             fs.writeVertexIndex(f2)
             fs.writeVertexIndex(f3)
-        logging.info('finished exporting faces.')
+        logger.info('finished exporting faces.')
 
-        logging.info('exporting textures... %d', len(self.textures))
+        logger.info('exporting textures... %d', len(self.textures))
         fs.writeInt(len(self.textures))
         for i in self.textures:
             i.save(fs)
-        logging.info('finished exporting textures.')
+        logger.info('finished exporting textures.')
 
-        logging.info('exporting materials... %d', len(self.materials))
+        logger.info('exporting materials... %d', len(self.materials))
         fs.writeInt(len(self.materials))
         for i in self.materials:
             i.save(fs)
-        logging.info('finished exporting materials.')
+        logger.info('finished exporting materials.')
 
-        logging.info('exporting bones... %d', len(self.bones))
+        logger.info('exporting bones... %d', len(self.bones))
         fs.writeInt(len(self.bones))
         for i in self.bones:
             i.save(fs)
-        logging.info('finished exporting bones.')
+        logger.info('finished exporting bones.')
 
-        logging.info('exporting morphs... %d', len(self.morphs))
+        logger.info('exporting morphs... %d', len(self.morphs))
         fs.writeInt(len(self.morphs))
         for i in self.morphs:
             i.save(fs)
-        logging.info('finished exporting morphs.')
+        logger.info('finished exporting morphs.')
 
-        logging.info('exporting display items... %d', len(self.display))
+        logger.info('exporting display items... %d', len(self.display))
         fs.writeInt(len(self.display))
         for i in self.display:
             i.save(fs)
-        logging.info('finished exporting display items.')
+        logger.info('finished exporting display items.')
 
-        logging.info('exporting rigid bodies... %d', len(self.rigids))
+        logger.info('exporting rigid bodies... %d', len(self.rigids))
         fs.writeInt(len(self.rigids))
         for i in self.rigids:
             i.save(fs)
-        logging.info('finished exporting rigid bodies.')
+        logger.info('finished exporting rigid bodies.')
 
-        logging.info('exporting joints... %d', len(self.joints))
+        logger.info('exporting joints... %d', len(self.joints))
         fs.writeInt(len(self.joints))
         for i in self.joints:
             i.save(fs)
-        logging.info('finished exporting joints.')
-        logging.info('finished exporting the model.')
+        logger.info('finished exporting joints.')
+        logger.info('finished exporting the model.')
 
 
     def __repr__(self):
@@ -803,7 +803,7 @@ class Texture:
         except ValueError:
             relPath = self.path
         relPath = relPath.replace(os.path.sep, '\\') # always save using windows path conventions
-        logging.info('writing to pmx file the relative texture path: %s', relPath)
+        logger.info('writing to pmx file the relative texture path: %s', relPath)
         fs.writeStr(relPath)
 
 class SharedTexture(Texture):
@@ -1170,7 +1170,7 @@ class Morph:
 
         name = fs.readStr()
         name_e = fs.readStr()
-        logging.debug('morph: %s', name)
+        logger.debug('morph: %s', name)
         category = fs.readSignedByte()
         typeIndex = fs.readSignedByte()
         ret = _CLASSES[typeIndex](name, name_e, category, type_index = typeIndex)
@@ -1399,7 +1399,7 @@ class Display:
             else:
                 raise Exception('invalid value.')
             self.data.append((disp_type, index))
-        logging.debug('the number of display elements: %d', len(self.data))
+        logger.debug('the number of display elements: %d', len(self.data))
 
     def save(self, fs):
         fs.writeStr(self.name)
@@ -1595,12 +1595,12 @@ class Joint:
 
 def load(path):
     with FileReadStream(path) as fs:
-        logging.info('****************************************')
-        logging.info(' mmd_tools.pmx module')
-        logging.info('----------------------------------------')
-        logging.info(' Start to load model data form a pmx file')
-        logging.info('            by the mmd_tools.pmx modlue.')
-        logging.info('')
+        logger.info('****************************************')
+        logger.info(' mmd_tools.pmx module')
+        logger.info('----------------------------------------')
+        logger.info(' Start to load model data form a pmx file')
+        logger.info('            by the mmd_tools.pmx modlue.')
+        logger.info('')
         header = Header()
         header.load(fs)
         fs.setHeader(header)
@@ -1608,12 +1608,12 @@ def load(path):
         try:
             model.load(fs)
         except struct.error as e:
-            logging.error(' * Corrupted file: %s', e)
+            logger.error(' * Corrupted file: %s', e)
             #raise
-        logging.info(' Finished loading.')
-        logging.info('----------------------------------------')
-        logging.info(' mmd_tools.pmx module')
-        logging.info('****************************************')
+        logger.info(' Finished loading.')
+        logger.info('----------------------------------------')
+        logger.info(' mmd_tools.pmx module')
+        logger.info('****************************************')
         return model
 
 def save(path, model, add_uv_count=0):

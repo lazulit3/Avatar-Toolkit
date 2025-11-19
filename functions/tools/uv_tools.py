@@ -8,6 +8,26 @@ from ...core.translations import t
 from ...core.logging_setup import logger
 import traceback
 
+
+def get_uv_vertex_selection(mesh: Mesh) -> List[bool]:
+    """
+    Get UV vertex selection state for Blender 5.0.
+    UV selection is stored in mesh attributes (.uv_select_vert).
+    """
+    uv_select_attr = mesh.attributes['.uv_select_vert']
+    selection = [False] * len(mesh.loops)
+    uv_select_attr.data.foreach_get('value', selection)
+    return selection
+
+
+def set_uv_vertex_selection(mesh: Mesh, loop_index: int, value: bool) -> None:
+    """
+    Set UV vertex selection state for Blender 5.0.
+    UV selection is stored in mesh attributes (.uv_select_vert).
+    """
+    uv_select_attr = mesh.attributes['.uv_select_vert']
+    uv_select_attr.data[loop_index].value = value
+
 class GenerateLoopTreeResult(TypedDict):
     tree: Dict[str, Set[str]]
     selected_loops: Dict[str, List[int]]
@@ -78,8 +98,9 @@ class AvatarToolkit_OT_AlignUVEdgesToTarget(Operator):
             # that two vertices share the same face loop, and therefore are connected.
 
             #hmmm real stupid grimlin hours with this one. Using a string as the index of a dictionary of loop corners that end up on the same coordinate
-            for k,i in enumerate(uv_lay.vertex_selection):
-                if (i.value == True) and (bm.verts[me.loops[k].vertex_index].select == True) and (bm.verts[me.loops[k].vertex_index].hide == False):
+            uv_selection = get_uv_vertex_selection(me)
+            for k, is_selected in enumerate(uv_selection):
+                if (is_selected == True) and (bm.verts[me.loops[k].vertex_index].select == True) and (bm.verts[me.loops[k].vertex_index].hide == False):
                     key = np.array(uv_lay.uv[k].vector[:])
                     key = key.round(decimals=5)
 
@@ -140,7 +161,7 @@ class AvatarToolkit_OT_AlignUVEdgesToTarget(Operator):
             uv_lay = me.uv_layers.active
             for uvcoordstr in vert_target_loops:
                 for loop in vert_target_loops[uvcoordstr]:
-                    uv_lay.vertex_selection[loop].value = True
+                    set_uv_vertex_selection(me, loop, True)
 
             bm.free()
             me.validate()
