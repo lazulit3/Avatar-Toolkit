@@ -746,22 +746,18 @@ class PMXImporter:
         mesh.polygons.foreach_set("use_smooth", (True,) * len(pmxModel.faces))
         mesh.polygons.foreach_set("material_index", material_indices)
 
-        uv_textures, uv_layers = getattr(mesh, "uv_textures", mesh.uv_layers), mesh.uv_layers
-        uv_tex = uv_textures.new()
-        uv_layer = uv_layers[uv_tex.name]
+        uv_layers = mesh.uv_layers
+        uv_layer = uv_layers.new()
         uv_table = {vi: self.flipUV_V(v.uv) for vi, v in enumerate(pmxModel.vertices)}
         uv_layer.data.foreach_set("uv", tuple(v for i in loop_indices_orig for v in uv_table[i]))
 
-        if hasattr(mesh, "uv_textures"):
-            for bf, mi in zip(uv_tex.data, material_indices):
-                bf.image = self.__imageTable.get(mi, None)
 
         if pmxModel.header and pmxModel.header.additional_uvs:
             logger.info(f"Importing {pmxModel.header.additional_uvs} additional UVs")
             zw_data_map = collections.OrderedDict()
             split_uvzw = lambda uvi: (self.flipUV_V(uvi[:2]), uvi[2:])
             for i in range(pmxModel.header.additional_uvs):
-                add_uv = uv_layers[uv_textures.new(name="UV" + str(i + 1)).name]
+                add_uv = uv_layers.new(name="UV" + str(i + 1))
                 logger.info(f" - {add_uv.name}...(uv channels)")
                 uv_table = {vi: split_uvzw(v.additional_uvs[i]) for vi, v in enumerate(pmxModel.vertices)}
                 add_uv.data.foreach_set("uv", tuple(v for i in loop_indices_orig for v in uv_table[i][0]))
@@ -771,11 +767,10 @@ class PMXImporter:
                     zw_data_map["_" + add_uv.name] = {k: self.flipUV_V(v[1]) for k, v in uv_table.items()}
             for name, zw_table in zw_data_map.items():
                 logger.info(f" - {name}...(zw channels of {name[1:]})")
-                add_zw = uv_textures.new(name=name)
+                add_zw = uv_layers.new(name=name)
                 if add_zw is None:
                     logger.warning("\t* Lost zw channels")
                     continue
-                add_zw = uv_layers[add_zw.name]
                 add_zw.data.foreach_set("uv", tuple(v for i in loop_indices_orig for v in zw_table[i]))
 
         self.__fixOverlappingFaceMaterials(mesh.materials, mesh.vertices, loop_indices, material_indices)

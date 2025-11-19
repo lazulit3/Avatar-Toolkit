@@ -643,12 +643,13 @@ class ViewUVMorph(bpy.types.Operator):
                 base_uv_data = mesh.uv_layers.active.data
                 temp_uv_data = mesh.uv_layers[uv_tex.name].data
                 for i, l in enumerate(mesh.loops):
-                    select = temp_uv_data[i].select = l.vertex_index in offsets
+                    # Blender 5.0+: UV selection is now stored in face-corner attributes
+                    # Skipping UV selection assignment as it's not critical for morph preview
+                    select = l.vertex_index in offsets
                     if select:
                         temp_uv_data[i].uv = base_uv_data[i].uv + offsets[l.vertex_index]
 
             uv_textures.active = uv_tex
-            uv_tex.active_render = True
         meshObj.hide_set(False)
         meshObj.select_set(selected)
         logger.info(f"Viewing UV morph: {morph.name}")
@@ -667,13 +668,13 @@ class ClearUVMorphView(bpy.types.Operator):
         assert root is not None
         for m in FnModel.iterate_mesh_objects(root):
             mesh = m.data
-            uv_textures = getattr(mesh, "uv_textures", mesh.uv_layers)
-            for t in uv_textures:
+            uv_layers = mesh.uv_layers
+            for t in list(uv_layers):  # Create a copy to iterate safely
                 if t.name.startswith("__uv."):
-                    uv_textures.remove(t)
-            if len(uv_textures) > 0:
-                uv_textures[0].active_render = True
-                uv_textures.active_index = 0
+                    uv_layers.remove(t)
+            if len(uv_layers) > 0:
+                # Only set active_index
+                uv_layers.active_index = 0
 
             animation_data = mesh.animation_data
             if animation_data:
