@@ -35,6 +35,6 @@ class AvatarToolKit_PT_OptimizationPanel(Panel):
         # Join Meshes section
         col = draw_section_header(layout, t("Optimization.join_meshes_title"), icon='OBJECT_DATA')
         draw_operator_row(col, [
-            (AvatarToolkit_OT_JoinAllMeshes.bl_idname, t("Optimization.join_all"), 'OBJECT_DATA'),
-            (AvatarToolkit_OT_JoinSelectedMeshes.bl_idname, t("Optimization.join_selected"), 'RESTRICT_SELECT_OFF')
+            (AvatarToolkit_OT_JoinAllMeshes.bl_idname, t("Optimization.join_all_meshes"), 'OBJECT_DATA'),
+            (AvatarToolkit_OT_JoinSelectedMeshes.bl_idname, t("Optimization.join_selected_meshes"), 'RESTRICT_SELECT_OFF')
         ])
