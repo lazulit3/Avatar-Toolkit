@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014 MMD Tools authors
-# This file was originally part of the MMD Tools add-on for Blender
-# You can find MMD Tools here: https://github.com/MMD-Blender/blender_mmd_tools
-# Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
-# MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
+# Copyright 2015 MMD Tools authors
+# This file is part of MMD Tools.
 
 import math
-from typing import Dict, Optional, Tuple, cast, Set, List, Any, Union, Generator
+from typing import Dict, Optional, Tuple, cast
 
 import bpy
 from mathutils import Euler, Vector
@@ -16,7 +12,6 @@ from ..bpyutils import FnContext, Props
 from ..core import rigid_body
 from ..core.model import FnModel, Model
 from ..core.rigid_body import FnRigidBody
-from ...logging_setup import logger
 
 
 class SelectRigidBody(bpy.types.Operator):
@@ -44,15 +39,15 @@ class SelectRigidBody(bpy.types.Operator):
         default=False,
     )
 
-    def invoke(self, context: bpy.types.Context, event: Any) -> Set[str]:
+    def invoke(self, context, event):
         vm = context.window_manager
         return vm.invoke_props_dialog(self)
 
     @classmethod
-    def poll(cls, context: bpy.types.Context) -> bool:
+    def poll(cls, context):
         return FnModel.is_rigid_body_object(context.active_object)
 
-    def execute(self, context: bpy.types.Context) -> Set[str]:
+    def execute(self, context):
         obj = context.active_object
         root = FnModel.find_root_object(obj)
         if root is None:
@@ -174,7 +169,7 @@ class AddRigidBody(bpy.types.Operator):
         default=0.1,
     )
 
-    def __add_rigid_body(self, context: bpy.types.Context, root_object: bpy.types.Object, pose_bone: Optional[bpy.types.PoseBone] = None) -> bpy.types.Object:
+    def __add_rigid_body(self, context: bpy.types.Context, root_object: bpy.types.Object, pose_bone: Optional[bpy.types.PoseBone] = None):
         name_j: str = self.name_j
         name_e: str = self.name_e
         size = self.size.copy()
@@ -227,7 +222,7 @@ class AddRigidBody(bpy.types.Operator):
         )
 
     @classmethod
-    def poll(cls, context: bpy.types.Context) -> bool:
+    def poll(cls, context):
         root_object = FnModel.find_root_object(context.active_object)
         if root_object is None:
             return False
@@ -238,11 +233,11 @@ class AddRigidBody(bpy.types.Operator):
 
         return True
 
-    def execute(self, context: bpy.types.Context) -> Set[str]:
+    def execute(self, context):
         active_object = context.active_object
 
-        root_object = cast(bpy.types.Object, FnModel.find_root_object(active_object))
-        armature_object = cast(bpy.types.Object, FnModel.find_armature_object(root_object))
+        root_object = cast("bpy.types.Object", FnModel.find_root_object(active_object))
+        armature_object = cast("bpy.types.Object", FnModel.find_armature_object(root_object))
 
         if active_object != armature_object:
             FnContext.select_single_object(context, root_object).select_set(False)
@@ -255,17 +250,15 @@ class AddRigidBody(bpy.types.Operator):
 
         armature_object.select_set(False)
         if len(selected_pose_bones) > 0:
-            logger.info(f"Adding rigid bodies to {len(selected_pose_bones)} selected bones")
             for pose_bone in selected_pose_bones:
                 rigid = self.__add_rigid_body(context, root_object, pose_bone)
                 rigid.select_set(True)
         else:
-            logger.info("Adding a single rigid body without bone attachment")
             rigid = self.__add_rigid_body(context, root_object)
             rigid.select_set(True)
         return {"FINISHED"}
 
-    def invoke(self, context: bpy.types.Context, event: Any) -> Set[str]:
+    def invoke(self, context, event):
         no_bone = True
         if context.selected_bones and len(context.selected_bones) > 0:
             no_bone = False
@@ -291,13 +284,12 @@ class RemoveRigidBody(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
-    def poll(cls, context: bpy.types.Context) -> bool:
+    def poll(cls, context):
         return FnModel.is_rigid_body_object(context.active_object)
 
-    def execute(self, context: bpy.types.Context) -> Set[str]:
+    def execute(self, context):
         obj = context.active_object
         root = FnModel.find_root_object(obj)
-        logger.info(f"Removing rigid body: {obj.name}")
         utils.selectAObject(obj)  # ensure this is the only one object select
         bpy.ops.object.delete(use_global=True)
         if root:
@@ -310,8 +302,7 @@ class RigidBodyBake(bpy.types.Operator):
     bl_label = "Bake"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context: bpy.types.Context) -> Set[str]:
-        logger.info("Baking rigid body simulation")
+    def execute(self, context: bpy.types.Context):
         with context.temp_override(scene=context.scene, point_cache=context.scene.rigidbody_world.point_cache):
             bpy.ops.ptcache.bake("INVOKE_DEFAULT", bake=True)
 
@@ -323,8 +314,7 @@ class RigidBodyDeleteBake(bpy.types.Operator):
     bl_label = "Delete Bake"
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
-    def execute(self, context: bpy.types.Context) -> Set[str]:
-        logger.info("Deleting rigid body simulation bake")
+    def execute(self, context: bpy.types.Context):
         with context.temp_override(scene=context.scene, point_cache=context.scene.rigidbody_world.point_cache):
             bpy.ops.ptcache.free_bake("INVOKE_DEFAULT")
 
@@ -387,7 +377,7 @@ class AddJoint(bpy.types.Operator):
         min=0,
     )
 
-    def __enumerate_rigid_pair(self, bone_map: Dict[bpy.types.Object, Optional[bpy.types.Bone]]) -> Generator[Tuple[bpy.types.Object, bpy.types.Object], None, None]:
+    def __enumerate_rigid_pair(self, bone_map: Dict[bpy.types.Object, Optional[bpy.types.Bone]]):
         obj_seq = tuple(bone_map.keys())
         for rigid_a, bone_a in bone_map.items():
             for rigid_b, bone_b in bone_map.items():
@@ -400,7 +390,7 @@ class AddJoint(bpy.types.Operator):
             else:
                 yield obj_seq
 
-    def __add_joint(self, context: bpy.types.Context, root_object: bpy.types.Object, rigid_pair: Tuple[bpy.types.Object, bpy.types.Object], bone_map: Dict[bpy.types.Object, Optional[bpy.types.Bone]]) -> bpy.types.Object:
+    def __add_joint(self, context: bpy.types.Context, root_object: bpy.types.Object, rigid_pair: Tuple[bpy.types.Object, bpy.types.Object], bone_map):
         loc: Optional[Vector] = None
         rot = Euler((0.0, 0.0, 0.0))
         rigid_a, rigid_b = rigid_pair
@@ -438,7 +428,7 @@ class AddJoint(bpy.types.Operator):
         )
 
     @classmethod
-    def poll(cls, context: bpy.types.Context) -> bool:
+    def poll(cls, context):
         root_object = FnModel.find_root_object(context.active_object)
         if root_object is None:
             return False
@@ -449,11 +439,11 @@ class AddJoint(bpy.types.Operator):
 
         return True
 
-    def execute(self, context: bpy.types.Context) -> Set[str]:
+    def execute(self, context):
         active_object = context.active_object
-        root_object = cast(bpy.types.Object, FnModel.find_root_object(active_object))
-        armature_object = cast(bpy.types.Object, FnModel.find_armature_object(root_object))
-        bones = cast(bpy.types.Armature, armature_object.data).bones
+        root_object = cast("bpy.types.Object", FnModel.find_root_object(active_object))
+        armature_object = cast("bpy.types.Object", FnModel.find_armature_object(root_object))
+        bones = cast("bpy.types.Armature", armature_object.data).bones
         bone_map: Dict[bpy.types.Object, Optional[bpy.types.Bone]] = {r: bones.get(r.mmd_rigid.bone, None) for r in FnModel.iterate_rigid_body_objects(root_object) if r.select_get()}
 
         if len(bone_map) < 2:
@@ -462,19 +452,15 @@ class AddJoint(bpy.types.Operator):
 
         FnContext.select_single_object(context, root_object).select_set(False)
         if context.scene.rigidbody_world is None:
-            logger.info("Creating rigid body world")
             bpy.ops.rigidbody.world_add()
 
-        joint_count = 0
         for pair in self.__enumerate_rigid_pair(bone_map):
             joint = self.__add_joint(context, root_object, pair, bone_map)
             joint.select_set(True)
-            joint_count += 1
-        
-        logger.info(f"Added {joint_count} joints between rigid bodies")
+
         return {"FINISHED"}
 
-    def invoke(self, context: bpy.types.Context, event: Any) -> Set[str]:
+    def invoke(self, context, event):
         vm = context.window_manager
         return vm.invoke_props_dialog(self)
 
@@ -486,13 +472,12 @@ class RemoveJoint(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
-    def poll(cls, context: bpy.types.Context) -> bool:
+    def poll(cls, context):
         return FnModel.is_joint_object(context.active_object)
 
-    def execute(self, context: bpy.types.Context) -> Set[str]:
+    def execute(self, context):
         obj = context.active_object
         root = FnModel.find_root_object(obj)
-        logger.info(f"Removing joint: {obj.name}")
         utils.selectAObject(obj)  # ensure this is the only one object select
         bpy.ops.object.delete(use_global=True)
         if root:
@@ -507,7 +492,7 @@ class UpdateRigidBodyWorld(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     @staticmethod
-    def __get_rigid_body_world_objects() -> Tuple[bpy.types.Collection, bpy.types.Collection]:
+    def __get_rigid_body_world_objects():
         rigid_body.setRigidBodyWorldEnabled(True)
         rbw = bpy.context.scene.rigidbody_world
         if not rbw.collection:
@@ -522,21 +507,21 @@ class UpdateRigidBodyWorld(bpy.types.Operator):
 
         return rbw.collection.objects, rbw.constraints.objects
 
-    def execute(self, context: bpy.types.Context) -> Set[str]:
+    def execute(self, context):
         scene = context.scene
         scene_objs = set(scene.objects)
         scene_objs.union(o for x in scene.objects if x.instance_type == "COLLECTION" and x.instance_collection for o in x.instance_collection.objects)
 
-        def _update_group(obj: bpy.types.Object, group: bpy.types.Collection) -> bool:
+        def _update_group(obj, group):
             if obj in scene_objs:
                 if obj not in group.values():
                     group.link(obj)
                 return True
-            elif obj in group.values():
+            if obj in group.values():
                 group.unlink(obj)
             return False
 
-        def _references(obj: bpy.types.Object) -> Generator[bpy.types.Object, None, None]:
+        def _references(obj):
             yield obj
             if getattr(obj, "proxy", None):
                 yield from _references(obj.proxy)
@@ -553,7 +538,6 @@ class UpdateRigidBodyWorld(bpy.types.Operator):
         # Object.rigid_body are removed,
         # but Object.rigid_body_constraint are retained.
         # Therefore, it must be checked with Object.mmd_type.
-        logger.info("Updating rigid body world objects")
         for i in (x for x in objects if x.mmd_type == "RIGID_BODY"):
             if not _update_group(i, rb_objs):
                 continue
@@ -568,7 +552,6 @@ class UpdateRigidBodyWorld(bpy.types.Operator):
             # TODO Modify mmd_rigid to allow recovery of the remaining rigidbody parameters.
             # mass, friction, restitution, linear_dumping, angular_dumping
 
-        logger.info("Updating rigid body constraints")
         for i in (x for x in objects if x.rigid_body_constraint):
             if not _update_group(i, rbc_objs):
                 continue
@@ -579,7 +562,6 @@ class UpdateRigidBodyWorld(bpy.types.Operator):
             rbc.object2 = rb_map.get(rbc.object2, rbc.object2)
 
         if need_rebuild_physics:
-            logger.info("Rebuilding physics for models")
             for root_object in scene.objects:
                 if root_object.mmd_type != "ROOT":
                     continue

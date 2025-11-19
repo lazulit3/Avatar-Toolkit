@@ -1,38 +1,34 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014 MMD Tools authors
-# This file was originally part of the MMD Tools add-on for Blender
-# You can find MMD Tools here: https://github.com/MMD-Blender/blender_mmd_tools
-# Neoneko has modified this file to work with Avatar Toolkit and may of made changes or improvements.
-# MMD Tools is licensed under the terms of the GNU General Public License version 3 (GPLv3) same as Avatar Toolkit.
+# Copyright 2015 MMD Tools authors
+# This file is part of MMD Tools.
 
 import bpy
-from typing import Optional, List, Dict, Any, Set, Tuple, Union, TypeVar, Type
-from bpy.types import PropertyGroup, Object, ShapeKey
 
 from .. import utils
 from ..core.bone import FnBone
 from ..core.material import FnMaterial
 from ..core.model import FnModel, Model
 from ..core.morph import FnMorph
-from ....core.logging_setup import logger
 
 
 def _morph_base_get_name(prop: "_MorphBase") -> str:
     return prop.get("name", "")
 
 
-def _morph_base_set_name(prop: "_MorphBase", value: str) -> None:
+def _morph_base_set_name(prop: "_MorphBase", value: str):
     mmd_root = prop.id_data.mmd_root
-    morph_type = "%s_morphs" % prop.bl_rna.identifier[:-5].lower()
+    # morph_type = mmd_root.active_morph_type
+    morph_type = f"{prop.bl_rna.identifier[:-5].lower()}_morphs"
+    # assert(prop.bl_rna.identifier.endswith('Morph'))
+    # logging.debug('_set_name: %s %s %s', prop, value, morph_type)
     prop_name = prop.get("name", None)
     if prop_name == value:
         return
 
-    used_names: Set[str] = {x.name for x in getattr(mmd_root, morph_type) if x != prop}
+    used_names = {x.name for x in getattr(mmd_root, morph_type) if x != prop}
     value = utils.unique_name(value, used_names)
     if prop_name is not None:
         if morph_type == "vertex_morphs":
-            kb_list: Dict[str, List[ShapeKey]] = {}
+            kb_list = {}
             for mesh in FnModel.iterate_mesh_objects(prop.id_data):
                 for kb in getattr(mesh.data.shape_keys, "key_blocks", ()):
                     kb_list.setdefault(kb.name, []).append(kb)
@@ -43,7 +39,7 @@ def _morph_base_set_name(prop: "_MorphBase", value: str) -> None:
                     kb.name = value
 
         elif morph_type == "uv_morphs":
-            vg_list: Dict[str, List[Any]] = {}
+            vg_list = {}
             for mesh in FnModel.iterate_mesh_objects(prop.id_data):
                 for vg, n, x in FnMorph.get_uv_morph_vertex_groups(mesh):
                     vg_list.setdefault(n, []).append(vg)
@@ -72,7 +68,6 @@ def _morph_base_set_name(prop: "_MorphBase", value: str) -> None:
                 kb.name = value
 
     prop["name"] = value
-    logger.debug(f"Renamed morph from '{prop_name}' to '{value}'")
 
 
 class _MorphBase:
@@ -101,12 +96,16 @@ class _MorphBase:
     )
 
 
+def _bone_morph_data_update_bone_id(prop: "BoneMorphData", context: bpy.types.Context):
+    pass  # Empty function is sufficient to trigger UI update
+
+
 def _bone_morph_data_get_bone(prop: "BoneMorphData") -> str:
-    bone_id: int = prop.get("bone_id", -1)
+    bone_id = prop.get("bone_id", -1)
     if bone_id < 0:
         return ""
-    root_object: Object = prop.id_data
-    armature_object: Optional[Object] = FnModel.find_armature_object(root_object)
+    root_object = prop.id_data
+    armature_object = FnModel.find_armature_object(root_object)
     if armature_object is None:
         return ""
     pose_bone = FnBone.find_pose_bone_by_bone_id(armature_object, bone_id)
@@ -115,9 +114,9 @@ def _bone_morph_data_get_bone(prop: "BoneMorphData") -> str:
     return pose_bone.name
 
 
-def _bone_morph_data_set_bone(prop: "BoneMorphData", value: str) -> None:
-    root: Object = prop.id_data
-    arm: Optional[Object] = FnModel.find_armature_object(root)
+def _bone_morph_data_set_bone(prop: "BoneMorphData", value: str):
+    root = prop.id_data
+    arm = FnModel.find_armature_object(root)
 
     # Load the library_override file. This function is triggered when loading, but the arm obj cannot be found.
     # The arm obj is exist, but the relative relationship has not yet been established.
@@ -125,14 +124,13 @@ def _bone_morph_data_set_bone(prop: "BoneMorphData", value: str) -> None:
         return
 
     if value not in arm.pose.bones.keys():
-        prop["bone_id"] = -1
+        prop.bone_id = -1
         return
     pose_bone = arm.pose.bones[value]
-    prop["bone_id"] = FnBone.get_or_assign_bone_id(pose_bone)
-    logger.debug(f"Set bone morph data bone to '{value}' with ID {prop['bone_id']}")
+    prop.bone_id = FnBone.get_or_assign_bone_id(pose_bone)
 
 
-def _bone_morph_data_update_location_or_rotation(prop: "BoneMorphData", _context: bpy.types.Context) -> None:
+def _bone_morph_data_update_location_or_rotation(prop: "BoneMorphData", _context):
     if not prop.name.startswith("mmd_bind"):
         return
     arm = FnModel(prop.id_data).morph_slider.dummy_armature
@@ -141,12 +139,9 @@ def _bone_morph_data_update_location_or_rotation(prop: "BoneMorphData", _context
         if bone:
             bone.location = prop.location
             bone.rotation_quaternion = prop.rotation.__class__(*prop.rotation.to_axis_angle())  # Fix for consistency
-            logger.debug(f"Updated bone morph data location/rotation for '{prop.name}'")
 
 
 class BoneMorphData(bpy.types.PropertyGroup):
-    """ """
-
     bone: bpy.props.StringProperty(
         name="Bone",
         description="Target bone",
@@ -156,6 +151,7 @@ class BoneMorphData(bpy.types.PropertyGroup):
 
     bone_id: bpy.props.IntProperty(
         name="Bone ID",
+        update=_bone_morph_data_update_bone_id,
     )
 
     location: bpy.props.FloatVectorProperty(
@@ -191,61 +187,53 @@ class BoneMorph(_MorphBase, bpy.types.PropertyGroup):
     )
 
 
-def _material_morph_data_get_material(prop: "MaterialMorphData") -> str:
-    mat_p = prop.get("material_data", None)
-    if mat_p is not None:
-        return mat_p.name
+def _material_morph_data_get_material(prop: "MaterialMorphData"):
+    mat_data = prop.get("material_data", None)
+    if mat_data is not None:
+        return mat_data.name
     return ""
 
 
-def _material_morph_data_set_material(prop: "MaterialMorphData", value: str) -> None:
+def _material_morph_data_set_material(prop: "MaterialMorphData", value: str):
     if value not in bpy.data.materials:
-        prop["material_data"] = None
-        prop["material_id"] = -1
-        logger.debug(f"Material '{value}' not found, setting material_data to None")
+        prop.material_data = None
+        prop.material_id = -1
     else:
         mat = bpy.data.materials[value]
         fnMat = FnMaterial(mat)
-        prop["material_data"] = mat
-        prop["material_id"] = fnMat.material_id
-        logger.debug(f"Set material morph data material to '{value}' with ID {fnMat.material_id}")
+        prop.material_data = mat
+        prop.material_id = fnMat.material_id
 
 
-def _material_morph_data_set_related_mesh(prop: "MaterialMorphData", value: str) -> None:
+def _material_morph_data_set_related_mesh(prop: "MaterialMorphData", value: str):
     mesh = FnModel.find_mesh_object_by_name(prop.id_data, value)
     if mesh is not None:
-        prop["related_mesh_data"] = mesh.data
-        logger.debug(f"Set material morph data related mesh to '{value}'")
+        prop.related_mesh_data = mesh.data
     else:
-        prop["related_mesh_data"] = None
-        logger.debug(f"Mesh '{value}' not found, setting related_mesh_data to None")
+        prop.related_mesh_data = None
 
 
-def _material_morph_data_get_related_mesh(prop: "MaterialMorphData") -> str:
-    mesh_p = prop.get("related_mesh_data", None)
-    if mesh_p is not None:
-        return mesh_p.name
+def _material_morph_data_get_related_mesh(prop):
+    mesh_data = prop.get("related_mesh_data", None)
+    if mesh_data is not None:
+        return mesh_data.name
     return ""
 
 
-def _material_morph_data_update_modifiable_values(prop: "MaterialMorphData", _context: bpy.types.Context) -> None:
+def _material_morph_data_update_modifiable_values(prop: "MaterialMorphData", _context):
     if not prop.name.startswith("mmd_bind"):
         return
     from ..core.shader import _MaterialMorph
 
-    mat = prop["material_data"]
-    if mat is not None:
-        _MaterialMorph.update_morph_inputs(mat, prop)
-        logger.debug(f"Updated material morph modifiable values for '{prop.name}'")
+    mat_data = prop.get("material_data", None)
+    if mat_data is not None:
+        _MaterialMorph.update_morph_inputs(mat_data, prop)
     else:
-        for mat in FnModel(prop.id_data).materials():
-            _MaterialMorph.update_morph_inputs(mat, prop)
-            logger.debug(f"Updated material morph modifiable values for all materials")
+        for mat_data in FnModel(prop.id_data).materials():
+            _MaterialMorph.update_morph_inputs(mat_data, prop)
 
 
 class MaterialMorphData(bpy.types.PropertyGroup):
-    """ """
-
     related_mesh: bpy.props.StringProperty(
         name="Related Mesh",
         description="Stores a reference to the mesh where this morph data belongs to",
@@ -416,6 +404,9 @@ class UVMorphOffset(bpy.types.PropertyGroup):
         name="UV Offset",
         description="UV offset",
         size=4,
+        # min=-1,
+        # max=1,
+        # precision=3,
         step=0.1,
         default=[0, 0, 0, 0],
     )
