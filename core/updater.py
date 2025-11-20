@@ -20,7 +20,7 @@ GITHUB_REPO = "teamneoneko/Avatar-Toolkit"
 # Define which version series this installation can update to
 # For example: ["0.1"] means only look for 0.1.x updates
 # ["0.2", "0.3"] would look for both 0.2.x and 0.3.x
-ALLOWED_VERSION_SERIES = ["0.5"]
+ALLOWED_VERSION_SERIES = ["0.6"]
 
 is_checking_for_update: bool = False
 update_needed: bool = False
