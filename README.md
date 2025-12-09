@@ -33,8 +33,8 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/lega
 ## Requirements
 
 1) Blender Version
-- Blender 4.5 or newer is required
-- Blender 4.5 is the current recommended version
+- Blender 5.0 or newer is required
+- Blender 5.0 is the current recommended version
 
 2) Python Requirements
 - If using a custom Python installation with Blender, ensure NumPy is installed
@@ -42,7 +42,7 @@ See everything Avatar Toolkit has ot offer [here](https://avatartoolkit.xyz/lega
 
 3) Recommended Setup
 - Download Blender directly from https://blender.org
-- Use Blender 4.5 for the best experience
+- Use Blender 5.0 for the best experience
 
 #### Unfortunately, due to the increased number of people complaining to me (yes, we get DMs about this) that AT or CATS is broken when it's not, we are going to have to be a bit more strict about which Blender releases we will provide support for.
 
