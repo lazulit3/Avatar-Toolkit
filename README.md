@@ -1,5 +1,5 @@
 # Avatar Toolkit
-We are aware the wiki is down and are working on a new one, please don't report this.
+### WE ARE MOVING AWAY FROM GITHUB TO DISROOT, NO FURTHER DEVELOPMENT WILL BE DONE ON GITHUB, ISSUES WILL BE ANSWERED UNTO THE 20TH OF JANURARY AFTER THE 20TH THE REPO WILL BE LOCKED, SEE THE NEW REPO HERE: https://git.disroot.org/Neoneko/Avatar-Toolkit
 
 ## Avatar Toolkit is in Alpha, There will be issues, please ensure you report them!. If using a Alpha plugin isn't your fancy you can find Cats Blender Plugin [HERE](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-)!
 #### Avatar Toolkit is in Alpha and will contain issues, please ensure you report them!
