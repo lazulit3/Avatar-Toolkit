@@ -5,7 +5,7 @@ schema_version = "1.0.0"
 id = "avatar_toolkit"
 version = "0.5.3"
 name = "Avatar Toolkit"
-tagline = "A modern tool for importing and optimizing models for VRChat, Resonite, and other similar games."
+tagline = "Import and optimize avatar models for VRChat and Resonite"
 maintainer = "Team NekoNeo"
 type = "add-on"
 
